@@ -1,163 +1,117 @@
-# Task List CLI – Go Spec
-
+# Link Shelf – Simple Build Spec
+ 
 ## What you're building
-
-A command-line task manager. The user can add tasks, list them, mark them done, and delete them. Tasks persist between runs in a local JSON file.
-
+ 
+A personal bookmark manager: save URLs with titles, list them, delete them. Go backend + vanilla HTML frontend + SQLite storage.
+ 
 ## Run it
-
+ 
 ```bash
-cd tasklist
+cd linkshelf
 go mod tidy
-go run ./cmd/tasklist add "Buy milk"
-go run ./cmd/tasklist list
-go run ./cmd/tasklist done 1
-go run ./cmd/tasklist delete 1
+go run ./cmd/server
+# visit http://localhost:8080
 ```
-
+ 
 ## File layout
-
+ 
 ```
-tasklist/
+linkshelf/
 ├── go.mod
-├── cmd/
-│   └── tasklist/
-│       └── main.go          # CLI entry point
+├── cmd/server/main.go
 ├── internal/
-│   ├── store/
-│   │   ├── store.go         # Load/save tasks to JSON
-│   │   └── store_test.go
-│   └── tasks/
-│       ├── tasks.go         # Task logic
-│       └── tasks_test.go
+│   ├── store/store.go
+│   └── api/handlers.go
+└── web/
+    ├── index.html
+    ├── app.js
+    └── style.css
 ```
-
+ 
 ## go.mod
-
+ 
 ```
-module tasklist
-
+module linkshelf
+ 
 go 1.22
+ 
+require modernc.org/sqlite v1.29.0
 ```
-
-No external dependencies. Stdlib only.
-
+ 
 ## Data model
-
-A task is a Go struct serialised to `tasks.json` in the current directory:
-
+ 
+One table, one struct:
+ 
 ```go
-type Task struct {
-    ID    int64  `json:"id"`
-    Title string `json:"title"`
-    Done  bool   `json:"done"`
-}
-
-type Store struct {
-    NextID int64  `json:"next_id"`
-    Tasks  []Task `json:"tasks"`
+type Link struct {
+    ID        int64  `json:"id"`
+    Title     string `json:"title"`
+    URL       string `json:"url"`
+    CreatedAt string `json:"created_at"` // RFC3339
 }
 ```
-
-Example file on disk:
-
-```json
-{
-  "next_id": 3,
-  "tasks": [
-    {"id": 1, "title": "Buy milk", "done": false},
-    {"id": 2, "title": "Walk dog", "done": true}
-  ]
-}
+ 
+```sql
+CREATE TABLE IF NOT EXISTS links (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  url   TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
 ```
-
-## Packages
-
-### internal/store/store.go
-
-Handles reading and writing `tasks.json`.
-
+ 
+## Store (`internal/store/store.go`)
+ 
+Implement these three functions backed by SQLite:
+ 
 ```go
-func Load(path string) (*Store, error)
-func Save(path string, s *Store) error
+func (s *Store) List(ctx context.Context) ([]Link, error)      // ORDER BY id DESC
+func (s *Store) Create(ctx context.Context, title, url string) (Link, error)
+func (s *Store) Delete(ctx context.Context, id int64) error
 ```
-
-- If the file does not exist, `Load` returns an empty `&Store{NextID: 1}` with no error.
-- `Save` writes JSON with two-space indentation.
-
-### internal/tasks/tasks.go
-
-Pure logic — no file I/O, no `fmt.Print`. All functions take a `*Store` and return an error where appropriate.
-
-```go
-func Add(s *Store, title string) (Task, error)
-func List(s *Store) []Task
-func Complete(s *Store, id int64) (Task, error)
-func Delete(s *Store, id int64) (Task, error)
-```
-
-Validation rules:
-- `title` must be non-empty after `strings.TrimSpace` — return `error` if blank
-- `id` must match an existing task — return `error` with a clear message if not found
-
-### cmd/tasklist/main.go
-
-CLI entry point using `os.Args`. No external flag libraries needed; stdlib `flag` package is allowed.
-
-Commands:
-
-| Command | Behaviour |
-|---------|-----------|
-| `add <title>` | Add a task; print `Added: <title> (id=N)` |
-| `list` | Print all tasks; print `No tasks.` if empty |
-| `done <id>` | Mark task done; print `Done: <title>` |
-| `delete <id>` | Delete task; print `Deleted: <title>` |
-
-Output format for `list`:
-
-```
-1. [ ] Buy milk
-2. [x] Walk dog
-```
-
-On error (bad id, blank title, unknown command): print a short error message to `os.Stderr` and exit with code 1 via `os.Exit(1)`.
-
-Load the store at the start, perform the action, save the store, print the result.
-
-## Tests
-
-### internal/store/store_test.go
-
-- `Load` on a missing path returns an empty store with no error
-- `Save` then `Load` round-trips correctly (same tasks, same NextID)
-- Use `t.TempDir()` for all file paths — never write to the real `tasks.json`
-
-### internal/tasks/tasks_test.go
-
-- `Add` increases the task count and assigns a unique ID
-- `Add` with a blank title returns an error
-- `List` returns all tasks
-- `Complete` sets `Done` to `true`
-- `Complete` with unknown id returns an error
-- `Delete` removes the task from the slice
-- `Delete` with unknown id returns an error
-- Adding two tasks gives them different IDs
-
-## Run tests
-
-```bash
-cd tasklist
-go test ./...
-go vet ./...
-```
-
-All tests must pass. No test may write outside `t.TempDir()`.
-
+ 
+Validation rules for `Create`:
+- Title: non-empty, max 200 chars
+- URL: non-empty, must start with `http://` or `https://`
+- Return an error (don't panic) if validation fails
+- Return an error if Delete is called with an id that doesn't exist
+## HTTP API (`internal/api/handlers.go`)
+ 
+| Method | Path | Success | Error |
+|--------|------|---------|-------|
+| GET | `/` | 200, serve `web/index.html` | — |
+| GET | `/static/{file}` | 200, serve file from `web/` | 404 |
+| GET | `/api/links` | 200, JSON array | — |
+| POST | `/api/links` | 201, JSON of created link | 400 `{"error":"..."}` |
+| DELETE | `/api/links/{id}` | 204 | 404 `{"error":"..."}` |
+ 
+The static handler must reject any path containing `..`.
+ 
+## `cmd/server/main.go`
+ 
+- Open SQLite at `linkshelf.db` (same directory as where you run the command)
+- Register routes on `http.DefaultServeMux`
+- Listen on `:8080`
+- Print `listening on :8080` when ready
+## Frontend (`web/`)
+ 
+**index.html** — a form with a title input, a URL input, an Add button, and an empty `<ul id="links">` list.
+ 
+**app.js** — on page load, fetch `/api/links` and populate the list. Each item shows the title (as a link), the URL, and a Delete button. The form submits via `POST /api/links`. Delete calls `DELETE /api/links/{id}`. All updates refresh the list without reloading the page.
+ 
+**style.css** — basic readable styles. Nothing fancy required.
+ 
+## Tests (optional but encouraged)
+ 
+If you write tests, put store tests in `internal/store/store_test.go` using an in-memory SQLite DB (`:memory:`), and handler tests in `internal/api/handlers_test.go` using `net/http/httptest`.
+ 
+Key cases to cover:
+- Create + List returns the link
+- Create with bad URL returns error
+- DELETE existing → 204; DELETE missing → 404
+- GET `/api/links` returns `[]` (not `null`) when empty
 ## Definition of done
-
-1. `go test ./...` and `go vet ./...` pass with no errors
-2. `go run ./cmd/tasklist add "Hello"` creates a task and prints confirmation
-3. `go run ./cmd/tasklist list` shows it
-4. `go run ./cmd/tasklist done 1` marks it complete
-5. `go run ./cmd/tasklist delete 1` removes it
-6. Running the program twice in a row preserves data between runs
+ 
+1. `go mod tidy && go build ./...` succeeds with no errors
+2. Server starts and the UI loads at `http://localhost:8080`
+3. You can add a bookmark, see it in the list, and delete it
