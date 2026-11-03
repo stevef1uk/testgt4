@@ -30,6 +30,14 @@
       "source": "qa_rework",
       "hits": 1,
       "updated_at": "2026-11-03T15:59:59Z"
+    },
+    {
+      "stack": "python",
+      "rule": "The cached Docker harness targets a Go application, but this phase cannot create the later Go source and web paths it references.",
+      "source": "agent",
+      "bead_path": "finally/backend/app/api/__init__.py",
+      "hits": 1,
+      "updated_at": "2026-11-03T16:22:08Z"
     }
   ]
 }

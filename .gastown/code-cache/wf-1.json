@@ -49,38 +49,45 @@
     "created_at": "2026-11-03T15:59:01Z"
   },
   "2:finally/Dockerfile": {
-    "content": "# Dockerfile for Go web server\n# Template variables: http://app:8000, 8000\n# Multi-stage build: golang:1.22-alpine builder -\u003e alpine:3.20 runtime\n# The web app runs on HOST (not in Docker). Playwright container reaches it via host.docker.internal.\n\n# Stage 1: Builder\nFROM golang:1.22-alpine AS builder\nWORKDIR /app\nCOPY go.mod go.sum ./\nRUN go mod download\nCOPY cmd/server/main.go ./cmd/server/\nRUN CGO_ENABLED=0 go build -o /server ./cmd/server\n\n# Stage 2: Runtime\nFROM alpine:3.20\nWORKDIR /app\nCOPY --from=builder /server /usr/local/bin/server\nCOPY web ./web\nEXPOSE 8080\nCMD [\"server\", \"-addr\", \":8080\"]",
-    "md5": "7a2b7c3d0dfc6ceb226c5d579836da35",
+    "content": "# Dockerfile for Go web server\n# Template variables: http://app:8000, 8000\n# Multi-stage build: golang:1.22-alpine builder -\u003e alpine:3.20 runtime\n# The web app runs on HOST (not in Docker). Playwright container reaches it via host.docker.internal.\n\nFROM golang:1.22-alpine AS builder\nWORKDIR /app\nCOPY go.mod go.sum ./\nRUN go mod download\nCOPY cmd/server/main.go ./cmd/server/\nRUN CGO_ENABLED=0 go build -o /server ./cmd/server\n\nFROM alpine:3.20\nWORKDIR /app\nCOPY --from=builder /server /usr/local/bin/server\nCOPY web ./web\nEXPOSE 8080\nCMD [\"server\", \"-addr\", \":8080\"]",
+    "md5": "965fc4bfabfc7bf3261d86b876c341a5",
     "validated": true,
-    "validated_at": "2026-11-03T16:16:16Z",
-    "created_at": "2026-11-03T16:16:16Z"
+    "validated_at": "2026-11-03T16:23:03Z",
+    "created_at": "2026-11-03T16:23:03Z"
   },
   "2:finally/backend/app/api/__init__.py": {
     "content": "\"\"\"FastAPI router for the watchlist market API boundary.\"\"\"\n\nfrom __future__ import annotations\n\nfrom fastapi import APIRouter\n\nrouter = APIRouter(prefix=\"/api\", tags=[\"api\"])\n\n\n@router.get(\"/health\", tags=[\"system\"])\ndef health() -\u003e dict[str, str]:\n    \"\"\"Report that the API process is ready to receive requests.\"\"\"\n    return {\"status\": \"ok\"}\n\n\n__all__ = [\"health\", \"router\"]",
     "md5": "dd1adc85d04a3f17afb689e25aab335a",
     "validated": true,
-    "validated_at": "2026-11-03T16:16:16Z",
-    "created_at": "2026-11-03T16:16:16Z"
+    "validated_at": "2026-11-03T16:20:45Z",
+    "created_at": "2026-11-03T16:20:45Z"
   },
   "2:finally/backend/app/api/schemas.py": {
     "content": "\"\"\"Pydantic contracts for the canonical API endpoints.\"\"\"\n\nfrom __future__ import annotations\n\nfrom typing import Literal\n\nfrom pydantic import BaseModel, Field, validator\n\n\nclass WatchlistRequest(BaseModel):\n    ticker: str = Field(min_length=1, max_length=10)\n\n    @validator(\"ticker\")\n    def normalize_ticker(cls, value: str) -\u003e str:\n        ticker = value.strip().upper()\n        if not ticker.isalpha():\n            raise ValueError(\"ticker must contain only letters\")\n        return ticker\n\n\nclass TradeRequest(BaseModel):\n    ticker: str = Field(min_length=1, max_length=10)\n    quantity: float = Field(gt=0)\n    side: Literal[\"buy\", \"sell\"]\n\n    @validator(\"ticker\")\n    def normalize_ticker(cls, value: str) -\u003e str:\n        ticker = value.strip().upper()\n        if not ticker.isalpha():\n            raise ValueError(\"ticker must contain only letters\")\n        return ticker\n\n\nclass TradeAction(TradeRequest):\n    pass\n\n\nclass WatchlistChange(BaseModel):\n    ticker: str = Field(min_length=1, max_length=10)\n    action: Literal[\"add\", \"remove\"]\n\n    @validator(\"ticker\")\n    def normalize_ticker(cls, value: str) -\u003e str:\n        ticker = value.strip().upper()\n        if not ticker.isalpha():\n            raise ValueError(\"ticker must contain only letters\")\n        return ticker\n\n\nclass ChatRequest(BaseModel):\n    message: str = Field(min_length=1)\n\n\nclass ChatResponse(BaseModel):\n    message: str\n    trades: list[TradeAction] = Field(default_factory=list)\n    watchlist_changes: list[WatchlistChange] = Field(default_factory=list)\n\n\nclass PriceQuote(BaseModel):\n    ticker: str\n    price: float\n    change_percent: float = 0.0\n\n\nclass Position(BaseModel):\n    ticker: str\n    shares: float\n    average_cost: float\n    current_price: float\n    market_value: float\n    unrealized_pnl: float\n\n\nclass PortfolioResponse(BaseModel):\n    cash: float\n    positions: list[Position] = Field(default_factory=list)\n    total_value: float\n    unrealized_pnl: float\n\n\nclass PortfolioSnapshot(BaseModel):\n    timestamp: str\n    total_value: float\n    cash: float\n\n\nclass PriceEvent(BaseModel):\n    prices: list[PriceQuote] = Field(default_factory=list)\n\n\n__all__ = [\n    \"ChatRequest\",\n    \"ChatResponse\",\n    \"PortfolioResponse\",\n    \"PortfolioSnapshot\",\n    \"Position\",\n    \"PriceEvent\",\n    \"PriceQuote\",\n    \"TradeAction\",\n    \"TradeRequest\",\n    \"WatchlistChange\",\n    \"WatchlistRequest\",\n]",
     "md5": "69fe687064aa34c2068352da35f54e43",
     "validated": true,
-    "validated_at": "2026-11-03T16:16:16Z",
-    "created_at": "2026-11-03T16:16:16Z"
+    "validated_at": "2026-11-03T16:20:45Z",
+    "created_at": "2026-11-03T16:20:45Z"
+  },
+  "2:finally/docker-compose.yml": {
+    "content": "services:\n  app:\n    build:\n      context: .\n      dockerfile: Dockerfile\n    ports:\n      - \"8000:8000\"\n    environment:\n      PORT: \"8000\"\n    healthcheck:\n      test: [\"CMD\", \"curl\", \"-f\", \"http://localhost:8000/\"]\n      interval: 5s\n      timeout: 5s\n      retries: 20",
+    "md5": "25326c9edbf116514007eab64de667ef",
+    "validated": true,
+    "validated_at": "2026-11-03T16:23:20Z",
+    "created_at": "2026-11-03T16:23:20Z"
   },
   "2:finally/test/docker-compose.test.yml": {
-    "content": "# Docker compose test harness for single-container rig\n# Template variables: playwright-go-test:latest, /app, npx playwright test --project=chromium --config=test/playwright.config.ts, http://app:8000, 8000, .., \"CMD\", \"curl\", \"-f\", \"http://localhost:8000/\", PORT=8000\n# App runs in its own container; Playwright reaches it over the internal compose network.\n# Multi-stage Dockerfile is used to pre-install npm dependencies.\n# Source files are mounted via volumes so test changes don't require image rebuilds.\n\nservices:\n  app:\n    build:\n      context: ..\n    ports:\n      - \"8000:8000\"\n    environment:\n      - PORT=8000\n    healthcheck:\n      test: [\"CMD\", \"curl\", \"-f\", \"http://localhost:8000/\"]\n      interval: 5s\n      timeout: 5s\n      retries: 20\n\n  playwright:\n    build:\n      context: ..\n      dockerfile: Dockerfile.playwright\n      target: playwright\n    working_dir: /app\n    depends_on:\n      app:\n        condition: service_healthy\n    environment:\n      - BASE_URL=http://app:8000\n      - CI=1\n      - PLAYWRIGHT_HTML_OPEN=never\n    volumes:\n      - ../:/src:ro\n    command: sh -c \"tar -C /src --exclude=./node_modules --exclude=./.git --exclude=./playwright-report --exclude=./test-results -cf - . | tar -C /app -xf - \u0026\u0026 npx playwright test --project=chromium --config=test/playwright.config.ts\"\n",
-    "md5": "0483414c0ec21d71790f68e1b6b6e75b",
+    "content": "# Docker compose test harness for single-container rig\n# Template variables: playwright-go-test:latest, /app, npx playwright test --project=chromium --config=test/playwright.config.ts, http://app:8000, 8000, .., \"CMD\", \"curl\", \"-f\", \"http://localhost:8000/\", PORT=8000\n# App runs in its own container; Playwright reaches it over the internal compose network.\n# Multi-stage Dockerfile is used to pre-install npm dependencies.\n# Source files are mounted via volumes so test changes don't require image rebuilds.\n\nservices:\n  app:\n    build:\n      context: ..\n    ports:\n      - \"8000:8000\"\n    environment:\n      - PORT=8000\n    healthcheck:\n      test: [\"CMD\", \"curl\", \"-f\", \"http://localhost:8000/\"]\n      interval: 5s\n      timeout: 5s\n      retries: 20\n\n  playwright:\n    build:\n      context: ..\n      dockerfile: Dockerfile.playwright\n      target: playwright\n    working_dir: /app\n    depends_on:\n      app:\n        condition: service_healthy\n    environment:\n      - BASE_URL=http://app:8000\n      - CI=1\n      - PLAYWRIGHT_HTML_OPEN=never\n    volumes:\n      - ../:/src:ro\n    command: sh -c \"tar -C /src --exclude=./node_modules --exclude=./.git --exclude=./playwright-report --exclude=./test-results -cf - . | tar -C /app -xf - \u0026\u0026 npx playwright test --project=chromium --config=test/playwright.config.ts\"",
+    "md5": "60dfa22fe4af37ba9ad9c99fc0736a3c",
     "validated": true,
-    "validated_at": "2026-11-03T16:16:16Z",
-    "created_at": "2026-11-03T16:16:16Z"
+    "validated_at": "2026-11-03T16:23:34Z",
+    "created_at": "2026-11-03T16:23:34Z"
   },
   "2:finally/test/e2e.spec.ts": {
     "content": "import { test, expect } from \"@playwright/test\";\n\nconst defaultTickers = [\n  \"AAPL\",\n  \"GOOGL\",\n  \"MSFT\",\n  \"AMZN\",\n  \"TSLA\",\n  \"NVDA\",\n  \"META\",\n  \"JPM\",\n  \"V\",\n  \"NFLX\",\n];\n\ntest.describe(\"FinAlly dashboard\", () =\u003e {\n  test(\"loads the real dashboard and seeded portfolio\", async ({ page }) =\u003e {\n    await page.goto(\"/\");\n    await expect(page.getByText(\"Market Dashboard\")).toBeVisible();\n    await expect(page.getByText(\"FinAlly\")).toBeVisible();\n    await expect(page.getByText(\"$10,000\")).toBeVisible();\n    await expect(page.getByTestId(\"connection-status\")).toBeVisible();\n\n    for (const ticker of defaultTickers) {\n      await expect(page.getByText(ticker, { exact: true })).toBeVisible();\n    }\n  });\n\n  test(\"adds and removes a watchlist ticker\", async ({ page }) =\u003e {\n    await page.goto(\"/\");\n\n    await page.getByRole(\"textbox\", { name: /add ticker/i }).fill(\"PYPL\");\n    await page.getByRole(\"button\", { name: /add ticker/i }).click();\n    await expect(page.getByText(\"PYPL\", { exact: true })).toBeVisible();\n\n    await page.getByRole(\"button\", { name: /remove NFLX/i }).click();\n    await expect(page.getByText(\"NFLX\", { exact: true })).not.toBeVisible();\n  });\n\n  test(\"submits a mocked portfolio question\", async ({ page }) =\u003e {\n    await page.goto(\"/\");\n\n    const message = page.getByRole(\"textbox\", { name: /message/i });\n    await message.fill(\"What's my portfolio value?\");\n    await page.getByRole(\"button\", { name: /send/i }).click();\n\n    await expect(page.getByText(\"What's my portfolio value?\", { exact: true })).toBeVisible();\n    await expect(page.getByTestId(\"assistant-message\").last()).not.toBeEmpty();\n  });\n});",
     "md5": "d5d418b1e80f4e4cebdfc6e815b39291",
     "validated": true,
-    "validated_at": "2026-11-03T16:16:16Z",
-    "created_at": "2026-11-03T16:16:16Z"
+    "validated_at": "2026-11-03T16:20:45Z",
+    "created_at": "2026-11-03T16:20:45Z"
   }
 }
