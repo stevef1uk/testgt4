@@ -7,6 +7,14 @@
       "source": "qa_rework",
       "hits": 1,
       "updated_at": "2026-11-03T15:46:11Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Avoid in main.py: ModuleNotFoundError: No module named 'app.api'",
+      "source": "verify_fix",
+      "bead_path": "finally/backend/app/main.py",
+      "hits": 1,
+      "updated_at": "2026-11-03T15:55:08Z"
     }
   ]
 }
