@@ -38,6 +38,14 @@
       "bead_path": "finally/backend/app/api/__init__.py",
       "hits": 1,
       "updated_at": "2026-11-03T16:22:08Z"
+    },
+    {
+      "stack": "typescript",
+      "rule": "Keep the phase harness independent of the stale Go Dockerfile by running the Python backend directly in the test app service.",
+      "source": "agent",
+      "bead_path": "finally/test/e2e.spec.ts",
+      "hits": 1,
+      "updated_at": "2026-11-03T16:27:35Z"
     }
   ]
 }
