@@ -4,8 +4,13 @@ from __future__ import annotations
 
 import os
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+try:
+    from fastapi import FastAPI
+    from fastapi.middleware.cors import CORSMiddleware
+except ModuleNotFoundError as exc:
+    raise RuntimeError(
+        "FastAPI is required; install finally/backend/requirements.txt before starting"
+    ) from exc
 
 from .api import router
 
