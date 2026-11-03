@@ -46,6 +46,22 @@
       "bead_path": "finally/test/e2e.spec.ts",
       "hits": 1,
       "updated_at": "2026-11-03T16:27:35Z"
+    },
+    {
+      "stack": "typescript",
+      "rule": "E2E verification is blocked by the active Dockerfile dependency: go.sum, cmd/server/main.go, and web are absent; do not alter e2e tests t...",
+      "source": "agent",
+      "bead_path": "finally/test/e2e.spec.ts",
+      "hits": 1,
+      "updated_at": "2026-11-03T16:33:25Z"
+    },
+    {
+      "stack": "typescript",
+      "rule": "te-39c cannot close because required phase verify is blocked by missing later-phase Docker inputs; e2e.spec.ts itself needs no change.",
+      "source": "agent",
+      "bead_path": "finally/test/e2e.spec.ts",
+      "hits": 1,
+      "updated_at": "2026-11-03T16:33:32Z"
     }
   ]
 }
