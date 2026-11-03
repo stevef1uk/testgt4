@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "stack": "python",
+      "rule": "QA lesson: Stage 1 — Spec compliance failed",
+      "source": "qa_rework",
+      "hits": 1,
+      "updated_at": "2026-11-03T15:46:11Z"
+    }
+  ]
+}

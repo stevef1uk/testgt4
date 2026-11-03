@@ -1,9 +1,44 @@
 {
   "0:finally/.env": {
-    "content": "APP_ENV=development\nHOST=0.0.0.0\nPORT=8000\nDATABASE_URL=sqlite:///./db/polecat.db",
-    "md5": "e89cbc95faf6e359978f72f608fb3e50",
+    "content": "APP_ENV=development\nHOST=0.0.0.0\nPORT=8000\nOPENROUTER_API_KEY=\nMASSIVE_API_KEY=\nLLM_MOCK=true",
+    "md5": "ca27fbcd6e3e21c672ac539840ccea42",
     "validated": true,
-    "validated_at": "2026-11-03T15:41:53Z",
-    "created_at": "2026-11-03T15:41:53Z"
+    "validated_at": "2026-11-03T15:45:01Z",
+    "created_at": "2026-11-03T15:45:01Z"
+  },
+  "0:finally/.gitignore": {
+    "content": ".env\ndb/*.db\ndb/*.log\n__pycache__/\n.pytest_cache/\n.coverage\nhtmlcov/\nplaywright-report/\ntest-results/\n",
+    "md5": "f7a63e951d1c5ac3b633a90244baaf52",
+    "validated": true,
+    "validated_at": "2026-11-03T15:44:28Z",
+    "created_at": "2026-11-03T15:44:28Z"
+  },
+  "0:finally/scripts/start_mac.sh": {
+    "content": "#!/usr/bin/env bash\nset -euo pipefail\n\nROOT=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/..\" \u0026\u0026 pwd)\"\ncd \"$ROOT\"\n\nif [[ -f .env ]]; then\n  set -a\n  # shellcheck disable=SC1091\n  source .env\n  set +a\nfi\n\n: \"${HOST:=0.0.0.0}\"\n: \"${PORT:=8000}\"\n\nmkdir -p db\nnohup python -m uvicorn backend.app.main:app --host \"$HOST\" --port \"$PORT\" \\\n  \u003e\u003e db/polecat.log 2\u003e\u00261 \u0026\necho \"$!\" \u003e \"${TMPDIR:-/tmp}/polecat.pid\"\necho \"Polecat started with PID $! on ${HOST}:${PORT}\"",
+    "md5": "e51918984725093803d73b256a78076e",
+    "validated": true,
+    "validated_at": "2026-11-03T15:44:28Z",
+    "created_at": "2026-11-03T15:44:28Z"
+  },
+  "0:finally/scripts/start_windows.ps1": {
+    "content": "$ErrorActionPreference = \"Stop\"\n\n$root = Split-Path $PSScriptRoot -Parent\n$envFile = Join-Path $root \".env\"\nif (Test-Path $envFile) {\n    Get-Content $envFile | Where-Object { $_ -match \"^\\s*[^#][^=]*=\" } | ForEach-Object {\n        $name, $value = $_ -split \"=\", 2\n        [Environment]::SetEnvironmentVariable($name.Trim(), $value.Trim())\n    }\n}\n\nNew-Item -ItemType Directory -Force -Path (Join-Path $root \"db\") | Out-Null\n$logFile = Join-Path $root \"db\\polecat.log\"\n$pidFile = Join-Path $env:TEMP \"polecat.pid\"\n$hostName = if ($env:HOST) { $env:HOST } else { \"0.0.0.0\" }\n$port = if ($env:PORT) { $env:PORT } else { \"8000\" }\n\n$process = Start-Process -FilePath \"python\" `\n    -ArgumentList \"-m\", \"uvicorn\", \"backend.app.main:app\", \"--host\", $hostName, \"--port\", $port `\n    -WorkingDirectory $root -RedirectStandardOutput $logFile -RedirectStandardError $logFile -PassThru\n$process.Id | Set-Content $pidFile\nWrite-Output \"Polecat started with PID $($process.Id) on $hostName`:$port\"",
+    "md5": "db2c697cbe022f79bc1f61f54524a4e3",
+    "validated": true,
+    "validated_at": "2026-11-03T15:44:28Z",
+    "created_at": "2026-11-03T15:44:28Z"
+  },
+  "0:finally/scripts/stop_mac.sh": {
+    "content": "#!/usr/bin/env bash\nset -euo pipefail\n\nPID_FILE=\"${TMPDIR:-/tmp}/polecat.pid\"\n\nif [[ -f \"$PID_FILE\" ]]; then\n  pid=\"$(cat \"$PID_FILE\")\"\n  if kill -0 \"$pid\" 2\u003e/dev/null; then\n    kill \"$pid\"\n    for _ in {1..20}; do\n      kill -0 \"$pid\" 2\u003e/dev/null || break\n      sleep 0.25\n    done\n    if kill -0 \"$pid\" 2\u003e/dev/null; then\n      kill -9 \"$pid\"\n    fi\n  fi\n  rm -f \"$PID_FILE\"\nfi",
+    "md5": "b3d7d8a747a6c411beb3919d4925fe76",
+    "validated": true,
+    "validated_at": "2026-11-03T15:44:28Z",
+    "created_at": "2026-11-03T15:44:28Z"
+  },
+  "0:finally/scripts/stop_windows.ps1": {
+    "content": "$ErrorActionPreference = \"Stop\"\n\n$pidFile = Join-Path $env:TEMP \"polecat.pid\"\n\nif (Test-Path $pidFile) {\n    $processId = [int](Get-Content $pidFile -Raw).Trim()\n    $process = Get-Process -Id $processId -ErrorAction SilentlyContinue\n    if ($null -ne $process) {\n        Stop-Process -Id $processId -Force\n    }\n    Remove-Item $pidFile -Force\n}",
+    "md5": "935463a660e85fd41bf12c9bab0fdf42",
+    "validated": true,
+    "validated_at": "2026-11-03T15:44:28Z",
+    "created_at": "2026-11-03T15:44:28Z"
   }
 }
