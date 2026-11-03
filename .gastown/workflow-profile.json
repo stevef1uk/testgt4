@@ -64,9 +64,10 @@
         "qa_verify_command": "cd finally && docker compose -f test/docker-compose.test.yml down && docker compose -f test/docker-compose.test.yml build --no-cache && docker compose -f test/docker-compose.test.yml up --exit-code-from playwright && (docker rmi test-app:latest 2>/dev/null || true) && docker image prune -f"
       }
     ],
-    "active_phase_id": "watchlist-market-ui",
+    "active_phase_id": "testing-release",
     "completed_phase_ids": [
-      "project-foundation"
+      "project-foundation",
+      "watchlist-market-ui"
     ],
     "spec_summary": "",
     "min_architecture_bytes": 3200,
