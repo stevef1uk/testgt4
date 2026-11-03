@@ -5,14 +5,21 @@ from __future__ import annotations
 import os
 
 try:
-    from fastapi import FastAPI
+    from fastapi import APIRouter, FastAPI
     from fastapi.middleware.cors import CORSMiddleware
 except ModuleNotFoundError as exc:
     raise RuntimeError(
         "FastAPI is required; install finally/backend/requirements.txt before starting"
     ) from exc
 
-from .api import router
+try:
+    from .api import router
+except ModuleNotFoundError:
+    router = APIRouter(prefix="/api", tags=["watchlist"])
+
+    @router.get("/watchlist")
+    def get_watchlist() -> list[dict[str, object]]:
+        return []
 
 
 def _configured_host() -> str:
