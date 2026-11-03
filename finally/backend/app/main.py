@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -40,7 +39,10 @@ def create_app() -> FastAPI:
     )
     application.include_router(router)
 
-    if not any(getattr(route, "path", None) == "/health" for route in application.routes):
+    if not any(
+        getattr(route, "path", None) == "/health" for route in application.routes
+    ):
+
         @application.get("/health", tags=["system"])
         def health() -> dict[str, str]:
             return {"status": "ok"}
