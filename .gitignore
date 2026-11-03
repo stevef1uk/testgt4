@@ -1,12 +1,9 @@
-# Local environment and generated runtime state
 .env
 db/*.db
-db/*.sqlite
-db/*.sqlite3
-
-# Python caches and test artifacts
+db/*.log
 __pycache__/
-*.py[cod]
 .pytest_cache/
 .coverage
 htmlcov/
+playwright-report/
+test-results/

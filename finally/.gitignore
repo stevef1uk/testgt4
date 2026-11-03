@@ -1,0 +1,9 @@
+.env
+db/*.db
+db/*.log
+__pycache__/
+.pytest_cache/
+.coverage
+htmlcov/
+playwright-report/
+test-results/
