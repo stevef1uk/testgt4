@@ -13,3 +13,25 @@ AGENTS.md
 project_label
 progress_report
 gt-agent-state.json
+
+# Gas Town mayor/rig (rig-flow checkpoints)
+codeindex.json
+**/codeindex.json
+*.db
+server
+block:
+node_modules/
+env/
+tests/
+polecat/
+package.json
+package-lock.json
+test-execution-command
+tests_skipped.txt
+spec_file_path.txt
+run-tests
+run-tests.sh
+run-tests.sh_backup
+qa/implementation-progress.json
+qa/qa-review-progress.json
+testgt3/

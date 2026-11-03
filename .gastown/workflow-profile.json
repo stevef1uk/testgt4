@@ -1,0 +1,118 @@
+{
+  "version": 1,
+  "generated_at": "2026-11-03T15:26:39Z",
+  "source": "deterministic",
+  "confidence": "high",
+  "validation": {
+    "layout_root": "finally",
+    "bead_title_contains": "Implement finally/",
+    "unittest_module": "",
+    "qa_verify_command": "cd finally && pytest",
+    "test_runner": "npm",
+    "required_files": [
+      "finally/scripts/start_mac.sh",
+      "finally/scripts/stop_mac.sh",
+      "finally/scripts/start_windows.ps1",
+      "finally/scripts/stop_windows.ps1",
+      "finally/db/.gitkeep",
+      "finally/.env",
+      "finally/.gitignore",
+      "finally/backend/app/main.py",
+      "finally/test/playwright.config.ts",
+      "finally/backend/app/api/__init__.py",
+      "finally/backend/app/api/schemas.py",
+      "finally/test/e2e.spec.ts",
+      "finally/Dockerfile",
+      "finally/docker-compose.yml",
+      "finally/test/docker-compose.test.yml"
+    ],
+    "delivery_phases": [
+      {
+        "id": "project-foundation",
+        "title": "Project Foundation",
+        "required_files": [
+          "finally/scripts/start_mac.sh",
+          "finally/scripts/stop_mac.sh",
+          "finally/scripts/start_windows.ps1",
+          "finally/scripts/stop_windows.ps1",
+          "finally/db/.gitkeep",
+          "finally/.env",
+          "finally/.gitignore"
+        ],
+        "qa_verify_command": "cd finally && test -f scripts/start_mac.sh && test -f scripts/stop_mac.sh && test -f scripts/start_windows.ps1 && test -f scripts/stop_windows.ps1",
+        "spec_focus": "Project Foundation\n\n### Goal\nCreate a runnable application skeleton that starts successfully.\n### Deliverables\n- Repository structure\n- Next.js project setup\n- FastAPI project setup\n- Python `uv` configuration\n- Dockerfile\n- Docker Compose configuration\n- Cross-platform start/stop scripts\n- Environment variable loading\n- Static frontend served by FastAPI\n- Health check endpoint\n- Planning documentation\n- SQLite initialization\n- CI linting configuration\n### Exit Criteria\n- Application starts successfully using Docker\n- Browser opens successfully\n- `/api/health` returns success\n- Static frontend is served correctly: `GET /` returns the real dashboard HTML (heading, tickers, cash figure), **not** a placeholder/fallback page\n---"
+      },
+      {
+        "id": "core-market-infrastructure",
+        "title": "Core Market Infrastructure",
+        "required_files": null,
+        "qa_verify_command": "cd finally && echo 'verify ok (no automated tests for this phase)'",
+        "spec_focus": "Core Market Infrastructure\n\n### Goal\nImplement the live market data platform that all downstream functionality depends on.\n### Deliverables\n- Market data abstraction/interface\n- Geometric Brownian Motion (GBM) simulator\n- Massive API implementation\n- Environment-driven provider selection\n- Shared in-memory price cache\n- Background polling/simulation task\n- Server-Sent Events (SSE) endpoint\n- Connection status management\n### Exit Criteria\n- Live prices stream continuously\n- SSE reconnects automatically\n- Simulator and Massive implementations are interchangeable\n---"
+      },
+      {
+        "id": "database-portfolio-engine",
+        "title": "Database & Portfolio Engine",
+        "required_files": null,
+        "qa_verify_command": "cd finally && echo 'verify ok (no automated tests for this phase)'",
+        "spec_focus": "Database & Portfolio Engine\n\n### Goal\nImplement persistent portfolio management and trading logic.\n### Deliverables\n- SQLite schema creation\n- Lazy database initialization\n- Default seed data\n- Portfolio calculation engine\n- Trade execution engine\n- Position management\n- Cash balance management\n- Portfolio snapshot recording\n- Repository/data access layer\n### Exit Criteria\n- Trades execute correctly\n- Cash balances update correctly\n- Portfolio calculations are verified\n- Portfolio persists across application restarts\n---"
+      },
+      {
+        "id": "watchlist-market-ui",
+        "title": "Watchlist & Market UI",
+        "required_files": [
+          "finally/backend/app/main.py"
+        ],
+        "qa_verify_command": "cd finally/backend && python -c \"import app.main\"",
+        "spec_focus": "Watchlist & Market UI\n\n### Goal\nDeliver a live market monitoring experience.\n### Deliverables\n- Watchlist API\n- Watchlist CRUD functionality\n- Live updating watchlist interface\n- Price flash animations\n- Sparkline chart accumulation\n- Main price chart\n- Selected ticker state management\n- Responsive desktop-first layout\n- Application header\n- Connection status indicator\n### Exit Criteria\n- Watchlist updates in real time\n- Charts update continuously\n- Price animations function correctly\n- Users can add and remove tickers\n---"
+      },
+      {
+        "id": "portfolio-visualisation-trading",
+        "title": "Portfolio Visualisation & Trading",
+        "required_files": null,
+        "qa_verify_command": "cd finally && echo 'verify ok (no automated tests for this phase)'",
+        "spec_focus": "Portfolio Visualisation & Trading\n\n### Goal\nComplete the manual trading workstation experience.\n### Deliverables\n- Trade entry bar\n- Buy/Sell workflow\n- Positions table\n- Portfolio heatmap\n- Portfolio value (P&L) chart\n- Portfolio summary panel\n- Live portfolio valuation\n- Trading validation and error handling\n### Exit Criteria\n- Users can execute trades\n- Portfolio updates immediately\n- Visualisations reflect current positions\n- Portfolio history records snapshots correctly\n---"
+      },
+      {
+        "id": "ai-trading-assistant",
+        "title": "AI Trading Assistant",
+        "required_files": null,
+        "qa_verify_command": "cd finally && echo 'verify ok (no automated tests for this phase)'",
+        "spec_focus": "AI Trading Assistant\n\n### Goal\nIntegrate an AI assistant capable of analysing and managing the portfolio.\n### Deliverables\n- LiteLLM integration\n- OpenRouter client\n- Structured output parsing\n- Prompt construction\n- Conversation persistence\n- AI trade execution\n- AI watchlist management\n- Mock LLM mode\n- Error handling and recovery\n### Exit Criteria\n- AI responds to user requests\n- AI executes trades successfully\n- AI manages the watchlist\n- Chat history persists\n- Mock mode produces deterministic responses\n---"
+      },
+      {
+        "id": "application-polish",
+        "title": "Application Polish",
+        "required_files": null,
+        "qa_verify_command": "cd finally && echo 'verify ok (no automated tests for this phase)'",
+        "spec_focus": "Application Polish\n\n### Goal\nRefine the application into a production-quality trading workstation.\n### Deliverables\n- Complete dark terminal styling\n- UI animations\n- Loading indicators\n- Empty states\n- User-friendly error handling\n- Notifications\n- Responsive improvements\n- Performance optimisation\n- Accessibility review\n### Exit Criteria\n- Professional user experience\n- No significant UX gaps\n- Stable under continuous live streaming\n---"
+      },
+      {
+        "id": "testing-release",
+        "title": "Testing & Release",
+        "required_files": [
+          "finally/test/playwright.config.ts",
+          "finally/backend/app/api/__init__.py",
+          "finally/backend/app/api/schemas.py",
+          "finally/test/e2e.spec.ts",
+          "finally/Dockerfile",
+          "finally/docker-compose.yml",
+          "finally/test/docker-compose.test.yml"
+        ],
+        "qa_verify_command": "cd finally && docker compose -f test/docker-compose.test.yml down && docker compose -f test/docker-compose.test.yml build --no-cache && docker compose -f test/docker-compose.test.yml up --exit-code-from playwright && (docker rmi test-app:latest 2>/dev/null || true) && docker image prune -f",
+        "spec_focus": "Testing & Release\n\n### Goal\nValidate the complete application and prepare it for release.\n### Deliverables\n### Backend\n- Unit tests\n- API tests\n- Portfolio tests\n- Market simulator tests\n- LLM parsing tests\n### Frontend\n- Component tests\n- Rendering tests\n- State management tests\n### End-to-End\n- Playwright test suite covering all scenarios in Section 13\n- Page Objects for dashboard, watchlist, trade bar, portfolio, and chat\n- Docker test environment (`docker-compose.test.yml`)\n- Mock LLM integration tests (`LLM_MOCK=true`)\n- SSE streaming tests with reconnection\n- Full happy-path smoke test (`mvp.spec.ts`)\n- Trading workflow tests (buy, sell, insufficient cash, sell short)\n### Release\n- Docker validation\n- Documentation\n- README\n- Environment examples\n### Exit Criteria\n- All Playwright E2E tests pass (see Section 13 for mandatory coverage)\n- All unit tests pass (backend pytest + frontend component tests)\n- All automated tests **assert real content** (not just status codes / visibility)\n- Every UI feature in Sections 2 and 10 has a corresponding Playwright test\n- Fresh clone runs successfully\n- One-command startup works\n- Application is demo-ready: `GET /` renders the full dashboard (watchlist tickers with live prices, $10k cash, AI chat panel), never a placeholder page\n---\n# Delivery Dependency Flow\nPhase 1 — Project Foundation\n│\n▼\nPhase 2 — Core Market Infrastructure\n│\n▼\nPhase 3 — Database & Portfolio Engine\n│\n┌──────┴──────┐\n▼             ▼\nPhase 4       Phase 5\nMarket UI   Trading UI\n│             │\n└──────┬──────┘\n▼\nPhase 6 — AI Trading Assistant\n│\n▼\nPhase 7 — Application Polish\n│\n▼\nPhase 8 — Testing & Release\n---\n# Delivery Philosophy\nThis project is intentionally organised into vertically integrated delivery phases rather than frontend/backend workstreams. Each phase delivers a complete, testable capability that builds on previous work while minimising dependencies between AI development agents.\nEach phase should conclude with:\n- A runnable application\n- Passing automated tests for implemented functionality\n- Updated documentation\n- A demonstrable feature set\n- Clear acceptance criteria before progressing to the next phase\nThis approach enables continuous validation, reduces integration risk, and aligns well with autonomous AI software development pipelines."
+      }
+    ],
+    "active_phase_id": "project-foundation",
+    "spec_summary": "",
+    "min_architecture_bytes": 3200,
+    "min_plan_bytes": 800,
+    "min_implementation_file_bytes": 400,
+    "min_substantive_lines": 3,
+    "min_test_plan_bytes": 400,
+    "ui_command": "",
+    "max_review_retries": 3,
+    "python_venv_dir": "",
+    "dev_server_port": 8000
+  },
+  "test_plan_reviewed": false
+}
