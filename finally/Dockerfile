@@ -1,18 +1,25 @@
-# Dockerfile for Go web server
-# Template variables: http://app:8000, 8000
-# Multi-stage build: golang:1.22-alpine builder -> alpine:3.20 runtime
-# The web app runs on HOST (not in Docker). Playwright container reaches it via host.docker.internal.
+FROM node:20-slim AS frontend
+WORKDIR /frontend
+COPY frontend/package*.json ./
+RUN npm install
+COPY frontend/ ./
+RUN npm run build
 
-FROM golang:1.22-alpine AS builder
-WORKDIR /app
-COPY go.mod go.sum ./
-RUN go mod download
-COPY cmd/server/main.go ./cmd/server/
-RUN CGO_ENABLED=0 go build -o /server ./cmd/server
-
-FROM alpine:3.20
-WORKDIR /app
-COPY --from=builder /server /usr/local/bin/server
-COPY web ./web
-EXPOSE 8080
-CMD ["server", "-addr", ":8080"]
+FROM python:3.12-slim AS runtime
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && python -m pip install --no-cache-dir uv
+WORKDIR /app/backend
+COPY backend/pyproject.toml backend/uv.lock ./
+RUN uv sync --frozen --no-dev --no-install-project
+COPY backend/ ./
+COPY --from=frontend /frontend/out /app/frontend/out
+ENV PATH="/app/backend/.venv/bin:$PATH" \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+RUN mkdir -p /app/db
+EXPOSE 8000
+HEALTHCHECK --interval=5s --timeout=5s --retries=20 \
+    CMD curl -fsS http://localhost:8000/api/health || exit 1
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,0 +1,6 @@
+{
+  "name": "finally-e2e",
+  "private": true,
+  "scripts": {"test": "playwright test --project=chromium"},
+  "devDependencies": {"@playwright/test": "1.62.1", "typescript": "^5.9.0", "@types/node": "^20.0.0"}
+}

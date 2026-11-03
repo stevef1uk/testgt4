@@ -7,8 +7,16 @@ services:
       - "8000:8000"
     environment:
       PORT: "8000"
+      LLM_MOCK: "${LLM_MOCK:-true}"
+    env_file:
+      - .env
+    volumes:
+      - finally-data:/app/db
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
       interval: 5s
       timeout: 5s
       retries: 20
+
+volumes:
+  finally-data:
