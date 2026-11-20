@@ -143,7 +143,7 @@ delivery_phases:
       - finally/frontend/components/Watchlist.tsx
       - finally/frontend/components/PriceChart.tsx
       - finally/test/watchlist-market-ui.spec.ts
-    qa_verify_command: 'test -f finally/frontend/components/Header.tsx && test -f finally/frontend/components/Sidebar.tsx && test -f finally/frontend/components/MarketOverview.tsx && test -f finally/frontend/components/Watchlist.tsx && test -f finally/frontend/components/PriceChart.tsx && PYTHONPATH=finally/backend python -c "from app.main import create_app; p={r.path for r in create_app().routes}; assert \"/api/watchlist\" in p and \"/api/watchlist/{ticker}\" in p"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) (cd finally/frontend && npm run build)'
+    qa_verify_command: 'test -f finally/frontend/components/Header.tsx && test -f finally/frontend/components/Sidebar.tsx && test -f finally/frontend/components/MarketOverview.tsx && test -f finally/frontend/components/Watchlist.tsx && test -f finally/frontend/components/PriceChart.tsx && PYTHONPATH=finally/backend python -c "from app.main import create_app; p={r.path for r in create_app().routes}; assert \"/api/watchlist\" in p and \"/api/watchlist/{ticker}\" in p"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build)'
     depends_on: [database-portfolio-engine]
     file_dependencies:
       finally/frontend/components/Header.tsx: [finally/frontend/app/layout.tsx]
@@ -159,7 +159,7 @@ delivery_phases:
       - finally/frontend/components/PortfolioSummary.tsx
       - finally/frontend/components/TradingPanel.tsx
       - finally/test/portfolio-visualisation-trading.spec.ts
-    qa_verify_command: 'test -f finally/frontend/components/PortfolioSummary.tsx && test -f finally/frontend/components/TradingPanel.tsx && PYTHONPATH=finally/backend python -c "from app.main import create_app; assert any(r.path == \"/api/portfolio/trade\" for r in create_app().routes)"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) (cd finally/frontend && npm run build)'
+    qa_verify_command: 'test -f finally/frontend/components/PortfolioSummary.tsx && test -f finally/frontend/components/TradingPanel.tsx && PYTHONPATH=finally/backend python -c "from app.main import create_app; assert any(r.path == \"/api/portfolio/trade\" for r in create_app().routes)"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build)'
     depends_on: [watchlist-market-ui]
     file_dependencies:
       finally/frontend/components/PortfolioSummary.tsx: [finally/frontend/app/page.tsx]
@@ -171,7 +171,7 @@ delivery_phases:
     required_files:
       - finally/frontend/components/ChatAssistant.tsx
       - finally/frontend/components/ChatAssistant.test.tsx
-    qa_verify_command: 'test -f finally/frontend/components/ChatAssistant.tsx && test -f finally/frontend/components/ChatAssistant.test.tsx && PYTHONPATH=finally/backend python -c "from app.main import create_app; assert any(r.path == \"/api/chat\" for r in create_app().routes)"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) (cd finally/frontend && npm run build)'
+    qa_verify_command: 'test -f finally/frontend/components/ChatAssistant.tsx && test -f finally/frontend/components/ChatAssistant.test.tsx && PYTHONPATH=finally/backend python -c "from app.main import create_app; assert any(r.path == \"/api/chat\" for r in create_app().routes)"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build)'
     depends_on: [portfolio-visualisation-trading]
     file_dependencies:
       finally/frontend/components/ChatAssistant.tsx: [finally/frontend/app/page.tsx]
