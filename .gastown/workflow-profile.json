@@ -42,6 +42,13 @@
       "finally/frontend/components/PriceChart.tsx",
       "finally/frontend/components/ChatAssistant.tsx",
       "finally/backend/db/schema.py",
+      "finally/backend/app/market/gbm.py",
+      "finally/backend/app/market/massive.py",
+      "finally/backend/app/market/cache.py",
+      "finally/backend/app/market/sse.py",
+      "finally/backend/tests/test_market_infrastructure.py",
+      "finally/test/watchlist-market-ui.spec.ts",
+      "finally/test/portfolio-visualisation-trading.spec.ts",
       "finally/frontend/app/polish.css"
     ],
     "delivery_phases": [
@@ -86,28 +93,54 @@
         "id": "core-market-infrastructure",
         "title": "Core Market Infrastructure",
         "required_files": [
-          "finally/scripts/start_mac.sh",
-          "finally/scripts/stop_mac.sh",
-          "finally/scripts/start_windows.ps1",
-          "finally/scripts/stop_windows.ps1",
-          "finally/db/.gitkeep",
           "finally/.env",
           "finally/.gitignore",
           "finally/backend/app/api/__init__.py",
           "finally/backend/app/api/schemas.py",
-          "finally/frontend/next-env.d.ts"
+          "finally/frontend/next-env.d.ts",
+          "finally/backend/tests/test_market_infrastructure.py",
+          "finally/backend/app/market/sse.py",
+          "finally/backend/app/market/cache.py",
+          "finally/backend/app/market/massive.py",
+          "finally/backend/app/market/gbm.py"
         ],
-        "qa_verify_command": "test -f finally/frontend/next-env.d.ts && test -x finally/scripts/start_mac.sh && test -x finally/scripts/stop_mac.sh && sh -n finally/scripts/start_mac.sh && sh -n finally/scripts/stop_mac.sh && test -f finally/scripts/start_windows.ps1 && test -f finally/scripts/stop_windows.ps1 && test -f finally/db/.gitkeep && test -f finally/.env && test -f finally/.gitignore && test -f finally/docker-compose.yml && PYTHONPATH=finally/backend python -c \"from app.main import create_app; assert any(r.path == \\\"/api/stream/prices\\\" for r in create_app().routes)\"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) (cd finally/frontend && npm run build)",
+        "qa_verify_command": "test -f finally/.env && test -f finally/.gitignore && test -f finally/backend/app/api/__init__.py && test -f finally/backend/app/api/schemas.py && test -f finally/frontend/next-env.d.ts && test -f finally/backend/app/market/gbm.py && test -f finally/backend/app/market/massive.py && test -f finally/backend/app/market/cache.py && test -f finally/backend/app/market/sse.py && test -f finally/backend/tests/test_market_infrastructure.py && PYTHONPATH=finally/backend python -m pytest finally/backend/tests/test_market_infrastructure.py && (cd finally/frontend && npm run build)",
         "depends_on": [
           "project-foundation"
         ],
-        "spec_focus": "Core Market Infrastructure"
+        "spec_focus": "Core Market Infrastructure",
+        "file_dependencies": {
+          "finally/backend/app/market/cache.py": [
+            "finally/backend/app/main.py"
+          ],
+          "finally/backend/app/market/gbm.py": [
+            "finally/backend/app/main.py"
+          ],
+          "finally/backend/app/market/massive.py": [
+            "finally/backend/app/main.py"
+          ],
+          "finally/backend/app/market/sse.py": [
+            "finally/backend/app/main.py",
+            "finally/backend/app/market/cache.py"
+          ],
+          "finally/backend/tests/test_market_infrastructure.py": [
+            "finally/backend/app/market/gbm.py",
+            "finally/backend/app/market/massive.py",
+            "finally/backend/app/market/cache.py",
+            "finally/backend/app/market/sse.py"
+          ]
+        }
       },
       {
         "id": "database-portfolio-engine",
         "title": "Database & Portfolio Engine",
         "required_files": [
-          "finally/backend/db/schema.py"
+          "finally/backend/db/schema.py",
+          "finally/scripts/start_mac.sh",
+          "finally/scripts/stop_mac.sh",
+          "finally/scripts/start_windows.ps1",
+          "finally/scripts/stop_windows.ps1",
+          "finally/db/.gitkeep"
         ],
         "qa_verify_command": "PYTHONPATH=finally/backend python -c \"from app.main import create_app; p={r.path for r in create_app().routes}; assert {\\\"/api/portfolio\\\", \\\"/api/portfolio/trade\\\", \\\"/api/portfolio/history\\\"} <= p\"",
         "depends_on": [
@@ -123,7 +156,8 @@
           "finally/frontend/components/Sidebar.tsx",
           "finally/frontend/components/MarketOverview.tsx",
           "finally/frontend/components/Watchlist.tsx",
-          "finally/frontend/components/PriceChart.tsx"
+          "finally/frontend/components/PriceChart.tsx",
+          "finally/test/watchlist-market-ui.spec.ts"
         ],
         "qa_verify_command": "test -f finally/frontend/components/Header.tsx && test -f finally/frontend/components/Sidebar.tsx && test -f finally/frontend/components/MarketOverview.tsx && test -f finally/frontend/components/Watchlist.tsx && test -f finally/frontend/components/PriceChart.tsx && PYTHONPATH=finally/backend python -c \"from app.main import create_app; p={r.path for r in create_app().routes}; assert \\\"/api/watchlist\\\" in p and \\\"/api/watchlist/{ticker}\\\" in p\"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) (cd finally/frontend && npm run build)",
         "depends_on": [
@@ -145,6 +179,10 @@
           ],
           "finally/frontend/components/Watchlist.tsx": [
             "finally/frontend/app/page.tsx"
+          ],
+          "finally/test/watchlist-market-ui.spec.ts": [
+            "finally/frontend/components/Watchlist.tsx",
+            "finally/frontend/components/PriceChart.tsx"
           ]
         }
       },
@@ -153,7 +191,8 @@
         "title": "Portfolio Visualisation & Trading",
         "required_files": [
           "finally/frontend/components/PortfolioSummary.tsx",
-          "finally/frontend/components/TradingPanel.tsx"
+          "finally/frontend/components/TradingPanel.tsx",
+          "finally/test/portfolio-visualisation-trading.spec.ts"
         ],
         "qa_verify_command": "test -f finally/frontend/components/PortfolioSummary.tsx && test -f finally/frontend/components/TradingPanel.tsx && PYTHONPATH=finally/backend python -c \"from app.main import create_app; assert any(r.path == \\\"/api/portfolio/trade\\\" for r in create_app().routes)\"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) (cd finally/frontend && npm run build)",
         "depends_on": [
@@ -166,6 +205,10 @@
           ],
           "finally/frontend/components/TradingPanel.tsx": [
             "finally/frontend/app/page.tsx"
+          ],
+          "finally/test/portfolio-visualisation-trading.spec.ts": [
+            "finally/frontend/components/PortfolioSummary.tsx",
+            "finally/frontend/components/TradingPanel.tsx"
           ]
         }
       },

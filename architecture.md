@@ -46,6 +46,13 @@ All paths use the `finally/` layout root.
 - `finally/frontend/components/PriceChart.tsx`
 - `finally/frontend/components/ChatAssistant.tsx`
 - `finally/backend/db/schema.py`
+- `finally/backend/app/market/gbm.py`
+- `finally/backend/app/market/massive.py`
+- `finally/backend/app/market/cache.py`
+- `finally/backend/app/market/sse.py`
+- `finally/backend/tests/test_market_infrastructure.py`
+- `finally/test/watchlist-market-ui.spec.ts`
+- `finally/test/portfolio-visualisation-trading.spec.ts`
 - `finally/frontend/app/polish.css`
 
 Additional frontend, backend, unit-test, page-object, and fixture files are
@@ -82,23 +89,34 @@ delivery_phases:
     title: Core Market Infrastructure
     spec_focus: Core Market Infrastructure
     required_files:
-      - finally/scripts/start_mac.sh
-      - finally/scripts/stop_mac.sh
-      - finally/scripts/start_windows.ps1
-      - finally/scripts/stop_windows.ps1
-      - finally/db/.gitkeep
       - finally/.env
       - finally/.gitignore
       - finally/backend/app/api/__init__.py
       - finally/backend/app/api/schemas.py
       - finally/frontend/next-env.d.ts
-    qa_verify_command: 'test -f finally/frontend/next-env.d.ts && test -x finally/scripts/start_mac.sh && test -x finally/scripts/stop_mac.sh && sh -n finally/scripts/start_mac.sh && sh -n finally/scripts/stop_mac.sh && test -f finally/scripts/start_windows.ps1 && test -f finally/scripts/stop_windows.ps1 && test -f finally/db/.gitkeep && test -f finally/.env && test -f finally/.gitignore && test -f finally/docker-compose.yml && PYTHONPATH=finally/backend python -c "from app.main import create_app; assert any(r.path == \"/api/stream/prices\" for r in create_app().routes)"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) (cd finally/frontend && npm run build)'
+      - finally/backend/tests/test_market_infrastructure.py
+      - finally/backend/app/market/sse.py
+      - finally/backend/app/market/cache.py
+      - finally/backend/app/market/massive.py
+      - finally/backend/app/market/gbm.py
+    qa_verify_command: 'test -f finally/.env && test -f finally/.gitignore && test -f finally/backend/app/api/__init__.py && test -f finally/backend/app/api/schemas.py && test -f finally/frontend/next-env.d.ts && test -f finally/backend/app/market/gbm.py && test -f finally/backend/app/market/massive.py && test -f finally/backend/app/market/cache.py && test -f finally/backend/app/market/sse.py && test -f finally/backend/tests/test_market_infrastructure.py && PYTHONPATH=finally/backend python -m pytest finally/backend/tests/test_market_infrastructure.py && (cd finally/frontend && npm run build)' 
     depends_on: [project-foundation]
+    file_dependencies:
+      finally/backend/app/market/gbm.py: [finally/backend/app/main.py]
+      finally/backend/app/market/massive.py: [finally/backend/app/main.py]
+      finally/backend/app/market/cache.py: [finally/backend/app/main.py]
+      finally/backend/app/market/sse.py: [finally/backend/app/main.py, finally/backend/app/market/cache.py]
+      finally/backend/tests/test_market_infrastructure.py: [finally/backend/app/market/gbm.py, finally/backend/app/market/massive.py, finally/backend/app/market/cache.py, finally/backend/app/market/sse.py]
   - id: database-portfolio-engine
     title: Database & Portfolio Engine
     spec_focus: Database & Portfolio Engine
     required_files:
       - finally/backend/db/schema.py
+      - finally/scripts/start_mac.sh
+      - finally/scripts/stop_mac.sh
+      - finally/scripts/start_windows.ps1
+      - finally/scripts/stop_windows.ps1
+      - finally/db/.gitkeep
     qa_verify_command: 'PYTHONPATH=finally/backend python -c "from app.main import create_app; p={r.path for r in create_app().routes}; assert {\"/api/portfolio\", \"/api/portfolio/trade\", \"/api/portfolio/history\"} <= p"'
     depends_on: [core-market-infrastructure]
   - id: watchlist-market-ui
@@ -110,6 +128,7 @@ delivery_phases:
       - finally/frontend/components/MarketOverview.tsx
       - finally/frontend/components/Watchlist.tsx
       - finally/frontend/components/PriceChart.tsx
+      - finally/test/watchlist-market-ui.spec.ts
     qa_verify_command: 'test -f finally/frontend/components/Header.tsx && test -f finally/frontend/components/Sidebar.tsx && test -f finally/frontend/components/MarketOverview.tsx && test -f finally/frontend/components/Watchlist.tsx && test -f finally/frontend/components/PriceChart.tsx && PYTHONPATH=finally/backend python -c "from app.main import create_app; p={r.path for r in create_app().routes}; assert \"/api/watchlist\" in p and \"/api/watchlist/{ticker}\" in p"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) (cd finally/frontend && npm run build)'
     depends_on: [database-portfolio-engine]
     file_dependencies:
@@ -118,17 +137,20 @@ delivery_phases:
       finally/frontend/components/MarketOverview.tsx: [finally/frontend/app/page.tsx]
       finally/frontend/components/Watchlist.tsx: [finally/frontend/app/page.tsx]
       finally/frontend/components/PriceChart.tsx: [finally/frontend/app/page.tsx]
+      finally/test/watchlist-market-ui.spec.ts: [finally/frontend/components/Watchlist.tsx, finally/frontend/components/PriceChart.tsx]
   - id: portfolio-visualisation-trading
     title: Portfolio Visualisation & Trading
     spec_focus: Portfolio Visualisation & Trading
     required_files:
       - finally/frontend/components/PortfolioSummary.tsx
       - finally/frontend/components/TradingPanel.tsx
+      - finally/test/portfolio-visualisation-trading.spec.ts
     qa_verify_command: 'test -f finally/frontend/components/PortfolioSummary.tsx && test -f finally/frontend/components/TradingPanel.tsx && PYTHONPATH=finally/backend python -c "from app.main import create_app; assert any(r.path == \"/api/portfolio/trade\" for r in create_app().routes)"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) (cd finally/frontend && npm run build)'
     depends_on: [watchlist-market-ui]
     file_dependencies:
       finally/frontend/components/PortfolioSummary.tsx: [finally/frontend/app/page.tsx]
       finally/frontend/components/TradingPanel.tsx: [finally/frontend/app/page.tsx]
+      finally/test/portfolio-visualisation-trading.spec.ts: [finally/frontend/components/PortfolioSummary.tsx, finally/frontend/components/TradingPanel.tsx]
   - id: ai-trading-assistant
     title: AI Trading Assistant
     spec_focus: AI Trading Assistant
@@ -232,6 +254,13 @@ content, never placeholder text.
 | `finally/planning/PLAN.md` | shared phase notes and agent contract | runtime behavior |
 | `finally/test/playwright.config.ts` | Playwright configuration | production UI behavior |
 | `finally/test/e2e.spec.ts` | release smoke assertions | server implementation |
+
+## Rework ownership additions
+
+The core-market-infrastructure phase owns the market behavior seams as concrete implementation and test paths: `finally/backend/app/market/gbm.py` provides deterministic geometric-Brownian-motion simulation, `finally/backend/app/market/massive.py` provides the configured Massive provider with fallback/error handling, `finally/backend/app/market/cache.py` owns bounded quote caching and expiry, and `finally/backend/app/market/sse.py` owns the streaming response and disconnect cleanup. Their behavioral regression coverage is owned by `finally/backend/tests/test_market_infrastructure.py`, including GBM validity, provider normalization, cache expiry, and SSE event framing.
+
+The watchlist-market-ui phase owns browser coverage in `finally/test/watchlist-market-ui.spec.ts`; it must assert rendered market rows, symbol selection, watchlist state, and live-price refresh rather than only checking source files. The portfolio-visualisation-trading phase owns browser coverage in `finally/test/portfolio-visualisation-trading.spec.ts`; it must assert portfolio values, chart rendering, order validation, and the visible post-trade state. These tests remain phase deliverables alongside their production components.
+
 
 ## HTTP + entrypoint integration
 
