@@ -54,7 +54,7 @@ delivery_phases:
       - finally/backend/app/main.py
       - finally/Dockerfile
       - finally/docker-compose.yml
-    qa_verify_command: 'test -x finally/scripts/start_mac.sh && test -x finally/scripts/stop_mac.sh && sh -n finally/scripts/start_mac.sh && sh -n finally/scripts/stop_mac.sh && test -f finally/scripts/start_windows.ps1 && test -f finally/scripts/stop_windows.ps1 && test -f finally/db/.gitkeep && test -f finally/.env && test -f finally/.gitignore && test -f finally/backend/app/main.py && test -f finally/Dockerfile && test -f finally/docker-compose.yml'
+    qa_verify_command: 'test -x finally/scripts/start_mac.sh && test -x finally/scripts/stop_mac.sh && sh -n finally/scripts/start_mac.sh && sh -n finally/scripts/stop_mac.sh && test -f finally/scripts/start_windows.ps1 && test -f finally/scripts/stop_windows.ps1 && test -f finally/db/.gitkeep && test -f finally/.env && test -f finally/.gitignore && test -f finally/backend/app/main.py && test -f finally/Dockerfile && test -f finally/docker-compose.yml && docker compose -f finally/docker-compose.yml build'
     depends_on: []
     file_dependencies:
       finally/Dockerfile: [finally/backend/app/main.py]
