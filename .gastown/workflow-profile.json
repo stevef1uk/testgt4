@@ -26,6 +26,7 @@
       "finally/backend/app/api/__init__.py",
       "finally/backend/app/api/schemas.py",
       "finally/test/e2e.spec.ts",
+      "finally/.github/workflows/ci.yml",
       "finally/frontend/package.json",
       "finally/frontend/tsconfig.json",
       "finally/frontend/next.config.js",
@@ -43,6 +44,7 @@
       "finally/frontend/components/ChatAssistant.tsx",
       "finally/frontend/components/ChatAssistant.test.tsx",
       "finally/backend/db/schema.py",
+      "finally/backend/app/portfolio/engine.py",
       "finally/backend/app/market/gbm.py",
       "finally/backend/app/market/massive.py",
       "finally/backend/app/market/cache.py",
@@ -69,7 +71,7 @@
           "finally/Dockerfile",
           "finally/docker-compose.yml"
         ],
-        "qa_verify_command": "test -f finally/planning/PLAN.md && test -f finally/backend/app/main.py && test -f finally/frontend/package.json && test -f finally/frontend/tsconfig.json && test -f finally/frontend/next.config.js && test -f finally/frontend/app/layout.tsx && test -f finally/frontend/app/page.tsx && test -f finally/frontend/app/globals.css && test -f finally/Dockerfile && docker compose -f finally/docker-compose.yml build",
+        "qa_verify_command": "test -f finally/planning/PLAN.md && test -f finally/backend/app/main.py && test -f finally/frontend/package.json && test -f finally/frontend/tsconfig.json && test -f finally/frontend/next.config.js && test -f finally/frontend/app/layout.tsx && test -f finally/frontend/app/page.tsx && test -f finally/frontend/app/globals.css && test -f finally/Dockerfile && test -f finally/docker-compose.yml && docker compose -f finally/docker-compose.yml build",
         "spec_focus": "Project Foundation",
         "file_dependencies": {
           "finally/Dockerfile": [
@@ -92,11 +94,34 @@
         }
       },
       {
+        "id": "project-foundation-support",
+        "title": "Project Foundation Support",
+        "required_files": [
+          "finally/scripts/start_mac.sh",
+          "finally/scripts/stop_mac.sh",
+          "finally/scripts/start_windows.ps1",
+          "finally/scripts/stop_windows.ps1",
+          "finally/.env",
+          "finally/.gitignore",
+          "finally/.github/workflows/ci.yml",
+          "finally/db/.gitkeep",
+          "finally/backend/db/schema.py"
+        ],
+        "qa_verify_command": "test -f finally/scripts/start_mac.sh && test -f finally/scripts/stop_mac.sh && test -f finally/scripts/start_windows.ps1 && test -f finally/scripts/stop_windows.ps1 && test -f finally/.env && test -f finally/.gitignore && test -f finally/.github/workflows/ci.yml && test -f finally/db/.gitkeep && test -f finally/backend/db/schema.py",
+        "depends_on": [
+          "project-foundation"
+        ],
+        "spec_focus": "Project Foundation",
+        "file_dependencies": {
+          "finally/backend/db/schema.py": [
+            "finally/db/.gitkeep"
+          ]
+        }
+      },
+      {
         "id": "core-market-infrastructure",
         "title": "Core Market Infrastructure",
         "required_files": [
-          "finally/.env",
-          "finally/.gitignore",
           "finally/backend/app/api/__init__.py",
           "finally/backend/app/api/schemas.py",
           "finally/frontend/next-env.d.ts",
@@ -108,7 +133,7 @@
         ],
         "qa_verify_command": "test -f finally/.env && test -f finally/.gitignore && test -f finally/backend/app/api/__init__.py && test -f finally/backend/app/api/schemas.py && test -f finally/frontend/next-env.d.ts && test -f finally/backend/app/market/gbm.py && test -f finally/backend/app/market/massive.py && test -f finally/backend/app/market/cache.py && test -f finally/backend/app/market/sse.py && test -f finally/backend/tests/test_market_infrastructure.py && PYTHONPATH=finally/backend python -m pytest finally/backend/tests/test_market_infrastructure.py && (cd finally/frontend && npm run build)",
         "depends_on": [
-          "project-foundation"
+          "project-foundation-support"
         ],
         "spec_focus": "Core Market Infrastructure",
         "file_dependencies": {
@@ -137,12 +162,7 @@
         "id": "database-portfolio-engine",
         "title": "Database & Portfolio Engine",
         "required_files": [
-          "finally/backend/db/schema.py",
-          "finally/scripts/start_mac.sh",
-          "finally/scripts/stop_mac.sh",
-          "finally/scripts/start_windows.ps1",
-          "finally/scripts/stop_windows.ps1",
-          "finally/db/.gitkeep"
+          "finally/backend/app/portfolio/engine.py"
         ],
         "qa_verify_command": "PYTHONPATH=finally/backend python -c \"from app.main import create_app; p={r.path for r in create_app().routes}; assert {\\\"/api/portfolio\\\", \\\"/api/portfolio/trade\\\", \\\"/api/portfolio/history\\\"} <= p\"",
         "depends_on": [

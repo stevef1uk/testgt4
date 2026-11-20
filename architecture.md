@@ -15,6 +15,7 @@ HTML is an error, never a placeholder.
 All paths use the `finally/` layout root.
 
 - `finally/planning/PLAN.md`
+- `finally/.github/workflows/ci.yml`
 - `finally/scripts/start_mac.sh`
 - `finally/scripts/stop_mac.sh`
 - `finally/scripts/start_windows.ps1`
@@ -47,6 +48,7 @@ All paths use the `finally/` layout root.
 - `finally/frontend/components/ChatAssistant.tsx`
 - `finally/frontend/components/ChatAssistant.test.tsx`
 - `finally/backend/db/schema.py`
+- `finally/backend/app/portfolio/engine.py`
 - `finally/backend/app/market/gbm.py`
 - `finally/backend/app/market/massive.py`
 - `finally/backend/app/market/cache.py`
@@ -80,19 +82,34 @@ delivery_phases:
       - finally/frontend/app/globals.css
       - finally/Dockerfile
       - finally/docker-compose.yml
-    qa_verify_command: 'test -f finally/planning/PLAN.md && test -f finally/backend/app/main.py && test -f finally/frontend/package.json && test -f finally/frontend/tsconfig.json && test -f finally/frontend/next.config.js && test -f finally/frontend/app/layout.tsx && test -f finally/frontend/app/page.tsx && test -f finally/frontend/app/globals.css && test -f finally/Dockerfile && docker compose -f finally/docker-compose.yml build'
+    qa_verify_command: 'test -f finally/planning/PLAN.md && test -f finally/backend/app/main.py && test -f finally/frontend/package.json && test -f finally/frontend/tsconfig.json && test -f finally/frontend/next.config.js && test -f finally/frontend/app/layout.tsx && test -f finally/frontend/app/page.tsx && test -f finally/frontend/app/globals.css && test -f finally/Dockerfile && test -f finally/docker-compose.yml && docker compose -f finally/docker-compose.yml build'
     depends_on: []
     file_dependencies:
       finally/frontend/next.config.js: [finally/frontend/package.json, finally/frontend/tsconfig.json]
       finally/frontend/app/layout.tsx: [finally/frontend/next.config.js, finally/frontend/app/globals.css]
       finally/frontend/app/page.tsx: [finally/frontend/app/layout.tsx]
       finally/Dockerfile: [finally/backend/app/main.py, finally/frontend/package.json, finally/frontend/next.config.js, finally/frontend/app/page.tsx]
+  - id: project-foundation-support
+    title: Project Foundation Support
+    spec_focus: Project Foundation
+    required_files:
+      - finally/scripts/start_mac.sh
+      - finally/scripts/stop_mac.sh
+      - finally/scripts/start_windows.ps1
+      - finally/scripts/stop_windows.ps1
+      - finally/.env
+      - finally/.gitignore
+      - finally/.github/workflows/ci.yml
+      - finally/db/.gitkeep
+      - finally/backend/db/schema.py
+    qa_verify_command: 'test -f finally/scripts/start_mac.sh && test -f finally/scripts/stop_mac.sh && test -f finally/scripts/start_windows.ps1 && test -f finally/scripts/stop_windows.ps1 && test -f finally/.env && test -f finally/.gitignore && test -f finally/.github/workflows/ci.yml && test -f finally/db/.gitkeep && test -f finally/backend/db/schema.py'
+    depends_on: [project-foundation]
+    file_dependencies:
+      finally/backend/db/schema.py: [finally/db/.gitkeep]
   - id: core-market-infrastructure
     title: Core Market Infrastructure
     spec_focus: Core Market Infrastructure
     required_files:
-      - finally/.env
-      - finally/.gitignore
       - finally/backend/app/api/__init__.py
       - finally/backend/app/api/schemas.py
       - finally/frontend/next-env.d.ts
@@ -102,7 +119,7 @@ delivery_phases:
       - finally/backend/app/market/massive.py
       - finally/backend/app/market/gbm.py
     qa_verify_command: 'test -f finally/.env && test -f finally/.gitignore && test -f finally/backend/app/api/__init__.py && test -f finally/backend/app/api/schemas.py && test -f finally/frontend/next-env.d.ts && test -f finally/backend/app/market/gbm.py && test -f finally/backend/app/market/massive.py && test -f finally/backend/app/market/cache.py && test -f finally/backend/app/market/sse.py && test -f finally/backend/tests/test_market_infrastructure.py && PYTHONPATH=finally/backend python -m pytest finally/backend/tests/test_market_infrastructure.py && (cd finally/frontend && npm run build)' 
-    depends_on: [project-foundation]
+    depends_on: [project-foundation-support]
     file_dependencies:
       finally/backend/app/market/gbm.py: [finally/backend/app/main.py]
       finally/backend/app/market/massive.py: [finally/backend/app/main.py]
@@ -113,12 +130,7 @@ delivery_phases:
     title: Database & Portfolio Engine
     spec_focus: Database & Portfolio Engine
     required_files:
-      - finally/backend/db/schema.py
-      - finally/scripts/start_mac.sh
-      - finally/scripts/stop_mac.sh
-      - finally/scripts/start_windows.ps1
-      - finally/scripts/stop_windows.ps1
-      - finally/db/.gitkeep
+      - finally/backend/app/portfolio/engine.py
     qa_verify_command: 'PYTHONPATH=finally/backend python -c "from app.main import create_app; p={r.path for r in create_app().routes}; assert {\"/api/portfolio\", \"/api/portfolio/trade\", \"/api/portfolio/history\"} <= p"'
     depends_on: [core-market-infrastructure]
   - id: watchlist-market-ui
@@ -188,6 +200,7 @@ delivery_phases:
 ## Requirements
 
 ### project-foundation
+This phase owns the cross-platform launch and shutdown scripts, environment loading from finally/.env, repository hygiene in finally/.gitignore, the SQLite marker and schema initialization in finally/db/.gitkeep and finally/backend/db/schema.py, and CI linting in finally/.github/workflows/ci.yml. These foundation assets are intentionally delivered before market infrastructure or portfolio behavior; later phases consume the initialized database rather than owning its bootstrap.
 
 Deliver the runnable repository skeleton, planning document, Next.js export,
 FastAPI/uv project, SQLite initialization boundary, Docker files, scripts,
@@ -195,6 +208,16 @@ environment loading, and health endpoint. `GET /` must serve actual
 `finally/frontend/out/index.html` containing the Market Dashboard heading,
 ten default tickers with prices, and $10,000 cash. Scripts must be idempotent,
 resolve their own directory, retain the database volume, and preserve errors.
+
+### project-foundation-support
+This continuation of Project Foundation owns the cross-platform launch and
+shutdown scripts, environment loading, repository hygiene, CI linting, the
+SQLite runtime marker, and schema initialization. It is a foundation-only
+batch that completes every Phase 1 deliverable before market behavior begins.
+
+Scripts resolve their own location, are idempotent, preserve the database
+volume, and return failures. The environment and CI files are configuration
+artifacts consumed by the runnable skeleton and later verification.
 
 ### core-market-infrastructure
 

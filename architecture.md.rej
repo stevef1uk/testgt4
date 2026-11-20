@@ -1,0 +1,10 @@
+--- architecture.md
++++ architecture.md
+@@ -109,7 +109,6 @@
+       finally/backend/app/market/cache.py: [finally/backend/app/main.py]
+       finally/backend/app/market/sse.py: [finally/backend/app/main.py, finally/backend/app/market/cache.py]
+       finally/backend/tests/test_market_infrastructure.py: [finally/backend/app/market/gbm.py, finally/backend/app/market/massive.py, finally/backend/app/market/cache.py, finally/backend/app/market/sse.py]
+-      - finally/backend/app/portfolio/engine.py
+   - id: database-portfolio-engine
+     title: Database & Portfolio Engine
+     spec_focus: Database & Portfolio Engine
