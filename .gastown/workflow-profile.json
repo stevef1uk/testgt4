@@ -25,12 +25,66 @@
       "finally/backend/app/main.py",
       "finally/backend/app/api/__init__.py",
       "finally/backend/app/api/schemas.py",
-      "finally/test/e2e.spec.ts"
+      "finally/test/e2e.spec.ts",
+      "finally/frontend/package.json",
+      "finally/frontend/tsconfig.json",
+      "finally/frontend/next.config.js",
+      "finally/frontend/next-env.d.ts",
+      "finally/frontend/app/layout.tsx",
+      "finally/frontend/app/page.tsx",
+      "finally/frontend/app/globals.css",
+      "finally/frontend/components/Header.tsx",
+      "finally/frontend/components/Sidebar.tsx",
+      "finally/frontend/components/MarketOverview.tsx",
+      "finally/frontend/components/PortfolioSummary.tsx",
+      "finally/frontend/components/Watchlist.tsx",
+      "finally/frontend/components/TradingPanel.tsx",
+      "finally/frontend/components/PriceChart.tsx",
+      "finally/frontend/components/ChatAssistant.tsx",
+      "finally/backend/db/schema.py",
+      "finally/frontend/app/polish.css"
     ],
     "delivery_phases": [
       {
         "id": "project-foundation",
         "title": "Project Foundation",
+        "required_files": [
+          "finally/planning/PLAN.md",
+          "finally/backend/app/main.py",
+          "finally/frontend/package.json",
+          "finally/frontend/tsconfig.json",
+          "finally/frontend/next.config.js",
+          "finally/frontend/app/layout.tsx",
+          "finally/frontend/app/page.tsx",
+          "finally/frontend/app/globals.css",
+          "finally/Dockerfile",
+          "finally/docker-compose.yml"
+        ],
+        "qa_verify_command": "test -f finally/planning/PLAN.md && test -f finally/backend/app/main.py && test -f finally/frontend/package.json && test -f finally/frontend/tsconfig.json && test -f finally/frontend/next.config.js && test -f finally/frontend/app/layout.tsx && test -f finally/frontend/app/page.tsx && test -f finally/frontend/app/globals.css && test -f finally/Dockerfile && docker compose -f finally/docker-compose.yml build",
+        "spec_focus": "Project Foundation",
+        "file_dependencies": {
+          "finally/Dockerfile": [
+            "finally/backend/app/main.py",
+            "finally/frontend/package.json",
+            "finally/frontend/next.config.js",
+            "finally/frontend/app/page.tsx"
+          ],
+          "finally/frontend/app/layout.tsx": [
+            "finally/frontend/next.config.js",
+            "finally/frontend/app/globals.css"
+          ],
+          "finally/frontend/app/page.tsx": [
+            "finally/frontend/app/layout.tsx"
+          ],
+          "finally/frontend/next.config.js": [
+            "finally/frontend/package.json",
+            "finally/frontend/tsconfig.json"
+          ]
+        }
+      },
+      {
+        "id": "core-market-infrastructure",
+        "title": "Core Market Infrastructure",
         "required_files": [
           "finally/scripts/start_mac.sh",
           "finally/scripts/stop_mac.sh",
@@ -39,30 +93,11 @@
           "finally/db/.gitkeep",
           "finally/.env",
           "finally/.gitignore",
-          "finally/backend/app/main.py",
-          "finally/Dockerfile",
-          "finally/docker-compose.yml"
+          "finally/backend/app/api/__init__.py",
+          "finally/backend/app/api/schemas.py",
+          "finally/frontend/next-env.d.ts"
         ],
-        "qa_verify_command": "test -x finally/scripts/start_mac.sh && test -x finally/scripts/stop_mac.sh && sh -n finally/scripts/start_mac.sh && sh -n finally/scripts/stop_mac.sh && test -f finally/scripts/start_windows.ps1 && test -f finally/scripts/stop_windows.ps1 && test -f finally/db/.gitkeep && test -f finally/.env && test -f finally/.gitignore && test -f finally/backend/app/main.py && test -f finally/Dockerfile && test -f finally/docker-compose.yml && docker compose -f finally/docker-compose.yml build",
-        "spec_focus": "Project Foundation",
-        "file_dependencies": {
-          "finally/Dockerfile": [
-            "finally/backend/app/main.py"
-          ],
-          "finally/docker-compose.yml": [
-            "finally/Dockerfile",
-            "finally/.env"
-          ]
-        }
-      },
-      {
-        "id": "core-market-infrastructure",
-        "title": "Core Market Infrastructure",
-        "required_files": [
-          "finally/planning/PLAN.md",
-          "finally/backend/app/main.py"
-        ],
-        "qa_verify_command": "test -f finally/planning/PLAN.md && PYTHONPATH=finally/backend python -c \"from app.main import create_app; assert any(r.path == \"/api/stream/prices\" for r in create_app().routes)\"",
+        "qa_verify_command": "test -f finally/frontend/next-env.d.ts && test -x finally/scripts/start_mac.sh && test -x finally/scripts/stop_mac.sh && sh -n finally/scripts/start_mac.sh && sh -n finally/scripts/stop_mac.sh && test -f finally/scripts/start_windows.ps1 && test -f finally/scripts/stop_windows.ps1 && test -f finally/db/.gitkeep && test -f finally/.env && test -f finally/.gitignore && test -f finally/docker-compose.yml && PYTHONPATH=finally/backend python -c \"from app.main import create_app; assert any(r.path == \\\"/api/stream/prices\\\" for r in create_app().routes)\"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) (cd finally/frontend && npm run build)",
         "depends_on": [
           "project-foundation"
         ],
@@ -72,7 +107,7 @@
         "id": "database-portfolio-engine",
         "title": "Database & Portfolio Engine",
         "required_files": [
-          "finally/backend/app/main.py"
+          "finally/backend/db/schema.py"
         ],
         "qa_verify_command": "PYTHONPATH=finally/backend python -c \"from app.main import create_app; p={r.path for r in create_app().routes}; assert {\\\"/api/portfolio\\\", \\\"/api/portfolio/trade\\\", \\\"/api/portfolio/history\\\"} <= p\"",
         "depends_on": [
@@ -84,43 +119,78 @@
         "id": "watchlist-market-ui",
         "title": "Watchlist & Market UI",
         "required_files": [
-          "finally/backend/app/main.py"
+          "finally/frontend/components/Header.tsx",
+          "finally/frontend/components/Sidebar.tsx",
+          "finally/frontend/components/MarketOverview.tsx",
+          "finally/frontend/components/Watchlist.tsx",
+          "finally/frontend/components/PriceChart.tsx"
         ],
-        "qa_verify_command": "PYTHONPATH=finally/backend python -c \"from app.main import create_app; p={r.path for r in create_app().routes}; assert \\\"/api/watchlist\\\" in p and \\\"/api/watchlist/{ticker}\\\" in p\"",
+        "qa_verify_command": "test -f finally/frontend/components/Header.tsx && test -f finally/frontend/components/Sidebar.tsx && test -f finally/frontend/components/MarketOverview.tsx && test -f finally/frontend/components/Watchlist.tsx && test -f finally/frontend/components/PriceChart.tsx && PYTHONPATH=finally/backend python -c \"from app.main import create_app; p={r.path for r in create_app().routes}; assert \\\"/api/watchlist\\\" in p and \\\"/api/watchlist/{ticker}\\\" in p\"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) (cd finally/frontend && npm run build)",
         "depends_on": [
           "database-portfolio-engine"
         ],
-        "spec_focus": "Watchlist & Market UI"
+        "spec_focus": "Watchlist & Market UI",
+        "file_dependencies": {
+          "finally/frontend/components/Header.tsx": [
+            "finally/frontend/app/layout.tsx"
+          ],
+          "finally/frontend/components/MarketOverview.tsx": [
+            "finally/frontend/app/page.tsx"
+          ],
+          "finally/frontend/components/PriceChart.tsx": [
+            "finally/frontend/app/page.tsx"
+          ],
+          "finally/frontend/components/Sidebar.tsx": [
+            "finally/frontend/app/layout.tsx"
+          ],
+          "finally/frontend/components/Watchlist.tsx": [
+            "finally/frontend/app/page.tsx"
+          ]
+        }
       },
       {
         "id": "portfolio-visualisation-trading",
         "title": "Portfolio Visualisation & Trading",
         "required_files": [
-          "finally/backend/app/main.py"
+          "finally/frontend/components/PortfolioSummary.tsx",
+          "finally/frontend/components/TradingPanel.tsx"
         ],
-        "qa_verify_command": "PYTHONPATH=finally/backend python -c \"from app.main import create_app; assert any(r.path == \\\"/api/portfolio/trade\\\" for r in create_app().routes)\"",
+        "qa_verify_command": "test -f finally/frontend/components/PortfolioSummary.tsx && test -f finally/frontend/components/TradingPanel.tsx && PYTHONPATH=finally/backend python -c \"from app.main import create_app; assert any(r.path == \\\"/api/portfolio/trade\\\" for r in create_app().routes)\"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) (cd finally/frontend && npm run build)",
         "depends_on": [
           "watchlist-market-ui"
         ],
-        "spec_focus": "Portfolio Visualisation & Trading"
+        "spec_focus": "Portfolio Visualisation & Trading",
+        "file_dependencies": {
+          "finally/frontend/components/PortfolioSummary.tsx": [
+            "finally/frontend/app/page.tsx"
+          ],
+          "finally/frontend/components/TradingPanel.tsx": [
+            "finally/frontend/app/page.tsx"
+          ]
+        }
       },
       {
         "id": "ai-trading-assistant",
         "title": "AI Trading Assistant",
         "required_files": [
-          "finally/backend/app/main.py"
+          "finally/frontend/components/ChatAssistant.tsx"
         ],
-        "qa_verify_command": "PYTHONPATH=finally/backend python -c \"from app.main import create_app; assert any(r.path == \\\"/api/chat\\\" for r in create_app().routes)\"",
+        "qa_verify_command": "test -f finally/frontend/components/ChatAssistant.tsx && PYTHONPATH=finally/backend python -c \"from app.main import create_app; assert any(r.path == \\\"/api/chat\\\" for r in create_app().routes)\"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) (cd finally/frontend && npm run build)",
         "depends_on": [
           "portfolio-visualisation-trading"
         ],
-        "spec_focus": "AI Trading Assistant"
+        "spec_focus": "AI Trading Assistant",
+        "file_dependencies": {
+          "finally/frontend/components/ChatAssistant.tsx": [
+            "finally/frontend/app/page.tsx"
+          ]
+        }
       },
       {
         "id": "application-polish",
         "title": "Application Polish",
         "required_files": [
-          "finally/backend/app/main.py"
+          "finally/frontend/app/polish.css"
         ],
         "qa_verify_command": "PYTHONPATH=finally/backend python -c \"from app.main import create_app; assert create_app() is not None\"",
         "depends_on": [
@@ -133,11 +203,7 @@
         "title": "Testing & Release",
         "required_files": [
           "finally/test/playwright.config.ts",
-          "finally/backend/app/api/__init__.py",
-          "finally/backend/app/api/schemas.py",
           "finally/test/e2e.spec.ts",
-          "finally/Dockerfile",
-          "finally/docker-compose.yml",
           "finally/test/docker-compose.test.yml"
         ],
         "qa_verify_command": "docker compose -f finally/test/docker-compose.test.yml down --remove-orphans && docker compose -f finally/test/docker-compose.test.yml build --no-cache && docker compose -f finally/test/docker-compose.test.yml up --exit-code-from playwright",
@@ -146,12 +212,6 @@
         ],
         "spec_focus": "Testing & Release",
         "file_dependencies": {
-          "finally/backend/app/api/__init__.py": [
-            "finally/backend/app/main.py"
-          ],
-          "finally/backend/app/api/schemas.py": [
-            "finally/backend/app/api/__init__.py"
-          ],
           "finally/test/docker-compose.test.yml": [
             "finally/docker-compose.yml",
             "finally/Dockerfile",
