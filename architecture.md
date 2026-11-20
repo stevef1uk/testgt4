@@ -55,6 +55,7 @@ All paths use the `finally/` layout root.
 - `finally/test/watchlist-market-ui.spec.ts`
 - `finally/test/portfolio-visualisation-trading.spec.ts`
 - `finally/frontend/app/polish.css`
+- `finally/test/application-polish.spec.ts`
 
 Additional frontend, backend, unit-test, page-object, and fixture files are
 owned by their implementing phases under `finally/frontend/`,
@@ -167,6 +168,7 @@ delivery_phases:
     spec_focus: Application Polish
     required_files:
       - finally/frontend/app/polish.css
+      - finally/test/application-polish.spec.ts
     qa_verify_command: 'PYTHONPATH=finally/backend python -c "from app.main import create_app; assert create_app() is not None"'
     depends_on: [ai-trading-assistant]
   - id: testing-release
@@ -233,6 +235,7 @@ specified Cerebras model and structured output. LLM_MOCK=true is deterministic.
 Validate and auto-execute actions through shared services and persist history.
 
 ### application-polish
+Application-polish verification is owned by `finally/test/application-polish.spec.ts`. It must exercise the responsive layout at narrow and wide viewports, assert accessible names and keyboard focus order, and verify that a market/API failure renders a recoverable error state rather than a blank or misleading panel. The polish phase owns this test alongside `finally/frontend/app/polish.css`; release remains responsible for the full-suite harness and broader end-to-end regression.
 
 Complete dark terminal styling, animations, loading and empty states,
 notifications, accessible controls, responsive behavior, and recovery for
