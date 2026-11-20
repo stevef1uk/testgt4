@@ -45,6 +45,7 @@ All paths use the `finally/` layout root.
 - `finally/frontend/components/TradingPanel.tsx`
 - `finally/frontend/components/PriceChart.tsx`
 - `finally/frontend/components/ChatAssistant.tsx`
+- `finally/frontend/components/ChatAssistant.test.tsx`
 - `finally/backend/db/schema.py`
 - `finally/backend/app/market/gbm.py`
 - `finally/backend/app/market/massive.py`
@@ -156,7 +157,8 @@ delivery_phases:
     spec_focus: AI Trading Assistant
     required_files:
       - finally/frontend/components/ChatAssistant.tsx
-    qa_verify_command: 'test -f finally/frontend/components/ChatAssistant.tsx && PYTHONPATH=finally/backend python -c "from app.main import create_app; assert any(r.path == \"/api/chat\" for r in create_app().routes)"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) (cd finally/frontend && npm run build)'
+      - finally/frontend/components/ChatAssistant.test.tsx
+    qa_verify_command: 'test -f finally/frontend/components/ChatAssistant.tsx && test -f finally/frontend/components/ChatAssistant.test.tsx && PYTHONPATH=finally/backend python -c "from app.main import create_app; assert any(r.path == \"/api/chat\" for r in create_app().routes)"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) (cd finally/frontend && npm run build)'
     depends_on: [portfolio-visualisation-trading]
     file_dependencies:
       finally/frontend/components/ChatAssistant.tsx: [finally/frontend/app/page.tsx]
@@ -223,6 +225,7 @@ positions, portfolio summary, P&L heatmap, and value-history chart. Buy and
 sell are instant fee-free market orders; failed validation is atomic.
 
 ### ai-trading-assistant
+The assistant component is delivered with focused interaction coverage in `finally/frontend/components/ChatAssistant.test.tsx`; the phase gate must run that test together with the frontend production build.
 
 Implement `POST /api/chat` returning message, trades, and watchlist_changes.
 Construct portfolio-aware prompts and use LiteLLM via OpenRouter with the

@@ -41,6 +41,7 @@
       "finally/frontend/components/TradingPanel.tsx",
       "finally/frontend/components/PriceChart.tsx",
       "finally/frontend/components/ChatAssistant.tsx",
+      "finally/frontend/components/ChatAssistant.test.tsx",
       "finally/backend/db/schema.py",
       "finally/backend/app/market/gbm.py",
       "finally/backend/app/market/massive.py",
@@ -216,9 +217,10 @@
         "id": "ai-trading-assistant",
         "title": "AI Trading Assistant",
         "required_files": [
-          "finally/frontend/components/ChatAssistant.tsx"
+          "finally/frontend/components/ChatAssistant.tsx",
+          "finally/frontend/components/ChatAssistant.test.tsx"
         ],
-        "qa_verify_command": "test -f finally/frontend/components/ChatAssistant.tsx && PYTHONPATH=finally/backend python -c \"from app.main import create_app; assert any(r.path == \\\"/api/chat\\\" for r in create_app().routes)\"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) (cd finally/frontend && npm run build)",
+        "qa_verify_command": "test -f finally/frontend/components/ChatAssistant.tsx && test -f finally/frontend/components/ChatAssistant.test.tsx && PYTHONPATH=finally/backend python -c \"from app.main import create_app; assert any(r.path == \\\"/api/chat\\\" for r in create_app().routes)\"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) (cd finally/frontend && npm run build)",
         "depends_on": [
           "portfolio-visualisation-trading"
         ],
