@@ -1,107 +1,107 @@
-# Test Plan — testgt4
+# Test Plan — Trading Portfolio Application
 
 ## Requirements → tests
 
 ### project-foundation
-Requirement: The application foundation starts successfully and provides the configured application shell and health behavior specified by the project contract.
+Requirement: The application foundation provides the configured server and client build/test entry points.
 Level: integration
 Test file: finally/backend/app/main_test.py
-Bead ID: te-0oc
+Bead ID: pending (project-foundation implementation bead)
 Phase: project-foundation
 Scenarios:
-- Start the application with the documented configuration and verify the foundation initializes.
-- Exercise the foundation health/readiness behavior and its failure path.
+- Start the application with the documented configuration and exercise the health/startup path.
+- Run the foundation test/build entry points with the expected dependency setup.
 Assertions:
-- Initialization succeeds with valid configuration and reports failure for invalid configuration.
-- The health response has the documented status and decoded JSON values.
+- The application starts without an initialization error and exposes its configured entry point.
+- The foundation packages build and their tests complete successfully.
 
 ### core-market-infrastructure
-Requirement: Market infrastructure retrieves and serves the specified market data through the documented API routes.
-Level: integration
-Test file: finally/internal/api/handlers_test.go
-Bead ID: pending
+Requirement: Market infrastructure retrieves and normalizes supported market data for the requested symbol.
+Level: unit
+Test file: finally/backend/tests/test_market_infrastructure.py
+Bead ID: pending (core-market-infrastructure implementation bead)
 Phase: core-market-infrastructure
 Scenarios:
-- Request each documented market-data route with valid parameters.
-- Exercise missing, malformed, and unavailable-symbol inputs.
+- Normalize a valid quote response and preserve symbol, price, and change values.
+- Handle an upstream error, malformed payload, and unknown symbol.
 Assertions:
-- Successful responses use the documented status/content type and contain the required decoded fields.
-- Invalid requests return the documented client error and unavailable data returns the documented error without leaking internal details.
+- Valid data is returned in the domain model with the specified numeric types.
+- Errors are returned rather than producing partial or fabricated market data.
 
 ### database-portfolio-engine
-Requirement: The portfolio store and engine persist, retrieve, and calculate portfolio holdings and values according to the specified data model and rules.
+Requirement: Portfolio persistence and calculations support holdings, transactions, and derived portfolio values.
 Level: unit
-Test file: finally/internal/portfolio/portfolio_test.go
-Bead ID: pending
+Test file: finally/backend/db/schema_test.py
+Bead ID: pending (database-portfolio-engine implementation bead)
 Phase: database-portfolio-engine
 Scenarios:
-- Create, update, retrieve, and delete portfolio records and positions.
-- Calculate positions, totals, and the documented edge cases such as empty portfolios and invalid quantities.
+- Add and remove transactions and calculate holdings and totals.
+- Read an empty portfolio and reject invalid quantities or prices.
 Assertions:
-- Store operations preserve identifiers and required fields and return the documented not-found/validation errors.
-- Calculations apply the specified arithmetic and remain deterministic for empty and boundary inputs.
+- Persisted records round-trip with their required fields and derived totals are correct.
+- Invalid operations fail without changing stored state.
 
 ### watchlist-market-ui
-Requirement: Users can view market data and manage the documented watchlist flows in the UI.
+Requirement: Users can view market quotes and add, remove, and retain symbols in a watchlist.
 Level: ui
-Test file: finally/tests/watchlist.spec.ts
-Bead ID: pending
+Test file: finally/test/watchlist-market-ui.spec.ts
+Bead ID: pending (watchlist-market-ui implementation bead)
 Phase: watchlist-market-ui
 Scenarios:
-- Load the watchlist, add a valid symbol, remove it, and reload the page.
-- Search/select a symbol and verify loading, empty, and API-error states.
+- Load the watchlist and see quote data for its symbols.
+- Add a valid symbol, remove it, refresh, and exercise empty and error states.
 Assertions:
-- The UI renders the documented symbols and market values and reflects add/remove persistence.
-- Controls are usable and error/empty states are visible without displaying stale or duplicate entries.
+- The rendered list reflects add/remove actions and persisted symbols.
+- Quote values, loading state, empty state, and market-error feedback are visible as specified.
 
 ### portfolio-visualisation-trading
-Requirement: Users can view portfolio visualisations and perform the documented trading flow.
-Level: ui
-Test file: finally/tests/portfolio-trading.spec.ts
-Bead ID: pending
+Requirement: Users can inspect portfolio visualisations and execute supported buy and sell actions.
+Level: integration
+Test file: finally/test/portfolio-visualisation-trading.spec.ts
+Bead ID: pending (portfolio-visualisation-trading implementation bead)
 Phase: portfolio-visualisation-trading
 Scenarios:
-- Open a portfolio and verify its balance, holdings, totals, and chart.
-- Submit valid and invalid buy/sell orders, including insufficient holdings or funds.
+- Request portfolio summary and chart data for an empty and funded portfolio.
+- Submit valid buy and sell orders and reject invalid quantities or insufficient holdings.
 Assertions:
-- The visualisation renders required values and updates after a successful trade.
-- Valid trades show the documented confirmation/result; rejected trades show validation errors and do not mutate the portfolio.
+- API responses contain the required portfolio totals, time-series data, status codes, and JSON fields.
+- Successful trades update holdings and invalid trades do not mutate the portfolio.
 
 ### ai-trading-assistant
-Requirement: The AI trading assistant accepts the documented prompt flow and returns safe, portfolio-aware responses.
+Requirement: The assistant provides contextual trading guidance from portfolio and market context while handling unavailable or invalid requests safely.
 Level: integration
-Test file: finally/internal/assistant/assistant_test.go
-Bead ID: pending
+Test file: finally/frontend/components/ChatAssistant.spec.tsx
+Bead ID: pending (ai-trading-assistant implementation bead)
 Phase: ai-trading-assistant
 Scenarios:
-- Send a valid assistant request with portfolio context and receive a response.
-- Exercise empty/invalid prompts, provider failure, and unsafe or unsupported advice cases.
+- Ask a supported question with portfolio and market context.
+- Submit an empty/invalid prompt and simulate an assistant-provider failure.
 Assertions:
-- The response has the documented status and decoded fields and does not expose secrets or raw provider errors.
-- Invalid or failed requests return the documented error shape and do not execute trades.
+- A successful response contains the assistant answer and required contextual fields.
+- Invalid input has the specified client error and provider failures are surfaced without exposing secrets.
 
 ### application-polish
-Requirement: The application provides the specified responsive, accessible, and consistent user experience across the shipped flows.
+Requirement: The application presents responsive, accessible, and consistent loading, error, and navigation behavior.
 Level: ui
-Test file: finally/tests/application-polish.spec.ts
-Bead ID: pending
+Test file: finally/frontend/app/polish.test.tsx
+Bead ID: pending (application-polish implementation bead)
 Phase: application-polish
 Scenarios:
-- Navigate the primary flows at the supported viewport sizes.
-- Use keyboard navigation and inspect loading, empty, error, and success states.
+- Navigate between market, watchlist, portfolio, trading, and assistant views at desktop and narrow viewport sizes.
+- Trigger loading, empty, validation, and server-error states and use keyboard navigation.
 Assertions:
-- Required navigation, labels, focus order, and responsive content remain usable.
-- All documented states render without uncaught errors or broken controls.
+- Navigation and responsive layout remain usable and the active view is identifiable.
+- Controls have accessible names/focus behavior and state feedback is clear without console-breaking errors.
 
 ### testing-release
-Requirement: The released application passes the documented verification and regression checks.
+Requirement: The completed application passes the prescribed automated test, build, and release verification checks.
 Level: integration
-Test file: finally/tests/release.spec.ts
-Bead ID: pending
+Test file: finally/test/e2e.spec.ts
+Bead ID: pending (testing-release implementation bead)
 Phase: testing-release
 Scenarios:
-- Run the documented end-to-end smoke path against the release build.
-- Verify the release build starts and serves the required application entry points.
+- Run the documented unit, integration, UI, build, and release checks against a clean setup.
+- Exercise the release artifact/startup smoke path.
 Assertions:
-- The release verification command completes successfully and all required routes respond.
-- No smoke-path assertion fails and the build contains the required runtime assets.
+- All required checks pass and the artifact is produced with the expected application entry points.
+- The release smoke test starts successfully and no required route or asset is missing.
