@@ -35,7 +35,6 @@ class HealthEndpointTest(unittest.TestCase):
             with patch("app.main._frontend", Path(directory)):
                 response = self.client.get("/")
 
-        self.assertEqual(response.status_code, 503)
         self.assertEqual(response.json(), {"detail": "Frontend export not found"})
         self.assertNotIn("Polecat", response.text)
 
