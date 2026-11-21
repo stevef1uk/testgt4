@@ -13,7 +13,7 @@ from .market.cache import MarketCache
 from .market.gbm import GBMProvider
 from .market.massive import MassiveProvider
 
-FRONTEND = Path(__file__).resolve().parents[2] / "frontend" / "out"
+_frontend = Path(__file__).resolve().parents[2] / "frontend" / "out"
 TICKERS = ("AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA", "META", "JPM", "V", "NFLX")
 
 
@@ -89,16 +89,16 @@ def create_app(provider: Any | None = None, cache: Any | None = None) -> FastAPI
 
     @application.get("/{path:path}")
     def frontend(path: str):
-        requested = FRONTEND / path
+        requested = _frontend / path
         if path and requested.is_file():
             return FileResponse(requested)
-        index = FRONTEND / "index.html"
+        index = _frontend / "index.html"
         if index.is_file():
             return FileResponse(index)
         raise HTTPException(status_code=503, detail="Frontend export not found")
 
-    if (FRONTEND / "_next").is_dir():
-        application.mount("/_next", StaticFiles(directory=FRONTEND / "_next"), name="next-assets")
+    if (_frontend / "_next").is_dir():
+        application.mount("/_next", StaticFiles(directory=_frontend / "_next"), name="next-assets")
     return application
 
 

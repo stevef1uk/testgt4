@@ -1,20 +1,26 @@
-"""Acceptance tests for the API package boundary."""
+from fastapi import FastAPI
+from fastapi.routing import APIRoute
 
-from __future__ import annotations
-
-import importlib
-import sys
-from pathlib import Path
+from app.api import register_routes
 
 
-_BACKEND_ROOT = Path(__file__).parents[2]
-if str(_BACKEND_ROOT) not in sys.path:
-    sys.path.insert(0, str(_BACKEND_ROOT))
+def test_register_routes_exposes_canonical_api_paths() -> None:
+    app = FastAPI()
+    register_routes(app)
 
+    paths = {
+        route.path
+        for route in app.routes
+        if isinstance(route, APIRoute)
+    }
 
-def test_api_package_imports_without_application_or_route_side_effects() -> None:
-    package = importlib.import_module("app.api")
-
-    assert package.__doc__ == "API package for the market application."
-    assert not hasattr(package, "app")
-    assert not hasattr(package, "router")
+    assert paths == {
+        "/api/stream/prices",
+        "/api/portfolio",
+        "/api/portfolio/trade",
+        "/api/portfolio/history",
+        "/api/watchlist",
+        "/api/watchlist/{ticker}",
+        "/api/chat",
+        "/api/health",
+    }
