@@ -24,9 +24,9 @@ class HealthEndpointTest(unittest.TestCase):
         response = self.client.get("/")
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn("Project workspace", response.text)
+        self.assertIn("FinAlly", response.text)
         self.assertIn("$10,000", response.text)
-        for ticker in ("AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA", "META", "JPM", "V", "JNJ"):
+        for ticker in ("AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA", "META", "JPM", "V", "NFLX"):
             with self.subTest(ticker=ticker):
                 self.assertIn(ticker, response.text)
 
@@ -35,7 +35,7 @@ class HealthEndpointTest(unittest.TestCase):
             with patch("app.main._frontend", Path(directory)):
                 response = self.client.get("/")
 
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 503)
         self.assertEqual(response.json(), {"detail": "Frontend export not found"})
         self.assertNotIn("Polecat", response.text)
 

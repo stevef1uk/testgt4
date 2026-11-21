@@ -1,13 +1,13 @@
 # Test Review — project-foundation
 
 ## Summary
-All planned project-foundation tests pass review; phase verify passed.
+All planned project-foundation tests pass; phase verify passed.
 
 ## Per-requirement results
-### project-foundation — PASS
-- Test file: finally/backend/app/main_test.py
-- Verify result: passed
-- Notes: Real TestClient requests and response assertions cover the health endpoint, rendered dashboard content, required ticker values, and missing-export behavior.
+### Project foundation requirements — PASS
+- Test file: `finally/backend/app/main_test.py`
+- Verify result: passed — all pytest tests passed and `npm run build` completed successfully.
+- Notes: The test suite makes real FastAPI `TestClient` requests and asserts the health response status and decoded JSON, the rendered dashboard heading, portfolio amount, and all required ticker symbols, plus the missing-export 404 response and JSON detail. This is substantive coverage of the backend wiring and exported frontend behavior.
 
 ## Overall assessment
-All active project-foundation requirements have substantive test coverage and the configured phase verification is green. Future-phase rows are deferred.
+Every in-scope `project-foundation` requirement has an existing non-stub test with real assertions. Required files exist, the backend tests pass, and the frontend production build passes.

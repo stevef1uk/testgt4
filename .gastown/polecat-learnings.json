@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "stack": "python",
+      "rule": "Avoid in main.py: E AssertionError: 503 != 404",
+      "source": "verify_fix",
+      "bead_path": "finally/backend/app/main.py",
+      "hits": 1,
+      "updated_at": "2026-11-21T08:01:28Z"
+    }
+  ]
+}

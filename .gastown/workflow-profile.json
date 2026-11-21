@@ -318,7 +318,10 @@
       }
     ],
     "explicit_delivery_contract": true,
-    "active_phase_id": "project-foundation",
+    "active_phase_id": "project-foundation-support",
+    "completed_phase_ids": [
+      "project-foundation"
+    ],
     "spec_summary": "",
     "min_architecture_bytes": 3200,
     "min_plan_bytes": 800,
@@ -330,5 +333,6 @@
     "python_venv_dir": "",
     "dev_server_port": 8000
   },
-  "test_plan_reviewed": false
+  "test_plan_reviewed": true,
+  "test_plan_frozen": true
 }

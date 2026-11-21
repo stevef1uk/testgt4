@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Polecat",
-  description: "A focused project workspace.",
+  title: "FinAlly Trading Dashboard",
+  description: "Track your portfolio and live market prices with FinAlly.",
 };
 
 export default function RootLayout({

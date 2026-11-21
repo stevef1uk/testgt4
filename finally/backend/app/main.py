@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-app = FastAPI(title="Polecat")
+app = FastAPI(title="FinAlly Trading Dashboard")
 
 _frontend = Path(__file__).resolve().parents[2] / "frontend" / "out"
 
@@ -27,4 +27,4 @@ def frontend(path: str):
     if index.is_file():
         return FileResponse(index)
 
-    raise HTTPException(status_code=404, detail="Frontend export not found")
+    raise HTTPException(status_code=503, detail="Frontend export not found")
