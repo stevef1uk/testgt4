@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class APIModel(BaseModel):
@@ -14,6 +14,13 @@ class APIModel(BaseModel):
 
 class WatchlistRequest(APIModel):
     ticker: str = Field(min_length=1)
+
+    @field_validator("ticker")
+    @classmethod
+    def ticker_must_not_be_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("ticker must not be blank")
+        return value
 
 
 class WatchlistItem(APIModel):
@@ -66,6 +73,13 @@ class PortfolioHistory(APIModel):
 
 class ChatRequest(APIModel):
     message: str = Field(min_length=1)
+
+    @field_validator("message")
+    @classmethod
+    def message_must_not_be_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("message must not be blank")
+        return value
 
 
 class ChatAction(APIModel):
