@@ -24,11 +24,11 @@ Test file: finally/backend/db/schema_test.py
 Bead ID: pending
 Phase: project-foundation-support
 Scenarios:
-- Repeated initialization creates the schema without duplicate seed rows.
-- Fresh initialization creates the default user, ten specified watchlist tickers, and 10000.0 cash.
+- Fresh SQLite initialization creates all required tables, one default profile, ten default watchlist tickers, and 10000.0 cash.
+- Repeated initialization succeeds without duplicate profile or watchlist rows.
 Assertions:
-- Required tables and exact seed values exist.
-- A second initialization succeeds and leaves one default profile and one row per default ticker.
+- Required schema tables and exact seed values are present.
+- A second initialization is idempotent and leaves one default profile and one row for each specified ticker.
 
 ### core-market-infrastructure
 Requirement: GBM and Massive providers share an interface, selection follows the environment, cache stores price history, and SSE emits the specified event fields.

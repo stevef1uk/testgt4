@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -27,4 +27,4 @@ def frontend(path: str):
     if index.is_file():
         return FileResponse(index)
 
-    return {"message": "Polecat"}
+    raise HTTPException(status_code=404, detail="Frontend export not found")

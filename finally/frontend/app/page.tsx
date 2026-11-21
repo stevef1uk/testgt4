@@ -8,6 +8,12 @@ export default function HomePage() {
           A focused workspace for keeping project activity clear, organized, and
           ready for the next step.
         </p>
+        <p>$10,000</p>
+        <ul aria-label="Tracked tickers">
+          {["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA", "META", "JPM", "V", "JNJ"].map(
+            (ticker) => <li key={ticker}>{ticker}</li>
+          )}
+        </ul>
       </section>
     </main>
   );

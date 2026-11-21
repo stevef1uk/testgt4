@@ -3,70 +3,70 @@
     "content": "FROM node:20-alpine AS frontend-builder\n\nWORKDIR /app/frontend\n\nCOPY frontend/package.json frontend/package-lock.json* ./\nRUN npm install\n\nCOPY frontend/ ./\nRUN npm run build\n\nFROM python:3.12-slim\n\nWORKDIR /app\n\nRUN pip install --no-cache-dir fastapi==0.115.0 uvicorn==0.30.6\n\nCOPY backend/ ./backend/\nCOPY --from=frontend-builder /app/frontend/out ./frontend/out\n\nEXPOSE 8000\n\nCMD [\"uvicorn\", \"backend.app.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]",
     "md5": "1e1c7e33a9cc9a0ba2473926daba56b5",
     "validated": true,
-    "validated_at": "2026-11-21T07:21:14Z",
-    "created_at": "2026-11-21T07:21:14Z"
+    "validated_at": "2026-11-21T07:34:42Z",
+    "created_at": "2026-11-21T07:34:42Z"
   },
   "0:finally/backend/app/main.py": {
-    "content": "from pathlib import Path\n\nfrom fastapi import FastAPI\nfrom fastapi.responses import FileResponse\nfrom fastapi.staticfiles import StaticFiles\n\napp = FastAPI(title=\"Polecat\")\n\n_frontend = Path(__file__).resolve().parents[2] / \"frontend\" / \"out\"\n\nif (_frontend / \"_next\").is_dir():\n    app.mount(\"/_next\", StaticFiles(directory=_frontend / \"_next\"), name=\"next-assets\")\n\n\n@app.get(\"/api/health\")\ndef health() -\u003e dict[str, str]:\n    return {\"status\": \"ok\"}\n\n\n@app.get(\"/{path:path}\")\ndef frontend(path: str):\n    requested = _frontend / path\n    if path and requested.is_file():\n        return FileResponse(requested)\n\n    index = _frontend / \"index.html\"\n    if index.is_file():\n        return FileResponse(index)\n\n    return {\"message\": \"Polecat\"}",
-    "md5": "3cf79afb6be8734aba0d3125dcfa5cd9",
+    "content": "from pathlib import Path\n\nfrom fastapi import FastAPI, HTTPException, HTTPException\nfrom fastapi.responses import FileResponse\nfrom fastapi.staticfiles import StaticFiles\n\napp = FastAPI(title=\"Polecat\")\n\n_frontend = Path(__file__).resolve().parents[2] / \"frontend\" / \"out\"\n\nif (_frontend / \"_next\").is_dir():\n    app.mount(\"/_next\", StaticFiles(directory=_frontend / \"_next\"), name=\"next-assets\")\n\n\n@app.get(\"/api/health\")\ndef health() -\u003e dict[str, str]:\n    return {\"status\": \"ok\"}\n\n\n@app.get(\"/{path:path}\")\ndef frontend(path: str):\n    requested = _frontend / path\n    if path and requested.is_file():\n        return FileResponse(requested)\n\n    index = _frontend / \"index.html\"\n    if index.is_file():\n        return FileResponse(index)\n\n    raise HTTPException(status_code=404, detail=\"Frontend export not found\")",
+    "md5": "47e88ff43813b65689360809a2389e87",
     "validated": true,
-    "validated_at": "2026-11-21T07:20:23Z",
-    "created_at": "2026-11-21T07:20:23Z"
+    "validated_at": "2026-11-21T07:34:42Z",
+    "created_at": "2026-11-21T07:34:42Z"
   },
   "0:finally/backend/app/main_test.py": {
-    "content": "import sys\nimport unittest\nfrom pathlib import Path\n\nfrom fastapi.testclient import TestClient\n\nsys.path.insert(0, str(Path(__file__).resolve().parents[1]))\nfrom app.main import app\n\n\nclass HealthEndpointTest(unittest.TestCase):\n    def test_health_endpoint_returns_ok(self):\n        response = TestClient(app).get(\"/api/health\")\n\n        self.assertEqual(response.status_code, 200)\n        self.assertEqual(response.json(), {\"status\": \"ok\"})\n\n\nif __name__ == \"__main__\":\n    unittest.main()",
-    "md5": "b59f7f477e6a9909cb44cdafb6bb17e3",
+    "content": "import sys\nimport tempfile\nimport unittest\nfrom pathlib import Path\nfrom unittest.mock import patch\n\nfrom fastapi.testclient import TestClient\n\nsys.path.insert(0, str(Path(__file__).resolve().parents[1]))\nfrom app.main import app\n\n\nclass HealthEndpointTest(unittest.TestCase):\n    def setUp(self):\n        self.client = TestClient(app)\n\n    def test_health_endpoint_returns_ok(self):\n        response = self.client.get(\"/api/health\")\n\n        self.assertEqual(response.status_code, 200)\n        self.assertEqual(response.json(), {\"status\": \"ok\"})\n\n    def test_root_serves_dashboard_heading_amount_and_all_required_tickers(self):\n        response = self.client.get(\"/\")\n\n        self.assertEqual(response.status_code, 200)\n        self.assertIn(\"Project workspace\", response.text)\n        self.assertIn(\"$10,000\", response.text)\n        for ticker in (\"AAPL\", \"MSFT\", \"GOOGL\", \"AMZN\", \"NVDA\", \"TSLA\", \"META\", \"JPM\", \"V\", \"JNJ\"):\n            with self.subTest(ticker=ticker):\n                self.assertIn(ticker, response.text)\n\n    def test_root_rejects_missing_frontend_export(self):\n        with tempfile.TemporaryDirectory() as directory:\n            with patch(\"app.main._frontend\", Path(directory)):\n                response = self.client.get(\"/\")\n\n        self.assertEqual(response.status_code, 404)\n        self.assertEqual(response.json(), {\"detail\": \"Frontend export not found\"})\n        self.assertNotIn(\"Polecat\", response.text)\n\n\nif __name__ == \"__main__\":\n    unittest.main()",
+    "md5": "0e2685b43c76d30a2401ce74bc4e513a",
     "validated": true,
-    "validated_at": "2026-11-21T07:20:23Z",
-    "created_at": "2026-11-21T07:20:23Z"
+    "validated_at": "2026-11-21T07:34:42Z",
+    "created_at": "2026-11-21T07:34:42Z"
   },
   "0:finally/docker-compose.yml": {
     "content": "services:\n  app:\n    build:\n      context: .\n      dockerfile: Dockerfile\n    ports:\n      - \"8000:8000\"\n    working_dir: /app\n    command: [\"uvicorn\", \"backend.app.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]",
     "md5": "6fc4fbc7831fa0165debc568d7226c8c",
     "validated": true,
-    "validated_at": "2026-11-21T07:22:25Z",
-    "created_at": "2026-11-21T07:22:25Z"
+    "validated_at": "2026-11-21T07:34:42Z",
+    "created_at": "2026-11-21T07:34:42Z"
   },
   "0:finally/frontend/app/globals.css": {
     "content": ":root {\n  --background: #f8fafc;\n  --foreground: #0f172a;\n  --muted: #64748b;\n  --border: #e2e8f0;\n  --accent: #2563eb;\n}\n\n* {\n  box-sizing: border-box;\n}\n\nhtml,\nbody {\n  max-width: 100vw;\n  overflow-x: hidden;\n}\n\nbody {\n  margin: 0;\n  background: var(--background);\n  color: var(--foreground);\n  font-family: Arial, Helvetica, sans-serif;\n}\n\na {\n  color: inherit;\n  text-decoration: none;\n}\n\nbutton,\ninput,\ntextarea {\n  font: inherit;\n}\n\nbutton {\n  cursor: pointer;\n}",
     "md5": "0f077f8280dc853a4bace3a8e6e2adb2",
     "validated": true,
-    "validated_at": "2026-11-21T07:20:23Z",
-    "created_at": "2026-11-21T07:20:23Z"
+    "validated_at": "2026-11-21T07:34:42Z",
+    "created_at": "2026-11-21T07:34:42Z"
   },
   "0:finally/frontend/app/layout.tsx": {
     "content": "import type { Metadata } from \"next\";\nimport \"./globals.css\";\n\nexport const metadata: Metadata = {\n  title: \"Polecat\",\n  description: \"A focused project workspace.\",\n};\n\nexport default function RootLayout({\n  children,\n}: Readonly\u003c{\n  children: React.ReactNode;\n}\u003e) {\n  return (\n    \u003chtml lang=\"en\"\u003e\n      \u003cbody\u003e{children}\u003c/body\u003e\n    \u003c/html\u003e\n  );\n}",
     "md5": "5aa7064840eb674c28c2e9a4a2c7a082",
     "validated": true,
-    "validated_at": "2026-11-21T07:20:23Z",
-    "created_at": "2026-11-21T07:20:23Z"
+    "validated_at": "2026-11-21T07:34:42Z",
+    "created_at": "2026-11-21T07:34:42Z"
   },
   "0:finally/frontend/app/page.tsx": {
-    "content": "export default function HomePage() {\n  return (\n    \u003cmain className=\"page\"\u003e\n      \u003csection className=\"hero\" aria-labelledby=\"page-title\"\u003e\n        \u003cp className=\"eyebrow\"\u003ePolecat\u003c/p\u003e\n        \u003ch1 id=\"page-title\"\u003eProject workspace\u003c/h1\u003e\n        \u003cp className=\"intro\"\u003e\n          A focused workspace for keeping project activity clear, organized, and\n          ready for the next step.\n        \u003c/p\u003e\n      \u003c/section\u003e\n    \u003c/main\u003e\n  );\n}",
-    "md5": "3de7600bb1f1fe43ab8b8e8a5895f353",
+    "content": "export default function HomePage() {\n  return (\n    \u003cmain className=\"page\"\u003e\n      \u003csection className=\"hero\" aria-labelledby=\"page-title\"\u003e\n        \u003cp className=\"eyebrow\"\u003ePolecat\u003c/p\u003e\n        \u003ch1 id=\"page-title\"\u003eProject workspace\u003c/h1\u003e\n        \u003cp className=\"intro\"\u003e\n          A focused workspace for keeping project activity clear, organized, and\n          ready for the next step.\n        \u003c/p\u003e\n        \u003cp\u003e$10,000\u003c/p\u003e\n        \u003cul aria-label=\"Tracked tickers\"\u003e\n          {[\"AAPL\", \"MSFT\", \"GOOGL\", \"AMZN\", \"NVDA\", \"TSLA\", \"META\", \"JPM\", \"V\", \"JNJ\"].map(\n            (ticker) =\u003e \u003cli key={ticker}\u003e{ticker}\u003c/li\u003e\n          )}\n        \u003c/ul\u003e\n      \u003c/section\u003e\n    \u003c/main\u003e\n  );\n}",
+    "md5": "53bd75fd005f7dbfad4ab88848068f53",
     "validated": true,
-    "validated_at": "2026-11-21T07:20:23Z",
-    "created_at": "2026-11-21T07:20:23Z"
+    "validated_at": "2026-11-21T07:34:42Z",
+    "created_at": "2026-11-21T07:34:42Z"
   },
   "0:finally/frontend/next.config.js": {
     "content": "/** @type {import('next').NextConfig} */\nconst nextConfig = {\n  output: \"export\",\n  images: {\n    unoptimized: true\n  }\n};\n\nmodule.exports = nextConfig;",
     "md5": "938c2f439e7de6a0ca939b69ae19fde1",
     "validated": true,
-    "validated_at": "2026-11-21T07:20:23Z",
-    "created_at": "2026-11-21T07:20:23Z"
+    "validated_at": "2026-11-21T07:34:42Z",
+    "created_at": "2026-11-21T07:34:42Z"
   },
   "0:finally/frontend/package.json": {
     "content": "{\n  \"name\": \"polecat-frontend\",\n  \"version\": \"1.0.0\",\n  \"private\": true,\n  \"scripts\": {\n    \"dev\": \"next dev\",\n    \"build\": \"next build\",\n    \"start\": \"next start\"\n  },\n  \"dependencies\": {\n    \"next\": \"14.2.5\",\n    \"react\": \"18.3.1\",\n    \"react-dom\": \"18.3.1\"\n  },\n  \"devDependencies\": {\n    \"@types/node\": \"20.14.12\",\n    \"@types/react\": \"18.3.3\",\n    \"@types/react-dom\": \"18.3.0\",\n    \"typescript\": \"5.5.4\"\n  }\n}\n",
     "md5": "85afb4fe90af0afd3ce9ea693f319410",
     "validated": true,
-    "validated_at": "2026-11-21T07:20:23Z",
-    "created_at": "2026-11-21T07:20:23Z"
+    "validated_at": "2026-11-21T07:34:42Z",
+    "created_at": "2026-11-21T07:34:42Z"
   },
   "0:finally/frontend/tsconfig.json": {
     "content": "{\n  \"compilerOptions\": {\n    \"target\": \"es5\",\n    \"lib\": [\"dom\", \"dom.iterable\", \"esnext\"],\n    \"allowJs\": false,\n    \"skipLibCheck\": true,\n    \"strict\": true,\n    \"noEmit\": true,\n    \"esModuleInterop\": true,\n    \"module\": \"esnext\",\n    \"moduleResolution\": \"bundler\",\n    \"resolveJsonModule\": true,\n    \"isolatedModules\": true,\n    \"jsx\": \"preserve\",\n    \"incremental\": true,\n    \"plugins\": [\n      {\n        \"name\": \"next\"\n      }\n    ]\n  },\n  \"include\": [\"next-env.d.ts\", \".next/types/**/*.ts\", \"**/*.ts\", \"**/*.tsx\"],\n  \"exclude\": [\"node_modules\"]\n}\n",
     "md5": "5c4114667a17758ff248410213bede4b",
     "validated": true,
-    "validated_at": "2026-11-21T07:20:23Z",
-    "created_at": "2026-11-21T07:20:23Z"
+    "validated_at": "2026-11-21T07:34:42Z",
+    "created_at": "2026-11-21T07:34:42Z"
   }
 }

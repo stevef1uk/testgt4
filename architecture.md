@@ -1,4 +1,5 @@
 # Architecture for testgt4
+layout_root: finally
 
 ## Overview
 
@@ -296,7 +297,7 @@ The release harness runs the complete app in the declared compose test environme
 The dependency graph is executable: foundation precedes support, market infrastructure precedes the database engine, market UI precedes trading UI, and both precede chat, polish, and release. Each phase command checks all files it delivers and runs a relevant behavioral check; every phase that delivers frontend source runs `npm run build`. The full release command starts from a clean compose state, uses the real Dockerfile, sets deterministic mock mode, runs Playwright, and removes compose resources on completion. API assertions use the exact SPEC paths and request shapes; browser assertions use roles, text, or test IDs and never bless placeholder output.
 
 ## Docker & Deployment
-The multi-stage image uses node:20-slim for the frontend build stage and python:3.12-slim for the runtime stage. The Node stage installs the dependencies from `finally/frontend/package.json`, runs the production export, and the Python stage copies the resulting `finally/frontend/out/` plus the backend sources and installs the Python requirements. The runtime exposes port 8000 and its Dockerfile instruction is CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]; compose publishes host port 8000 to container port 8000 and mounts the database directory.
+The multi-stage image uses node:20-alpine for the frontend build stage and python:3.12-slim for the runtime stage. The Node stage installs the dependencies from `finally/frontend/package.json`, runs the production export, and the Python stage copies the resulting `finally/frontend/out/` plus the backend sources and installs the Python requirements. The runtime exposes port 8000 and its Dockerfile instruction is CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]; compose publishes host port 8000 to container port 8000 and mounts the database directory.
 
 
 `finally/Dockerfile` uses a Node build stage to produce the default static export at `finally/frontend/out/`, then a Python 3.12/uv runtime stage. It copies that exact export to the runtime location expected by `finally/backend/app/main.py`, exposes port 8000, and runs uvicorn. `finally/docker-compose.yml` provides the single application service, environment loading, port mapping, and persistent `finally/db/` volume. `finally/test/docker-compose.test.yml` builds from the `finally/` root via its compose-relative context, mounts the project for Playwright, sets `BASE_URL` and `LLM_MOCK=true`, checks `/api/health`, and runs the full test command.
@@ -308,3 +309,14 @@ The release tests cover first launch with all ten symbols and cash, live price c
 ## Acceptance mapping
 
 The architecture satisfies the vision through one port and one container, real static dashboard serving, seeded SQLite state, live interchangeable market providers, SSE, manual simulated trading, portfolio visualizations, and structured AI actions. SPEC's visual requirements map to the frontend components and styles; its persistence and validation rules map to the schema and engine; its exact API table maps to route registration; and its mandatory testing strategy maps to explicit unit, component, browser, and Docker release artifacts. No later phase is pulled into foundation, and the foundation now has a concrete test file that directly proves its distinctive real-dashboard exit criterion.
+
+## Design-review corrections
+
+The existing delivery-phase YAML remains the single machine-readable contract; each phase keeps its SPEC identifier, title, ownership, dependencies, and acceptance gate. Required-file entries are repository-relative literals under `finally/`; no wildcard, directory-only, basename-only, or alternate `backend/` and `frontend/` entries are permitted. In particular, the database schema is `finally/backend/db/schema.py` and the marker database directory is `finally/db/.gitkeep`; these are distinct paths and must not be collapsed or exchanged. The frontend and backend files listed in the canonical layout are likewise distinct even when their basenames collide.
+
+The API contract is the SPEC route table already documented above. Route registration and client calls must use those exact HTTP methods, paths, parameter names, response shapes, and SSE content type; no renamed aliases or convenience routes are introduced. The application entrypoint is the only owner of static export fallback and startup, while the API registration module owns API handlers. The root response must come from the built export and must never be replaced by a placeholder when the export is absent.
+
+Docker verification uses the repository root as its working directory and the paths in the Dockerfile are relative to `finally/`: the Node build receives the concrete frontend manifest/config/source files, and the Python image receives `finally/backend/` plus the generated export at `finally/frontend/out/`. Compose exposes only the application service on port 8000 and invokes the same ASGI entrypoint. A Docker acceptance command must build and start that service, exercise the health endpoint and root export, and always remove the temporary container/network while preserving the failing status.
+
+Every `qa_verify_command` in the delivery block is one executable shell command, quoted as one YAML scalar; shell assignments or Python statements are not separate command lines. Commands run from the repository root, use `finally/` paths, and verify the files owned by their phase. Phases delivering frontend source also run the production build, while backend phases run the backend test/import gate; mixed phases run both. This prevents workflow-profile validation from interpreting fragments such as `pf = ...` or `cmd_files = ...` as shell commands and prevents basename collisions from hiding missing deliverables.
+
