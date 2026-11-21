@@ -8,6 +8,14 @@
       "bead_path": "finally/backend/app/main.py",
       "hits": 1,
       "updated_at": "2026-11-21T08:01:28Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Avoid in __init__.py: E AssertionError: Traceback (most recent call last):",
+      "source": "verify_fix",
+      "bead_path": "finally/backend/app/api/__init__.py",
+      "hits": 1,
+      "updated_at": "2026-11-21T08:55:49Z"
     }
   ]
 }
