@@ -1,7 +1,11 @@
 from datetime import datetime
+from pathlib import Path
+import sys
 
-from pydantic import ValidationError
+sys.path.insert(0, str(Path(__file__).parents[2]))
+
 import pytest
+from pydantic import ValidationError
 
 from app.api.schemas import (
     ChatAction,
