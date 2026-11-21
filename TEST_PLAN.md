@@ -1,95 +1,123 @@
-# Test Plan — Polecat
+# Test Plan — FinAlly
 
 ## Requirements → tests
 
 ### project-foundation
-Requirement: The application serves the actual FinAlly dashboard with the required heading, starting amount, ten specified tracked tickers, a healthy API response, and a diagnostic error when the frontend export is unavailable.
+Requirement: Serve the exported FinAlly dashboard, health response, required starting balance and ten tracked tickers, and a documented diagnostic response when the frontend export is unavailable.
 Level: integration
 Test file: finally/backend/app/main_test.py
 Bead ID: te-x44
 Phase: project-foundation
-| Level | Test file | Bead ID | Scenarios | Assertions |
-|---|---|---|---|---|
-| integration | finally/backend/app/main_test.py | te-x44 | GET /api/health returns 200 and decoded JSON {"status":"ok"}; GET / serves the exported dashboard with heading "FinAlly" and "$10,000"; dashboard contains exactly AAPL, GOOGL, MSFT, AMZN, TSLA, NVDA, META, JPM, V, NFLX; missing index.html returns 404 with {"detail":"Frontend export not found"} rather than fallback content. | Assert status codes and decoded JSON values/types; assert heading, amount, and all ten symbols; assert missing-export response excludes stale fallback content. |
-
-
+Scenarios:
+- GET /api/health returns the documented success status and JSON object.
+- GET / serves the exported dashboard containing “FinAlly”, “$10,000”, and AAPL, MSFT, GOOGL, AMZN, NVDA, TSLA, META, JPM, V, and NFLX.
+- When the frontend export is absent, GET / returns the documented diagnostic error response (including its documented detail), without fallback dashboard content; do not require an unsupported status code.
+Assertions:
+- Assert the documented status, decoded JSON values, and value types for health and the missing-export diagnostic.
+- Assert the heading, starting amount, and every required ticker in the dashboard; assert stale fallback content is absent.
 
 ### project-foundation-support
-Requirement: Support artifacts provide environment defaults, lifecycle scripts, CI, the database mount marker, and idempotent SQLite schema initialization with the exact default profile, ten tickers, and $10,000 cash.
+Requirement: Initialize all six SPEC database tables with their documented columns and constraints, and seed the exact default profile, ten tickers, and $10,000 cash idempotently.
 Level: unit
 Test file: finally/backend/db/schema_test.py
 Bead ID: te-s2x
 Phase: project-foundation-support
-| Level | Test file | Bead ID | Scenarios | Assertions |
-|---|---|---|---|---|
-| unit | finally/backend/db/schema_test.py | te-s2x | Initialize fresh SQLite and verify users_profile, watchlist, positions, trades, portfolio_snapshots, and chat_messages with documented columns and constraints; verify one default profile with 10000.0 cash and exactly the ten specified tickers; initialize a second time. | Schema and uniqueness constraints, seed values, and ticker set are exact; repeated initialization succeeds without duplicates and preserves one profile and one row per ticker. |
+Scenarios:
+- Initialize an in-memory SQLite database and verify users_profile, watchlist, positions, trades, portfolio_snapshots, and chat_messages exist with every SPEC-documented column, type/default, primary key, foreign key, uniqueness, and required constraint.
+- Verify the exact users_profile schema and seed row, including the documented profile identity and cash value 10000.0; verify exactly the ten documented watchlist tickers and no extras.
+- Enable/verify foreign keys, exercise the documented relational constraints, and run initialization twice.
+Assertions:
+- Assert sqlite_master/PRAGMA metadata for all six tables, columns, primary keys, foreign keys, and uniqueness/not-null constraints required by SPEC.
+- Assert one exact default profile row with 10000.0 cash, one row for each required ticker, and the documented default values/types.
+- Assert the second initialization succeeds and leaves the same single profile and ticker set without duplicates.
 
 ### core-market-infrastructure
-Requirement: GBM and Massive providers share one interface, selection follows MASSIVE_API_KEY, the cache retains latest/previous/timestamp values, and SSE emits the specified event fields.
-Level: unit
+Requirement: Provide the documented market-data and portfolio/trade API behavior, including validation, persistence, and error handling for the core market infrastructure routes.
+Level: integration
 Test file: finally/backend/tests/test_market_infrastructure.py
 Bead ID: pending
 Phase: core-market-infrastructure
-| Level | Test file | Bead ID | Scenarios | Assertions |
-|---|---|---|---|---|
-| unit | finally/backend/tests/test_market_infrastructure.py | pending | Generate positive GBM prices and parse Massive response into the shared provider shape; select simulator when MASSIVE_API_KEY is absent and Massive when non-empty; update cache twice and serialize SSE event with ticker, price, previous price, timestamp, and direction. | Provider outputs are interchangeable and positive; cache previous equals prior latest; SSE uses event-stream content with every required field. |
+Scenarios:
+- Exercise every SPEC route owned by this phase using the documented request and response shapes.
+- Verify valid market data and portfolio/trade operations cross the HTTP, store, and SQLite boundaries; verify invalid symbols, quantities, and missing records use documented errors.
+Assertions:
+- Assert each documented route status, content type, decoded JSON keys/types, and persisted state.
+- Assert validation and not-found/error responses do not mutate the database.
 
 ### database-portfolio-engine
-Requirement: Portfolio persistence and engine support fractional market orders, validation, average cost, P&L, snapshots, watchlist data, and persistence.
+Requirement: Apply the documented portfolio calculations and transaction rules to persisted positions, trades, cash, and snapshots.
 Level: unit
 Test file: finally/backend/app/portfolio/engine_test.py
 Bead ID: pending
 Phase: database-portfolio-engine
-| Level | Test file | Bead ID | Scenarios | Assertions |
-|---|---|---|---|---|
-| unit | finally/backend/app/portfolio/engine_test.py | pending | Buy and sell fractional shares and verify cash, quantity, and weighted average cost; reject insufficient-cash buys and excessive sells without mutation; calculate current value and unrealized P&L, record immediate snapshots, and reopen database. | Balances, positions, average cost, P&L, trade history, and snapshots match documented calculations; portfolio, trade, and history routes are registered and use the engine. |
+Scenarios:
+- Calculate holdings, cash, totals, and performance from the documented positions and trades, including empty and multi-position portfolios.
+- Apply buys, sells, insufficient-cash/holdings rejection, and snapshot persistence according to the SPEC rules.
+Assertions:
+- Assert exact numeric results and rounding/types required by SPEC.
+- Assert rejected transactions leave balances, positions, and trade history unchanged; assert accepted transactions update each required table consistently.
 
 ### watchlist-market-ui
-Requirement: Watchlist UI renders seeded symbols and prices, consumes SSE updates, accumulates sparklines, selects charts, flashes direction, manages CRUD, and shows connection status.
+Requirement: Let users view the documented market/watchlist data and perform the specified watchlist interactions in the dashboard UI.
 Level: ui
 Test file: finally/test/watchlist-market-ui.spec.ts
 Bead ID: pending
 Phase: watchlist-market-ui
-| Level | Test file | Bead ID | Scenarios | Assertions |
-|---|---|---|---|---|
-| ui | finally/test/watchlist-market-ui.spec.ts | pending | Render ten seeded tickers and prices, observe SSE price update, sparkline point, and green/red flash; select tickers, add PYPL, remove a ticker, reject duplicate AAPL, and observe connection status. | Browser observes real symbols, changed prices, chart selection, sparkline elements, CRUD results, and connected/reconnecting state. |
+Scenarios:
+- Load the running dashboard and verify the required watchlist symbols and market values are rendered.
+- Add/remove or otherwise perform each documented watchlist interaction, including the documented invalid/empty state.
+Assertions:
+- Assert visible controls, symbols, values, loading/error states, and accessible labels from the SPEC.
+- Assert the UI sends the documented request and reflects the persisted result without showing stale data.
 
 ### portfolio-visualisation-trading
-Requirement: Trading UI executes market orders and displays immediate cash/position changes, validation errors, positions, P&L, heatmap, and history chart data.
+Requirement: Render the documented portfolio visualisations and support the specified trading flow with the documented validation and result states.
 Level: ui
 Test file: finally/test/portfolio-visualisation-trading.spec.ts
 Bead ID: pending
 Phase: portfolio-visualisation-trading
-| Level | Test file | Bead ID | Scenarios | Assertions |
-|---|---|---|---|---|
-| ui | finally/test/portfolio-visualisation-trading.spec.ts | pending | Buy and sell AAPL shares, then verify immediate cash and position changes; reject insufficient-cash and excessive-sell orders without changing state; render positions, P&L, heatmap rectangles with P&L colors, and history chart data. | Successful and rejected trade values match API results; visualizations contain resulting portfolio data. |
+Scenarios:
+- Render portfolio value/holdings visualisations from the documented API data, including empty and populated states.
+- Submit valid buy/sell orders and exercise invalid quantity, symbol, and insufficient-funds/holdings cases.
+Assertions:
+- Assert charts/summary values and labels correspond to decoded API values.
+- Assert successful trades update cash, holdings, and history; assert rejected trades show the documented error and do not change displayed state.
 
 ### ai-trading-assistant
-Requirement: Chat returns validated structured actions, supports deterministic mock mode, persists messages, executes valid actions, rejects invalid actions, and recovers from provider errors.
+Requirement: Provide the documented assistant interaction, persistence, and response/error behavior.
 Level: integration
 Test file: finally/backend/tests/test_chat.py
 Bead ID: pending
 Phase: ai-trading-assistant
-| Level | Test file | Bead ID | Scenarios | Assertions |
-|---|---|---|---|---|
-| integration | finally/backend/tests/test_chat.py | pending | POST /api/chat returns message, trades, and watchlist_changes with documented types; identical LLM_MOCK requests produce equal decoded JSON; valid actions persist and use engine validation; malformed/provider failures return usable error without corrupting state, with ChatAssistant.test.tsx covering loading and inline confirmations. | Response keys/types, persistence, deterministic mock output, valid changes, and unchanged state after rejected actions are verified. |
+Scenarios:
+- Submit a valid assistant message and retrieve the documented chat response/history shape.
+- Verify empty/invalid messages and the documented unavailable-provider/error path.
+Assertions:
+- Assert documented status, content type, decoded JSON keys/types, and persisted chat message fields.
+- Assert invalid or provider-error requests return the documented diagnostic without creating an invalid assistant record.
 
 ### application-polish
-Requirement: Polish provides the dark terminal palette, responsive layout, animations, loading/error/empty states, accessible labels, notifications, and stable streaming.
+Requirement: Meet the documented application-wide responsive, accessible, navigation, loading, and error-state behavior.
 Level: ui
 Test file: finally/test/application-polish.spec.ts
 Bead ID: pending
 Phase: application-polish
-| Level | Test file | Bead ID | Scenarios | Assertions |
-|---|---|---|---|---|
-| ui | finally/test/application-polish.spec.ts | pending | Check dark palette, responsive layout, price transitions, loading indicators, and stable streaming; exercise empty, error, notification, and accessible-control states. | Computed styles match specified palette and real dashboard remains visible; state text/styles and accessible names communicate loading, errors, empty results, notifications, and outcomes. |
+Scenarios:
+- Exercise the documented primary navigation and dashboard flows at supported viewport sizes.
+- Verify loading, empty, API-error, and responsive/accessibility states for the shipped screens.
+Assertions:
+- Assert required navigation targets, visible page landmarks, keyboard-accessible controls, and responsive layout behavior.
+- Assert user-visible errors and loading indicators are present and stale/placeholder content is not presented as live data.
 
 ### testing-release
-Requirement: Dockerized Playwright release testing runs with LLM_MOCK=true, healthcheck, real-content assertions, and complete end-to-end coverage.
+Requirement: Run the documented release validation and test strategy across backend, frontend, integration, and required artifact checks.
 Level: integration
 Test file: finally/test/e2e.spec.ts
 Bead ID: pending
 Phase: testing-release
-| Level | Test file | Bead ID | Scenarios | Assertions |
-|---|---|---|---|---|
-| integration | finally/test/e2e.spec.ts | pending | Compose builds and starts app with LLM_MOCK=true, healthchecks /api/health, and runs Playwright with declared Chromium project; fresh dashboard covers heading, ten tickers, prices, connection status, and $10,000; browser flows cover watchlist CRUD, streaming/reconnection, navigation, trading validation, portfolio visualizations, chat actions, and happy path. | Tests assert real content and changed values rather than status/placeholders; Compose preserves Playwright failure status and cleans up resources. |
+Scenarios:
+- Run the documented backend and frontend test commands against a clean checkout and verify the required release artifacts.
+- Exercise the documented end-to-end smoke path from dashboard load through market data, portfolio/trade, and assistant surfaces.
+Assertions:
+- Assert all required test suites and artifact checks exit successfully.
+- Assert the smoke path completes with documented statuses and decoded payloads, with no missing required file or unhandled error.
