@@ -26,7 +26,15 @@
       "finally/backend/app/api/__init__.py",
       "finally/backend/app/api/schemas.py",
       "finally/test/e2e.spec.ts",
-      "finally/.github/workflows/ci.yml",
+      "finally/backend/app/main_test.py",
+      "finally/backend/tests/test_chat.py",
+      "finally/backend/db/schema.py",
+      "finally/backend/app/market/gbm.py",
+      "finally/backend/app/market/massive.py",
+      "finally/backend/app/market/cache.py",
+      "finally/backend/app/market/sse.py",
+      "finally/backend/app/portfolio/engine.py",
+      "finally/backend/tests/test_market_infrastructure.py",
       "finally/frontend/package.json",
       "finally/frontend/tsconfig.json",
       "finally/frontend/next.config.js",
@@ -34,34 +42,28 @@
       "finally/frontend/app/layout.tsx",
       "finally/frontend/app/page.tsx",
       "finally/frontend/app/globals.css",
+      "finally/frontend/app/polish.css",
       "finally/frontend/components/Header.tsx",
       "finally/frontend/components/Sidebar.tsx",
       "finally/frontend/components/MarketOverview.tsx",
-      "finally/frontend/components/PortfolioSummary.tsx",
       "finally/frontend/components/Watchlist.tsx",
-      "finally/frontend/components/TradingPanel.tsx",
       "finally/frontend/components/PriceChart.tsx",
+      "finally/frontend/components/PortfolioSummary.tsx",
+      "finally/frontend/components/TradingPanel.tsx",
       "finally/frontend/components/ChatAssistant.tsx",
       "finally/frontend/components/ChatAssistant.test.tsx",
-      "finally/backend/db/schema.py",
-      "finally/backend/app/portfolio/engine.py",
-      "finally/backend/app/market/gbm.py",
-      "finally/backend/app/market/massive.py",
-      "finally/backend/app/market/cache.py",
-      "finally/backend/app/market/sse.py",
-      "finally/backend/tests/test_market_infrastructure.py",
       "finally/test/watchlist-market-ui.spec.ts",
       "finally/test/portfolio-visualisation-trading.spec.ts",
-      "finally/frontend/app/polish.css",
-      "finally/test/application-polish.spec.ts"
+      "finally/test/application-polish.spec.ts",
+      "finally/.github/workflows/ci.yml"
     ],
     "delivery_phases": [
       {
         "id": "project-foundation",
         "title": "Project Foundation",
         "required_files": [
-          "finally/planning/PLAN.md",
           "finally/backend/app/main.py",
+          "finally/backend/app/main_test.py",
           "finally/frontend/package.json",
           "finally/frontend/tsconfig.json",
           "finally/frontend/next.config.js",
@@ -71,13 +73,21 @@
           "finally/Dockerfile",
           "finally/docker-compose.yml"
         ],
-        "qa_verify_command": "test -f finally/planning/PLAN.md && test -f finally/backend/app/main.py && test -f finally/frontend/package.json && test -f finally/frontend/tsconfig.json && test -f finally/frontend/next.config.js && test -f finally/frontend/app/layout.tsx && test -f finally/frontend/app/page.tsx && test -f finally/frontend/app/globals.css && test -f finally/Dockerfile && test -f finally/docker-compose.yml && docker compose -f finally/docker-compose.yml build",
+        "qa_verify_command": "test -f finally/backend/app/main.py && test -f finally/backend/app/main_test.py && test -f finally/frontend/package.json && test -f finally/frontend/tsconfig.json && test -f finally/frontend/next.config.js && test -f finally/frontend/app/layout.tsx && test -f finally/frontend/app/page.tsx && test -f finally/frontend/app/globals.css && test -f finally/Dockerfile && test -f finally/docker-compose.yml && PYTHONPATH=finally/backend python -m pytest finally/backend/app/main_test.py && (cd finally/frontend && npm run build)",
         "spec_focus": "Project Foundation",
         "file_dependencies": {
           "finally/Dockerfile": [
             "finally/backend/app/main.py",
             "finally/frontend/package.json",
             "finally/frontend/next.config.js",
+            "finally/frontend/app/page.tsx"
+          ],
+          "finally/backend/app/main.py": [
+            "finally/frontend/app/page.tsx",
+            "finally/frontend/app/layout.tsx"
+          ],
+          "finally/backend/app/main_test.py": [
+            "finally/backend/app/main.py",
             "finally/frontend/app/page.tsx"
           ],
           "finally/frontend/app/layout.tsx": [
@@ -97,6 +107,7 @@
         "id": "project-foundation-support",
         "title": "Project Foundation Support",
         "required_files": [
+          "finally/planning/PLAN.md",
           "finally/scripts/start_mac.sh",
           "finally/scripts/stop_mac.sh",
           "finally/scripts/start_windows.ps1",
@@ -107,7 +118,7 @@
           "finally/db/.gitkeep",
           "finally/backend/db/schema.py"
         ],
-        "qa_verify_command": "test -f finally/scripts/start_mac.sh && test -f finally/scripts/stop_mac.sh && test -f finally/scripts/start_windows.ps1 && test -f finally/scripts/stop_windows.ps1 && test -f finally/.env && test -f finally/.gitignore && test -f finally/.github/workflows/ci.yml && test -f finally/db/.gitkeep && test -f finally/backend/db/schema.py",
+        "qa_verify_command": "test -f finally/planning/PLAN.md && test -f finally/scripts/start_mac.sh && test -f finally/scripts/stop_mac.sh && test -f finally/scripts/start_windows.ps1 && test -f finally/scripts/stop_windows.ps1 && test -f finally/.env && test -f finally/.gitignore && test -f finally/.github/workflows/ci.yml && test -f finally/db/.gitkeep && test -f finally/backend/db/schema.py",
         "depends_on": [
           "project-foundation"
         ],
@@ -131,7 +142,7 @@
           "finally/backend/app/market/massive.py",
           "finally/backend/app/market/gbm.py"
         ],
-        "qa_verify_command": "test -f finally/.env && test -f finally/.gitignore && test -f finally/backend/app/api/__init__.py && test -f finally/backend/app/api/schemas.py && test -f finally/frontend/next-env.d.ts && test -f finally/backend/app/market/gbm.py && test -f finally/backend/app/market/massive.py && test -f finally/backend/app/market/cache.py && test -f finally/backend/app/market/sse.py && test -f finally/backend/tests/test_market_infrastructure.py && PYTHONPATH=finally/backend python -m pytest finally/backend/tests/test_market_infrastructure.py && (cd finally/frontend && npm run build)",
+        "qa_verify_command": "test -f finally/backend/app/api/__init__.py && test -f finally/backend/app/api/schemas.py && test -f finally/frontend/next-env.d.ts && test -f finally/backend/tests/test_market_infrastructure.py && PYTHONPATH=finally/backend python -m pytest finally/backend/tests/test_market_infrastructure.py && (cd finally/frontend && npm run build)",
         "depends_on": [
           "project-foundation-support"
         ],
@@ -168,7 +179,13 @@
         "depends_on": [
           "core-market-infrastructure"
         ],
-        "spec_focus": "Database & Portfolio Engine"
+        "spec_focus": "Database & Portfolio Engine",
+        "file_dependencies": {
+          "finally/backend/app/portfolio/engine.py": [
+            "finally/backend/db/schema.py",
+            "finally/backend/app/market/cache.py"
+          ]
+        }
       },
       {
         "id": "watchlist-market-ui",
@@ -181,7 +198,7 @@
           "finally/frontend/components/PriceChart.tsx",
           "finally/test/watchlist-market-ui.spec.ts"
         ],
-        "qa_verify_command": "test -f finally/frontend/components/Header.tsx && test -f finally/frontend/components/Sidebar.tsx && test -f finally/frontend/components/MarketOverview.tsx && test -f finally/frontend/components/Watchlist.tsx && test -f finally/frontend/components/PriceChart.tsx && PYTHONPATH=finally/backend python -c \"from app.main import create_app; p={r.path for r in create_app().routes}; assert \\\"/api/watchlist\\\" in p and \\\"/api/watchlist/{ticker}\\\" in p\"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build)",
+        "qa_verify_command": "test -f finally/frontend/components/Header.tsx && test -f finally/frontend/components/Sidebar.tsx && test -f finally/frontend/components/MarketOverview.tsx && test -f finally/frontend/components/Watchlist.tsx && test -f finally/frontend/components/PriceChart.tsx && test -f finally/test/watchlist-market-ui.spec.ts && (cd finally/frontend && npm run build)",
         "depends_on": [
           "database-portfolio-engine"
         ],
@@ -195,9 +212,6 @@
           ],
           "finally/frontend/components/PriceChart.tsx": [
             "finally/frontend/app/page.tsx"
-          ],
-          "finally/frontend/components/Sidebar.tsx": [
-            "finally/frontend/app/layout.tsx"
           ],
           "finally/frontend/components/Watchlist.tsx": [
             "finally/frontend/app/page.tsx"
@@ -216,7 +230,7 @@
           "finally/frontend/components/TradingPanel.tsx",
           "finally/test/portfolio-visualisation-trading.spec.ts"
         ],
-        "qa_verify_command": "test -f finally/frontend/components/PortfolioSummary.tsx && test -f finally/frontend/components/TradingPanel.tsx && PYTHONPATH=finally/backend python -c \"from app.main import create_app; assert any(r.path == \\\"/api/portfolio/trade\\\" for r in create_app().routes)\"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build)",
+        "qa_verify_command": "test -f finally/frontend/components/PortfolioSummary.tsx && test -f finally/frontend/components/TradingPanel.tsx && test -f finally/test/portfolio-visualisation-trading.spec.ts && PYTHONPATH=finally/backend python -c \"from app.main import create_app; assert any(r.path == \\\"/api/portfolio/trade\\\" for r in create_app().routes)\" && (cd finally/frontend && npm run build)",
         "depends_on": [
           "watchlist-market-ui"
         ],
@@ -239,14 +253,19 @@
         "title": "AI Trading Assistant",
         "required_files": [
           "finally/frontend/components/ChatAssistant.tsx",
-          "finally/frontend/components/ChatAssistant.test.tsx"
+          "finally/frontend/components/ChatAssistant.test.tsx",
+          "finally/backend/tests/test_chat.py"
         ],
-        "qa_verify_command": "test -f finally/frontend/components/ChatAssistant.tsx && test -f finally/frontend/components/ChatAssistant.test.tsx && PYTHONPATH=finally/backend python -c \"from app.main import create_app; assert any(r.path == \\\"/api/chat\\\" for r in create_app().routes)\"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build)",
+        "qa_verify_command": "test -f finally/frontend/components/ChatAssistant.tsx && test -f finally/frontend/components/ChatAssistant.test.tsx && test -f finally/backend/tests/test_chat.py && PYTHONPATH=finally/backend python -m pytest finally/backend/tests/test_chat.py && PYTHONPATH=finally/backend python -c \"from app.main import create_app; assert any(r.path == \\\"/api/chat\\\" for r in create_app().routes)\" && (cd finally/frontend && npm run build)",
         "depends_on": [
           "portfolio-visualisation-trading"
         ],
         "spec_focus": "AI Trading Assistant",
         "file_dependencies": {
+          "finally/backend/tests/test_chat.py": [
+            "finally/backend/app/main.py",
+            "finally/backend/app/portfolio/engine.py"
+          ],
           "finally/frontend/components/ChatAssistant.tsx": [
             "finally/frontend/app/page.tsx"
           ]
@@ -259,11 +278,19 @@
           "finally/frontend/app/polish.css",
           "finally/test/application-polish.spec.ts"
         ],
-        "qa_verify_command": "PYTHONPATH=finally/backend python -c \"from app.main import create_app; assert create_app() is not None\"",
+        "qa_verify_command": "test -f finally/frontend/app/polish.css && test -f finally/test/application-polish.spec.ts && (cd finally/frontend && npm run build)",
         "depends_on": [
           "ai-trading-assistant"
         ],
-        "spec_focus": "Application Polish"
+        "spec_focus": "Application Polish",
+        "file_dependencies": {
+          "finally/frontend/app/polish.css": [
+            "finally/frontend/app/globals.css"
+          ],
+          "finally/test/application-polish.spec.ts": [
+            "finally/frontend/app/polish.css"
+          ]
+        }
       },
       {
         "id": "testing-release",

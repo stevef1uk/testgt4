@@ -2,35 +2,28 @@
 
 ## Overview
 
-FinAlly is a single-origin AI trading workstation matching SPEC. Next.js
-TypeScript is exported statically and served by FastAPI in one container on
-port 8000. SQLite is persistent, market prices use a simulator by default or
-Massive when configured, SSE provides live prices, and Playwright verifies
-real rendered behavior. The initial database contains AAPL, GOOGL, MSFT,
-AMZN, TSLA, NVDA, META, JPM, V, NFLX and $10,000 cash. Missing exported
-HTML is an error, never a placeholder.
+FinAlly is a single-origin AI trading workstation. The design follows SPEC exactly: a static-export Next.js TypeScript dashboard is built into `finally/frontend/out/`, and FastAPI serves that export and the REST/SSE API from port 8000. SQLite is the persistent single-user store, initialized lazily with the ten specified tickers and $10,000 cash. The market provider is selected by environment: deterministic/in-process GBM simulation by default, or Massive REST polling when its key is present. LiteLLM/OpenRouter structured responses power chat, with deterministic `LLM_MOCK=true` behavior.
+
+The backend owns persistence, validation, portfolio calculations, market-provider coordination, SSE, chat orchestration, and static serving. The frontend owns rendering, EventSource lifecycle, local sparkline history, chart selection, trade controls, portfolio visualizations, and chat interaction. The Docker image is multi-stage (Node build followed by Python runtime); the compose and scripts are convenience and test harness integration, not a second runtime service. No placeholder HTML is permitted: the root route reads the real exported index and returns an error if it is absent.
 
 ## Planned file layout
 
-All paths use the `finally/` layout root.
+Every implementation and test artifact is enumerated below. `finally/backend/app/main_test.py` is an explicit foundation integration test, added because the foundation exit criterion tests real root content rather than merely file existence. `finally/backend/tests/test_chat.py` is the backend chat contract test used alongside the frontend chat test.
+The planning contract is `finally/planning/PLAN.md`.
 
 - `finally/planning/PLAN.md`
-- `finally/.github/workflows/ci.yml`
-- `finally/scripts/start_mac.sh`
-- `finally/scripts/stop_mac.sh`
-- `finally/scripts/start_windows.ps1`
-- `finally/scripts/stop_windows.ps1`
-- `finally/db/.gitkeep`
-- `finally/.env`
-- `finally/.gitignore`
 - `finally/backend/app/main.py`
+- `finally/backend/app/main_test.py`
 - `finally/backend/app/api/__init__.py`
 - `finally/backend/app/api/schemas.py`
-- `finally/test/playwright.config.ts`
-- `finally/test/e2e.spec.ts`
-- `finally/Dockerfile`
-- `finally/docker-compose.yml`
-- `finally/test/docker-compose.test.yml`
+- `finally/backend/db/schema.py`
+- `finally/backend/app/market/gbm.py`
+- `finally/backend/app/market/massive.py`
+- `finally/backend/app/market/cache.py`
+- `finally/backend/app/market/sse.py`
+- `finally/backend/app/portfolio/engine.py`
+- `finally/backend/tests/test_market_infrastructure.py`
+- `finally/backend/tests/test_chat.py`
 - `finally/frontend/package.json`
 - `finally/frontend/tsconfig.json`
 - `finally/frontend/next.config.js`
@@ -38,31 +31,80 @@ All paths use the `finally/` layout root.
 - `finally/frontend/app/layout.tsx`
 - `finally/frontend/app/page.tsx`
 - `finally/frontend/app/globals.css`
+- `finally/frontend/app/polish.css`
 - `finally/frontend/components/Header.tsx`
 - `finally/frontend/components/Sidebar.tsx`
 - `finally/frontend/components/MarketOverview.tsx`
-- `finally/frontend/components/PortfolioSummary.tsx`
 - `finally/frontend/components/Watchlist.tsx`
-- `finally/frontend/components/TradingPanel.tsx`
 - `finally/frontend/components/PriceChart.tsx`
+- `finally/frontend/components/PortfolioSummary.tsx`
+- `finally/frontend/components/TradingPanel.tsx`
 - `finally/frontend/components/ChatAssistant.tsx`
 - `finally/frontend/components/ChatAssistant.test.tsx`
-- `finally/backend/db/schema.py`
-- `finally/backend/app/portfolio/engine.py`
-- `finally/backend/app/market/gbm.py`
-- `finally/backend/app/market/massive.py`
-- `finally/backend/app/market/cache.py`
-- `finally/backend/app/market/sse.py`
-- `finally/backend/tests/test_market_infrastructure.py`
 - `finally/test/watchlist-market-ui.spec.ts`
 - `finally/test/portfolio-visualisation-trading.spec.ts`
-- `finally/frontend/app/polish.css`
 - `finally/test/application-polish.spec.ts`
+- `finally/test/playwright.config.ts`
+- `finally/test/e2e.spec.ts`
+- `finally/test/docker-compose.test.yml`
+- `finally/Dockerfile`
+- `finally/docker-compose.yml`
+- `finally/scripts/start_mac.sh`
+- `finally/scripts/stop_mac.sh`
+- `finally/scripts/start_windows.ps1`
+- `finally/scripts/stop_windows.ps1`
+- `finally/.env`
+- `finally/.gitignore`
+- `finally/.github/workflows/ci.yml`
+- `finally/db/.gitkeep`
 
-Additional frontend, backend, unit-test, page-object, and fixture files are
-owned by their implementing phases under `finally/frontend/`,
-`finally/backend/`, and `finally/test/`. Generated `finally/frontend/out/`
-and runtime `finally/db/finally.db` are outputs, not handwritten deliverables.
+## Module / bead ownership
+
+| File | Owns exported symbols and responsibilities | Must not define |
+|---|---|---|
+| `finally/backend/app/main.py` | `create_app(...) -> FastAPI`, health/root/static wiring, provider lifecycle | Database schema SQL, UI markup, duplicate route implementations |
+| `finally/backend/app/api/__init__.py` | FastAPI route registration/factory helpers for canonical API paths | A second application entrypoint or divergent paths |
+| `finally/backend/app/api/schemas.py` | Pydantic request/response models for watchlist, portfolio, trade, history, and chat contracts | Persistence or market polling |
+| `finally/backend/db/schema.py` | SQLite initialization, idempotent tables, and exact default seed values | HTTP handlers or frontend state |
+| `finally/backend/app/market/gbm.py` | GBM simulator/provider interface and seeded-price generation | Database writes or SSE formatting |
+| `finally/backend/app/market/massive.py` | Massive REST adapter implementing the same provider interface | Portfolio calculations |
+| `finally/backend/app/market/cache.py` | Latest/previous/timestamp price cache and provider selection support | Browser rendering |
+| `finally/backend/app/market/sse.py` | `/api/stream/prices` event generator and SSE response | Trade authorization or HTML |
+| `finally/backend/app/portfolio/engine.py` | Position, cash, market-order, P&L, snapshot, watchlist, and chat persistence operations | React components or provider-specific polling |
+| `finally/frontend/app/page.tsx` | Dashboard composition and client state boundary | Python/API server |
+| `finally/frontend/app/layout.tsx` | Metadata, document shell, global styles | Feature-specific trading logic |
+| `finally/frontend/components/Header.tsx` | Header cash/value/status presentation | API route definitions |
+| `finally/frontend/components/Sidebar.tsx` | Terminal/sidebar layout and chat placement | Portfolio mutation rules |
+| `finally/frontend/components/MarketOverview.tsx` | Market panel composition | SQLite access |
+| `finally/frontend/components/Watchlist.tsx` | Watchlist rows, CRUD controls, flash classes, sparkline data | Server-side price generation |
+| `finally/frontend/components/PriceChart.tsx` | Selected ticker history visualization | Trade execution |
+| `finally/frontend/components/PortfolioSummary.tsx` | Positions, heatmap, P&L chart, live totals | API validation |
+| `finally/frontend/components/TradingPanel.tsx` | Market-order form and error/result presentation | Direct database access |
+| `finally/frontend/components/ChatAssistant.tsx` | Chat history, loading state, structured action confirmations | LLM provider calls |
+| `finally/frontend/components/ChatAssistant.test.tsx` | Component tests for rendering/loading/action confirmations | Production components |
+| the concrete browser test files listed below | Browser-level behavior and real-content assertions | Unit implementation |
+
+Python public contracts use typed functions/classes and Pydantic models; TypeScript components use typed props and event callbacks. The engine is the sole owner of transaction validation: buys require sufficient cash, sells require sufficient shares, and every successful trade records a trade and immediate portfolio snapshot.
+
+## HTTP + entrypoint integration
+
+The canonical routes are exactly those in SPEC:
+
+| Method | Path | Contract |
+|---|---|---|
+| GET | `/api/stream/prices` | SSE events containing ticker, price, previous price, timestamp, and change direction |
+| GET | `/api/portfolio` | Current positions, cash balance, total value, and unrealized P&L |
+| POST | `/api/portfolio/trade` | Accepts `{ticker, quantity, side}` and executes a market order |
+| GET | `/api/portfolio/history` | Portfolio value snapshots |
+| GET | `/api/watchlist` | Watchlist tickers with latest prices |
+| POST | `/api/watchlist` | Accepts `{ticker}` and adds it |
+| DELETE | `/api/watchlist/{ticker}` | Removes the ticker |
+| POST | `/api/chat` | Complete JSON response containing `message` and executed actions |
+| GET | `/api/health` | Deployment health success response |
+
+`finally/backend/app/main.py` exposes `create_app(...) -> FastAPI`. The entrypoint reads configuration, establishes the SQLite path, initializes schema lazily/on startup, creates the cache and selected provider, passes those dependencies into route registration, starts/stops the background market task, mounts API routes before the static fallback, and serves `finally/frontend/out/index.html` at root. The root handler uses the SPEC path calculation and returns a diagnostic server error if that file is absent; it never synthesizes placeholder HTML. The Docker command runs the app on port 8000. EventSource clients reconnect natively and the frontend maps connection state to the required green/yellow/red indicator.
+
+Portfolio and chat routes call the engine and schemas, never duplicate arithmetic. Chat loads recent conversation, portfolio/watchlist context, invokes LiteLLM through the specified OpenRouter model/provider contract unless `LLM_MOCK=true`, validates structured trades and watchlist changes through the same engine, persists user/assistant messages, and returns complete JSON.
 
 ## Delivery phases
 
@@ -72,8 +114,8 @@ delivery_phases:
     title: Project Foundation
     spec_focus: Project Foundation
     required_files:
-      - finally/planning/PLAN.md
       - finally/backend/app/main.py
+      - finally/backend/app/main_test.py
       - finally/frontend/package.json
       - finally/frontend/tsconfig.json
       - finally/frontend/next.config.js
@@ -82,17 +124,21 @@ delivery_phases:
       - finally/frontend/app/globals.css
       - finally/Dockerfile
       - finally/docker-compose.yml
-    qa_verify_command: 'test -f finally/planning/PLAN.md && test -f finally/backend/app/main.py && test -f finally/frontend/package.json && test -f finally/frontend/tsconfig.json && test -f finally/frontend/next.config.js && test -f finally/frontend/app/layout.tsx && test -f finally/frontend/app/page.tsx && test -f finally/frontend/app/globals.css && test -f finally/Dockerfile && test -f finally/docker-compose.yml && docker compose -f finally/docker-compose.yml build'
+    qa_verify_command: 'test -f finally/backend/app/main.py && test -f finally/backend/app/main_test.py && test -f finally/frontend/package.json && test -f finally/frontend/tsconfig.json && test -f finally/frontend/next.config.js && test -f finally/frontend/app/layout.tsx && test -f finally/frontend/app/page.tsx && test -f finally/frontend/app/globals.css && test -f finally/Dockerfile && test -f finally/docker-compose.yml && PYTHONPATH=finally/backend python -m pytest finally/backend/app/main_test.py && (cd finally/frontend && npm run build)'
     depends_on: []
     file_dependencies:
-      finally/frontend/next.config.js: [finally/frontend/package.json, finally/frontend/tsconfig.json]
+      finally/backend/app/main.py: [finally/frontend/app/page.tsx, finally/frontend/app/layout.tsx]
+      finally/backend/app/main_test.py: [finally/backend/app/main.py, finally/frontend/app/page.tsx]
+      finally/Dockerfile: [finally/backend/app/main.py, finally/frontend/package.json, finally/frontend/next.config.js, finally/frontend/app/page.tsx]
       finally/frontend/app/layout.tsx: [finally/frontend/next.config.js, finally/frontend/app/globals.css]
       finally/frontend/app/page.tsx: [finally/frontend/app/layout.tsx]
-      finally/Dockerfile: [finally/backend/app/main.py, finally/frontend/package.json, finally/frontend/next.config.js, finally/frontend/app/page.tsx]
+      finally/frontend/next.config.js: [finally/frontend/package.json, finally/frontend/tsconfig.json]
   - id: project-foundation-support
+
     title: Project Foundation Support
     spec_focus: Project Foundation
     required_files:
+      - finally/planning/PLAN.md
       - finally/scripts/start_mac.sh
       - finally/scripts/stop_mac.sh
       - finally/scripts/start_windows.ps1
@@ -102,7 +148,7 @@ delivery_phases:
       - finally/.github/workflows/ci.yml
       - finally/db/.gitkeep
       - finally/backend/db/schema.py
-    qa_verify_command: 'test -f finally/scripts/start_mac.sh && test -f finally/scripts/stop_mac.sh && test -f finally/scripts/start_windows.ps1 && test -f finally/scripts/stop_windows.ps1 && test -f finally/.env && test -f finally/.gitignore && test -f finally/.github/workflows/ci.yml && test -f finally/db/.gitkeep && test -f finally/backend/db/schema.py'
+    qa_verify_command: 'test -f finally/planning/PLAN.md && test -f finally/scripts/start_mac.sh && test -f finally/scripts/stop_mac.sh && test -f finally/scripts/start_windows.ps1 && test -f finally/scripts/stop_windows.ps1 && test -f finally/.env && test -f finally/.gitignore && test -f finally/.github/workflows/ci.yml && test -f finally/db/.gitkeep && test -f finally/backend/db/schema.py'
     depends_on: [project-foundation]
     file_dependencies:
       finally/backend/db/schema.py: [finally/db/.gitkeep]
@@ -118,12 +164,12 @@ delivery_phases:
       - finally/backend/app/market/cache.py
       - finally/backend/app/market/massive.py
       - finally/backend/app/market/gbm.py
-    qa_verify_command: 'test -f finally/.env && test -f finally/.gitignore && test -f finally/backend/app/api/__init__.py && test -f finally/backend/app/api/schemas.py && test -f finally/frontend/next-env.d.ts && test -f finally/backend/app/market/gbm.py && test -f finally/backend/app/market/massive.py && test -f finally/backend/app/market/cache.py && test -f finally/backend/app/market/sse.py && test -f finally/backend/tests/test_market_infrastructure.py && PYTHONPATH=finally/backend python -m pytest finally/backend/tests/test_market_infrastructure.py && (cd finally/frontend && npm run build)' 
+    qa_verify_command: 'test -f finally/backend/app/api/__init__.py && test -f finally/backend/app/api/schemas.py && test -f finally/frontend/next-env.d.ts && test -f finally/backend/tests/test_market_infrastructure.py && PYTHONPATH=finally/backend python -m pytest finally/backend/tests/test_market_infrastructure.py && (cd finally/frontend && npm run build)'
     depends_on: [project-foundation-support]
     file_dependencies:
+      finally/backend/app/market/cache.py: [finally/backend/app/main.py]
       finally/backend/app/market/gbm.py: [finally/backend/app/main.py]
       finally/backend/app/market/massive.py: [finally/backend/app/main.py]
-      finally/backend/app/market/cache.py: [finally/backend/app/main.py]
       finally/backend/app/market/sse.py: [finally/backend/app/main.py, finally/backend/app/market/cache.py]
       finally/backend/tests/test_market_infrastructure.py: [finally/backend/app/market/gbm.py, finally/backend/app/market/massive.py, finally/backend/app/market/cache.py, finally/backend/app/market/sse.py]
   - id: database-portfolio-engine
@@ -133,6 +179,8 @@ delivery_phases:
       - finally/backend/app/portfolio/engine.py
     qa_verify_command: 'PYTHONPATH=finally/backend python -c "from app.main import create_app; p={r.path for r in create_app().routes}; assert {\"/api/portfolio\", \"/api/portfolio/trade\", \"/api/portfolio/history\"} <= p"'
     depends_on: [core-market-infrastructure]
+    file_dependencies:
+      finally/backend/app/portfolio/engine.py: [finally/backend/db/schema.py, finally/backend/app/market/cache.py]
   - id: watchlist-market-ui
     title: Watchlist & Market UI
     spec_focus: Watchlist & Market UI
@@ -143,11 +191,10 @@ delivery_phases:
       - finally/frontend/components/Watchlist.tsx
       - finally/frontend/components/PriceChart.tsx
       - finally/test/watchlist-market-ui.spec.ts
-    qa_verify_command: 'test -f finally/frontend/components/Header.tsx && test -f finally/frontend/components/Sidebar.tsx && test -f finally/frontend/components/MarketOverview.tsx && test -f finally/frontend/components/Watchlist.tsx && test -f finally/frontend/components/PriceChart.tsx && PYTHONPATH=finally/backend python -c "from app.main import create_app; p={r.path for r in create_app().routes}; assert \"/api/watchlist\" in p and \"/api/watchlist/{ticker}\" in p"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build)'
+    qa_verify_command: 'test -f finally/frontend/components/Header.tsx && test -f finally/frontend/components/Sidebar.tsx && test -f finally/frontend/components/MarketOverview.tsx && test -f finally/frontend/components/Watchlist.tsx && test -f finally/frontend/components/PriceChart.tsx && test -f finally/test/watchlist-market-ui.spec.ts && (cd finally/frontend && npm run build)'
     depends_on: [database-portfolio-engine]
     file_dependencies:
       finally/frontend/components/Header.tsx: [finally/frontend/app/layout.tsx]
-      finally/frontend/components/Sidebar.tsx: [finally/frontend/app/layout.tsx]
       finally/frontend/components/MarketOverview.tsx: [finally/frontend/app/page.tsx]
       finally/frontend/components/Watchlist.tsx: [finally/frontend/app/page.tsx]
       finally/frontend/components/PriceChart.tsx: [finally/frontend/app/page.tsx]
@@ -159,7 +206,7 @@ delivery_phases:
       - finally/frontend/components/PortfolioSummary.tsx
       - finally/frontend/components/TradingPanel.tsx
       - finally/test/portfolio-visualisation-trading.spec.ts
-    qa_verify_command: 'test -f finally/frontend/components/PortfolioSummary.tsx && test -f finally/frontend/components/TradingPanel.tsx && PYTHONPATH=finally/backend python -c "from app.main import create_app; assert any(r.path == \"/api/portfolio/trade\" for r in create_app().routes)"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build)'
+    qa_verify_command: 'test -f finally/frontend/components/PortfolioSummary.tsx && test -f finally/frontend/components/TradingPanel.tsx && test -f finally/test/portfolio-visualisation-trading.spec.ts && PYTHONPATH=finally/backend python -c "from app.main import create_app; assert any(r.path == \"/api/portfolio/trade\" for r in create_app().routes)" && (cd finally/frontend && npm run build)'
     depends_on: [watchlist-market-ui]
     file_dependencies:
       finally/frontend/components/PortfolioSummary.tsx: [finally/frontend/app/page.tsx]
@@ -171,18 +218,23 @@ delivery_phases:
     required_files:
       - finally/frontend/components/ChatAssistant.tsx
       - finally/frontend/components/ChatAssistant.test.tsx
-    qa_verify_command: 'test -f finally/frontend/components/ChatAssistant.tsx && test -f finally/frontend/components/ChatAssistant.test.tsx && PYTHONPATH=finally/backend python -c "from app.main import create_app; assert any(r.path == \"/api/chat\" for r in create_app().routes)"  && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build) && (cd finally/frontend && npm run build)'
+      - finally/backend/tests/test_chat.py
+    qa_verify_command: 'test -f finally/frontend/components/ChatAssistant.tsx && test -f finally/frontend/components/ChatAssistant.test.tsx && test -f finally/backend/tests/test_chat.py && PYTHONPATH=finally/backend python -m pytest finally/backend/tests/test_chat.py && PYTHONPATH=finally/backend python -c "from app.main import create_app; assert any(r.path == \"/api/chat\" for r in create_app().routes)" && (cd finally/frontend && npm run build)'
     depends_on: [portfolio-visualisation-trading]
     file_dependencies:
       finally/frontend/components/ChatAssistant.tsx: [finally/frontend/app/page.tsx]
+      finally/backend/tests/test_chat.py: [finally/backend/app/main.py, finally/backend/app/portfolio/engine.py]
   - id: application-polish
     title: Application Polish
     spec_focus: Application Polish
     required_files:
       - finally/frontend/app/polish.css
       - finally/test/application-polish.spec.ts
-    qa_verify_command: 'PYTHONPATH=finally/backend python -c "from app.main import create_app; assert create_app() is not None"'
+    qa_verify_command: 'test -f finally/frontend/app/polish.css && test -f finally/test/application-polish.spec.ts && (cd finally/frontend && npm run build)'
     depends_on: [ai-trading-assistant]
+    file_dependencies:
+      finally/frontend/app/polish.css: [finally/frontend/app/globals.css]
+      finally/test/application-polish.spec.ts: [finally/frontend/app/polish.css]
   - id: testing-release
     title: Testing & Release
     spec_focus: Testing & Release
@@ -193,163 +245,66 @@ delivery_phases:
     qa_verify_command: 'docker compose -f finally/test/docker-compose.test.yml down --remove-orphans && docker compose -f finally/test/docker-compose.test.yml build --no-cache && docker compose -f finally/test/docker-compose.test.yml up --exit-code-from playwright'
     depends_on: [application-polish]
     file_dependencies:
-      finally/test/playwright.config.ts: [finally/test/e2e.spec.ts]
       finally/test/docker-compose.test.yml: [finally/docker-compose.yml, finally/Dockerfile, finally/test/playwright.config.ts]
+      finally/test/playwright.config.ts: [finally/test/e2e.spec.ts]
 ```
 
 ## Requirements
 
 ### project-foundation
-This phase owns the cross-platform launch and shutdown scripts, environment loading from finally/.env, repository hygiene in finally/.gitignore, the SQLite marker and schema initialization in finally/db/.gitkeep and finally/backend/db/schema.py, and CI linting in finally/.github/workflows/ci.yml. These foundation assets are intentionally delivered before market infrastructure or portfolio behavior; later phases consume the initialized database rather than owning its bootstrap.
 
-Deliver the runnable repository skeleton, planning document, Next.js export,
-FastAPI/uv project, SQLite initialization boundary, Docker files, scripts,
-environment loading, and health endpoint. `GET /` must serve actual
-`finally/frontend/out/index.html` containing the Market Dashboard heading,
-ten default tickers with prices, and $10,000 cash. Scripts must be idempotent,
-resolve their own directory, retain the database volume, and preserve errors.
+The foundation delivers a buildable Next.js export, FastAPI factory and root/health behavior, Docker and compose runtime, planning document, and the explicit test `finally/backend/app/main_test.py`. Its test must assert `/api/health` succeeds and root content is the actual dashboard: heading, all ten required ticker symbols, and `$10,000`; it must reject missing export/error behavior rather than accept placeholder HTML. The production frontend build and foundation pytest command are the phase gate.
 
 ### project-foundation-support
-This continuation of Project Foundation owns the cross-platform launch and
-shutdown scripts, environment loading, repository hygiene, CI linting, the
-SQLite runtime marker, and schema initialization. It is a foundation-only
-batch that completes every Phase 1 deliverable before market behavior begins.
 
-Scripts resolve their own location, are idempotent, preserve the database
-volume, and return failures. The environment and CI files are configuration
-artifacts consumed by the runnable skeleton and later verification.
+Support files provide environment defaults, idempotent cross-platform lifecycle scripts, CI configuration, runtime `finally/db/` mount marker, and SQLite schema/seed initialization. The schema must be safe to initialize repeatedly and seed the exact user, watchlist, and cash specified by SPEC. The phase check confirms every declared support artifact exists after the foundation dependency.
 
 ### core-market-infrastructure
 
-Define one interface for a GBM simulator and Massive REST provider. Select
-Massive only when MASSIVE_API_KEY is non-empty. Maintain latest and previous
-prices, timestamps, and direction in a shared cache. `GET /api/stream/prices`
-is an SSE stream of those values; EventSource reconnects automatically.
+The market layer defines one provider shape implemented by GBM and Massive, chooses by `MASSIVE_API_KEY`, stores latest/previous/timestamp values in one cache, and drives a background task. SSE emits the specified fields at approximately the simulator cadence, while the frontend-facing protocol permits reconnect and status changes. `finally/backend/tests/test_market_infrastructure.py` verifies valid GBM prices, Massive parsing, provider interchangeability, cache behavior, and SSE event shape; the phase also runs a production frontend build.
 
 ### database-portfolio-engine
 
-Lazily create users_profile, watchlist, positions, trades,
-portfolio_snapshots, and chat_messages in SQLite with user_id `"default"`.
-Seed ten tickers and 10000.0 cash. Use parameterized transactions; support
-fractional market orders, cash/share validation, immediate position updates,
-and snapshots after trades and periodically. Persistence survives restarts.
+The engine and schema deliver lazy SQLite initialization, default data, fractional market orders, cash/share validation, average cost, unrealized P&L, history snapshots, and persistence. The exact portfolio route paths are registered and backed by the same engine used by manual and AI trades. Acceptance checks route registration plus executable engine behavior without moving UI scope into this phase.
 
 ### watchlist-market-ui
 
-Implement `GET /api/watchlist`, `POST /api/watchlist`, and
-`DELETE /api/watchlist/{ticker}`. Render a dark desktop-first dashboard with
-live prices, green/red flash transitions, accumulated sparklines, a selected
-ticker chart, responsive layout, and green/yellow/red connection status.
-Add, remove, and duplicate behavior must be visible.
+The market UI consumes the exact watchlist routes and EventSource path, renders the ten seeded symbols and prices, accumulates per-symbol sparkline points, selects the detailed chart, flashes green/red on direction, and exposes header connection status. Add/remove operations and duplicate handling are visible user flows. `finally/test/watchlist-market-ui.spec.ts` uses browser assertions for rendered symbols, updates, controls, and chart content; the production build is required.
 
 ### portfolio-visualisation-trading
 
-Implement `GET /api/portfolio`, `POST /api/portfolio/trade`, and
-`GET /api/portfolio/history` with SPEC schemas. Render trade controls,
-positions, portfolio summary, P&L heatmap, and value-history chart. Buy and
-sell are instant fee-free market orders; failed validation is atomic.
+The trading UI calls the exact trade route and displays validation errors, immediate cash/position changes, positions table, P&L values, heatmap rectangles colored by P&L, and history chart data. `finally/test/portfolio-visualisation-trading.spec.ts` covers buy, sell, insufficient cash, excessive sell, visual output, and snapshot behavior through the running application. The build and route check are both required.
 
 ### ai-trading-assistant
-The assistant component is delivered with focused interaction coverage in `finally/frontend/components/ChatAssistant.test.tsx`; the phase gate must run that test together with the frontend production build.
 
-Implement `POST /api/chat` returning message, trades, and watchlist_changes.
-Construct portfolio-aware prompts and use LiteLLM via OpenRouter with the
-specified Cerebras model and structured output. LLM_MOCK=true is deterministic.
-Validate and auto-execute actions through shared services and persist history.
+The backend and frontend implement the exact `/api/chat` complete JSON contract: message plus executed trades/watchlist changes. LiteLLM uses the specified OpenRouter/Cerebras model arrangement, structured output is validated, actions use engine validation, messages persist, provider errors recover, and `LLM_MOCK=true` is deterministic. `finally/backend/tests/test_chat.py` is the explicit backend test path for this phase, covering contract, mock repeatability, persistence, and rejected actions; `finally/frontend/components/ChatAssistant.test.tsx` covers loading and inline confirmations. The production build and route check gate delivery.
 
 ### application-polish
-Application-polish verification is owned by `finally/test/application-polish.spec.ts`. It must exercise the responsive layout at narrow and wide viewports, assert accessible names and keyboard focus order, and verify that a market/API failure renders a recoverable error state rather than a blank or misleading panel. The polish phase owns this test alongside `finally/frontend/app/polish.css`; release remains responsible for the full-suite harness and broader end-to-end regression.
 
-Complete dark terminal styling, animations, loading and empty states,
-notifications, accessible controls, responsive behavior, and recovery for
-API, SSE, and chat failures while retaining real rendered data.
+Polish applies the SPEC dark terminal palette, responsive layout, animations, loading/error/empty states, accessible labels, notifications, and streaming stability without changing route contracts. `finally/test/application-polish.spec.ts` checks real rendered styles and interaction states in a browser, and the production build proves the delivered stylesheet is included.
 
 ### testing-release
 
-Provide backend unit/API tests, frontend component tests, and the mandatory
-Playwright Page Objects and scenarios in SPEC. Cover seeded content, live
-prices, SSE reconnect, watchlist CRUD, trading validation, charts, heatmap,
-mock chat actions, navigation, and the full MVP journey. Assertions must
-check real headings, ticker text, prices, cash, portfolio values, or chat
-content, never placeholder text.
-
-## Module / bead ownership
-
-| File | Owns | Must not define |
-|---|---|---|
-| `finally/backend/app/main.py` | `create_app(...) -> FastAPI`, module `app`, lifecycle and static serving | duplicate routes or schemas |
-| `finally/backend/app/api/__init__.py` | `router` and canonical route registration | Docker startup or database schema |
-| `finally/backend/app/api/schemas.py` | Pydantic request/response contracts | route handlers or persistence |
-| `finally/planning/PLAN.md` | shared phase notes and agent contract | runtime behavior |
-| `finally/test/playwright.config.ts` | Playwright configuration | production UI behavior |
-| `finally/test/e2e.spec.ts` | release smoke assertions | server implementation |
-
-## Rework ownership additions
-
-The core-market-infrastructure phase owns the market behavior seams as concrete implementation and test paths: `finally/backend/app/market/gbm.py` provides deterministic geometric-Brownian-motion simulation, `finally/backend/app/market/massive.py` provides the configured Massive provider with fallback/error handling, `finally/backend/app/market/cache.py` owns bounded quote caching and expiry, and `finally/backend/app/market/sse.py` owns the streaming response and disconnect cleanup. Their behavioral regression coverage is owned by `finally/backend/tests/test_market_infrastructure.py`, including GBM validity, provider normalization, cache expiry, and SSE event framing.
-
-The watchlist-market-ui phase owns browser coverage in `finally/test/watchlist-market-ui.spec.ts`; it must assert rendered market rows, symbol selection, watchlist state, and live-price refresh rather than only checking source files. The portfolio-visualisation-trading phase owns browser coverage in `finally/test/portfolio-visualisation-trading.spec.ts`; it must assert portfolio values, chart rendering, order validation, and the visible post-trade state. These tests remain phase deliverables alongside their production components.
-
-
-## HTTP + entrypoint integration
-
-The exact SPEC API paths are `GET /api/stream/prices`,
-`GET /api/portfolio`, `POST /api/portfolio/trade`,
-`GET /api/portfolio/history`, `GET /api/watchlist`, `POST /api/watchlist`,
-`DELETE /api/watchlist/{ticker}`, `POST /api/chat`, and `GET /api/health`.
-`create_app()` initializes providers, registers the router exactly once, serves
-the real `finally/frontend/out/index.html` at `GET /`, and returns a diagnostic
-error if it is absent. The module-level `app` is the ASGI target on
-0.0.0.0:8000.
+The release harness runs the complete app in the declared compose test environment with `LLM_MOCK=true`, healthchecks on `/api/health`, and Playwright on the required project. `finally/test/playwright.config.ts` defines the Docker-managed base URL, retries, timeout, Chromium project, and reporters; `finally/test/e2e.spec.ts` asserts real dashboard content and the required watchlist, trading, portfolio, chat, SSE, navigation, and happy-path behavior. The compose build/run command is the final gate and must preserve failure exit codes while cleaning containers.
 
 ## Unit tests
 
-Backend tests cover GBM, Massive normalization, provider selection, cache and
-SSE payloads, schema/seed initialization, trade math, snapshots, route shapes,
-errors, and structured chat parsing. Frontend tests cover dashboard rendering,
-SSE state, flash classes, watchlist CRUD, trade state, charts, heatmap,
-chat loading, and accessibility. Tests isolate SQLite and use LLM_MOCK=true
-for network-free behavior.
+`finally/backend/tests/test_market_infrastructure.py` tests provider math, parsing, cache, and stream serialization. `finally/backend/app/main_test.py` tests foundation HTTP wiring and real static content. `finally/backend/tests/test_chat.py` tests structured chat parsing, mock determinism, persistence, and action validation. `finally/frontend/components/ChatAssistant.test.tsx` tests component rendering, loading, assistant messages, and action confirmations. Browser tests remain integration/UI tests and must assert content rather than status alone.
 
 ## Integration and testing
 
-Verification runs from the repository root. Compose cleanup is in a trap or
-finally path and preserves the original exit status. The release harness
-builds the real image, waits for `GET /api/health`, runs Playwright in its own
-container, and checks user-visible content. BASE_URL defaults to
-http://localhost:8000 and the browser project is chromium.
+The dependency graph is executable: foundation precedes support, market infrastructure precedes the database engine, market UI precedes trading UI, and both precede chat, polish, and release. Each phase command checks all files it delivers and runs a relevant behavioral check; every phase that delivers frontend source runs `npm run build`. The full release command starts from a clean compose state, uses the real Dockerfile, sets deterministic mock mode, runs Playwright, and removes compose resources on completion. API assertions use the exact SPEC paths and request shapes; browser assertions use roles, text, or test IDs and never bless placeholder output.
 
 ## Docker & Deployment
+The multi-stage image uses node:20-slim for the frontend build stage and python:3.12-slim for the runtime stage. The Node stage installs the dependencies from `finally/frontend/package.json`, runs the production export, and the Python stage copies the resulting `finally/frontend/out/` plus the backend sources and installs the Python requirements. The runtime exposes port 8000 and its Dockerfile instruction is CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]; compose publishes host port 8000 to container port 8000 and mounts the database directory.
 
-`finally/Dockerfile` is a two-stage build. The frontend stage uses
-`node:20-slim`, copies the Next.js project under `finally/frontend/`, runs
-`npm install --ignore-scripts`, and runs `npm run build` with
-`output: "export"` to produce `finally/frontend/out/`. The runtime stage uses
-`python:3.12-slim`, installs uv, copies `finally/backend/` with project
-metadata and lockfile, runs `uv sync --frozen`, and copies the generated
-export into the runtime image. Node tooling is absent at runtime.
 
-The image exposes TCP port 8000 and runs
-`CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]`.
-`finally/docker-compose.yml` maps host port 8000 to container port 8000,
-loads `finally/.env`, mounts persistent database storage, and health-checks
-http://localhost:8000/api/health. `finally/test/docker-compose.test.yml` uses
-the project root as build context, mounts it into Playwright, sets
-LLM_MOCK=true, and runs the release suite against the app service.
+`finally/Dockerfile` uses a Node build stage to produce the default static export at `finally/frontend/out/`, then a Python 3.12/uv runtime stage. It copies that exact export to the runtime location expected by `finally/backend/app/main.py`, exposes port 8000, and runs uvicorn. `finally/docker-compose.yml` provides the single application service, environment loading, port mapping, and persistent `finally/db/` volume. `finally/test/docker-compose.test.yml` builds from the `finally/` root via its compose-relative context, mounts the project for Playwright, sets `BASE_URL` and `LLM_MOCK=true`, checks `/api/health`, and runs the full test command.
 
 ## E2E / integration testing
 
-The Playwright harness uses Page Objects for dashboard, watchlist, trade,
-portfolio, and chat and uses role, text, or test-ID selectors. It asserts all
-ten tickers, $10,000, prices, connection status, watchlist changes, price
-flashes, sparklines, buy/sell state, validation errors, visualizations,
-mocked chat execution, SSE reconnection, navigation, and the complete happy
-path. Every SPEC UI feature has behavioral browser evidence.
+The release tests cover first launch with all ten symbols and cash, live price changes and SSE reconnection, watchlist add/remove/duplicate behavior, market buy/sell and validation, portfolio table/heatmap/P&L chart, chat response and executed actions, selected ticker navigation, dark styling, and the full happy path. Tests must observe actual DOM content and changed values. The test harness remains under `finally/test/`; it is a required delivery artifact even though it orchestrates the production container.
 
 ## Acceptance mapping
 
-The design follows the SPEC dependency flow from foundation through market
-infrastructure, persistence, market UI, trading, AI, polish, and release. It
-preserves exact HTTP paths, static-export behavior, SQLite persistence, seeded
-data, provider selection, deterministic mock mode, cross-platform scripts,
-Docker port and command, and real-content E2E evidence.
+The architecture satisfies the vision through one port and one container, real static dashboard serving, seeded SQLite state, live interchangeable market providers, SSE, manual simulated trading, portfolio visualizations, and structured AI actions. SPEC's visual requirements map to the frontend components and styles; its persistence and validation rules map to the schema and engine; its exact API table maps to route registration; and its mandatory testing strategy maps to explicit unit, component, browser, and Docker release artifacts. No later phase is pulled into foundation, and the foundation now has a concrete test file that directly proves its distinctive real-dashboard exit criterion.
