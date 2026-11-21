@@ -1,4 +1,17 @@
 export default function HomePage() {
+  const tickers = [
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "AMZN",
+    "NVDA",
+    "TSLA",
+    "META",
+    "JPM",
+    "V",
+    "JNJ",
+  ];
+
   return (
     <main className="page">
       <section className="hero" aria-labelledby="page-title">
@@ -10,9 +23,9 @@ export default function HomePage() {
         </p>
         <p>$10,000</p>
         <ul aria-label="Tracked tickers">
-          {["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA", "META", "JPM", "V", "JNJ"].map(
-            (ticker) => <li key={ticker}>{ticker}</li>
-          )}
+          {tickers.map((ticker) => (
+            <li key={ticker}>{ticker}</li>
+          ))}
         </ul>
       </section>
     </main>
