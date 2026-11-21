@@ -27,14 +27,6 @@
     },
     {
       "stack": "python",
-      "rule": "Avoid in __init__.py: E AssertionError: assert set() == {'/api/chat',.../prices', ...}",
-      "source": "verify_fix",
-      "bead_path": "finally/backend/app/api/__init__.py",
-      "hits": 1,
-      "updated_at": "2026-11-21T11:04:45Z"
-    },
-    {
-      "stack": "python",
       "rule": "Avoid in __init__.py: E ModuleNotFoundError: No module named 'app'",
       "source": "verify_fix",
       "bead_path": "finally/backend/app/api/__init__.py",
@@ -48,6 +40,22 @@
       "bead_path": "finally/backend/app/main_test.py",
       "hits": 1,
       "updated_at": "2026-11-21T14:29:28Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Avoid in schemas.py: E ModuleNotFoundError: No module named 'schemas'",
+      "source": "verify_fix",
+      "bead_path": "finally/backend/app/api/schemas.py",
+      "hits": 1,
+      "updated_at": "2026-11-21T15:46:11Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Avoid in __init__.py: E AssertionError: assert set() == {'/api/chat',.../prices', ...}",
+      "source": "verify_fix",
+      "bead_path": "finally/backend/app/api/__init__.py",
+      "hits": 2,
+      "updated_at": "2026-11-21T16:03:13Z"
     }
   ]
 }

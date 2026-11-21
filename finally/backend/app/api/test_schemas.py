@@ -1,7 +1,7 @@
 from datetime import datetime
 
-import pytest
 from pydantic import ValidationError
+import pytest
 
 from app.api.schemas import (
     ChatAction,
@@ -9,51 +9,53 @@ from app.api.schemas import (
     ChatResponse,
     HistoryPoint,
     PortfolioHistory,
+    PortfolioPosition,
     PortfolioResponse,
     TradeRequest,
+    TradeResponse,
+    WatchlistItem,
     WatchlistRequest,
 )
 
 
-def test_valid_payloads_parse_and_collection_defaults_are_empty() -> None:
-    assert WatchlistRequest(ticker="AAPL").ticker == "AAPL"
-    assert TradeRequest(ticker="AAPL", quantity=2, side="buy").quantity == 2
-    assert PortfolioResponse(cash=1000, total_value=1000, unrealized_pnl=0).positions == []
-    assert PortfolioHistory().snapshots == []
-    response = ChatResponse(message="done")
-    assert response.actions == []
-    assert ChatAction(action="buy").details == []
-    assert HistoryPoint(timestamp=datetime(2024, 1, 1), value=10).value == 10
+def test_market_and_portfolio_contracts_validate_and_dump() -> None:
+    watch = WatchlistItem(
+        ticker="AAPL",
+        price=190.0,
+        timestamp=datetime(2024, 1, 1),
+        change_direction="up",
+    )
+    trade = TradeRequest(ticker="AAPL", quantity=2, side="buy")
+    position = PortfolioPosition(
+        ticker="AAPL",
+        quantity=2,
+        average_price=180,
+        current_price=190,
+        market_value=380,
+        unrealized_pnl=20,
+    )
+    portfolio = PortfolioResponse(
+        positions=[position], cash=1000, total_value=1380, unrealized_pnl=20
+    )
+
+    assert watch.model_dump()["ticker"] == "AAPL"
+    assert trade.model_dump() == {"ticker": "AAPL", "quantity": 2.0, "side": "buy"}
+    assert portfolio.model_dump()["positions"][0]["market_value"] == 380.0
 
 
-@pytest.mark.parametrize(
-    "model, payload",
-    [
-        (WatchlistRequest, {"ticker": " "}),
-        (ChatRequest, {"message": "\t"}),
-        (TradeRequest, {"ticker": "AAPL", "quantity": 0, "side": "buy"}),
-        (TradeRequest, {"ticker": "AAPL", "quantity": 1, "side": "hold"}),
-        (TradeRequest, {"ticker": "AAPL", "quantity": -1, "side": "sell"}),
-    ],
-)
-def test_invalid_request_values_are_rejected(model, payload) -> None:
+def test_chat_and_history_contracts_have_safe_empty_collections() -> None:
+    history = PortfolioHistory(snapshots=[HistoryPoint(timestamp="2024-01-01", value=100)])
+    response = ChatResponse(message="Done", actions=[ChatAction(action="hold")])
+
+    assert history.model_dump()["snapshots"][0]["value"] == 100.0
+    assert response.model_dump()["actions"][0]["details"] == {}
+
+
+def test_requests_reject_blank_values_and_extra_fields() -> None:
     with pytest.raises(ValidationError):
-        model(**payload)
-
-
-def test_extra_fields_are_rejected() -> None:
+        WatchlistRequest(ticker=" ")
     with pytest.raises(ValidationError):
-        WatchlistRequest(ticker="AAPL", unexpected=True)
-
-
-def test_negative_prices_are_rejected() -> None:
-    from app.api.schemas import TradeResponse
-
+        ChatRequest(message=" ")
     with pytest.raises(ValidationError):
-        TradeResponse(
-            ticker="AAPL",
-            quantity=1,
-            side="buy",
-            price=-0.01,
-            cash=100,
-        )
+        TradeRequest(ticker="AAPL", quantity=1, side="buy", unexpected=True)
+

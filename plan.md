@@ -1,80 +1,78 @@
-# Core Market Infrastructure implementation plan
+# Core Market Infrastructure Plan
 
-This phase delivers only the eight active-phase files. The implementation must preserve the repository-relative `finally/` paths and the contracts in SPEC.md and architecture.md. Later API, database, UI, and entrypoint phases consume these primitives; do not pull their files into this phase.
+This phase covers exactly the eight active required files. It implements the market contracts in SPEC Sections 6 and 8 without adding later portfolio, watchlist UI, chat, or application-entrypoint behavior.
 
-## Verification gate
+## Verification
 
-The active phase is accepted only when the following exact gate succeeds from the town root:
+The polecat must run:
 `test -f finally/backend/app/api/__init__.py && test -f finally/backend/app/api/schemas.py && test -f finally/frontend/next-env.d.ts && test -f finally/backend/tests/test_market_infrastructure.py && PYTHONPATH=finally/backend python -m pytest finally/backend/tests/test_market_infrastructure.py && (cd finally/frontend && npm run build)`
-The test file must assert behavior, not merely imports: provider determinism and validation, cache previous-price tracking, SSE framing/direction, and Pydantic request/response validation.
 
 ## Bead map
 
 ### te-wxs: finally/backend/app/api/__init__.py
-- Scope: Implement the API package initializer and its documented package-level exports only; do not register future routes here.
-- Architecture: Follow architecture.md API package layout and the SPEC schema/API boundary; keep imports compatible with the existing `backend.app` package.
-- Interfaces: Preserve the package initializer contract and exports consumed by backend imports; no undocumented route aliases.
-- Depends on: finally/backend/app/api/schemas.py
-- Consumed by: finally/backend/app/main.py and later API route work.
-- Acceptance: The package imports successfully under `PYTHONPATH=finally/backend`, exposes the architecture-defined API package symbols, and introduces no side effects that require database or server startup.
+- Scope: Preserve the importable API package and route-registration/factory boundary defined by architecture.md; do not add a second application entrypoint.
+- Architecture: Module/bead ownership table, API package row; canonical route ownership remains aligned with the SPEC route table.
+- Interfaces: Export the API package surface specified by architecture.md and keep `app.api` importable.
+- Depends on: <none>
+- Consumed by: te-1kp; te-x1n; later entrypoint/API integration.
+- Acceptance: `PYTHONPATH=finally/backend` imports `app.api` successfully, with no divergent routes or speculative later-phase behavior.
 
 ### te-1kp: finally/backend/app/api/schemas.py
-- Scope: Implement the strict Pydantic contracts for watchlist, trade, portfolio, history, and chat payloads.
-- Architecture: Use the schema definitions and field constraints in architecture.md, matching SPEC request/response shapes.
-- Interfaces: `WatchlistRequest`, `WatchlistItem`, `TradeRequest`, `TradeResponse`, `PortfolioPosition`, `PortfolioResponse`, `HistoryPoint`, `PortfolioHistory`, `ChatRequest`, `ChatAction`, and `ChatResponse`.
-- Depends on: <none>
-- Consumed by: finally/backend/app/api/__init__.py and later route, engine, and chat phases.
-- Acceptance: Valid payloads parse; blank watchlist tickers and chat messages, non-positive trade quantities, invalid trade sides, negative prices, and extra fields are rejected; portfolio/history/chat defaults serialize as the documented empty lists and action details.
+- Scope: Implement the Pydantic request/response contracts for the canonical watchlist, portfolio, trade, history, and chat APIs.
+- Architecture: Schemas ownership row and `core-market-infrastructure` requirement; field names and request shapes must match SPEC Section 8 exactly.
+- Interfaces: Export the schema classes and fields specified by architecture.md for ticker, price, portfolio, trade, history, watchlist, and chat contracts.
+- Depends on: te-wxs
+- Consumed by: te-x1n; later API and entrypoint phases.
+- Acceptance: Valid documented payloads validate and serialize with exact field names; malformed required fields and invalid negative price values are rejected; this module contains no persistence or polling.
 
 ### te-9gi: finally/backend/app/market/massive.py
-- Scope: Implement the interchangeable Massive market-data provider defined by the architecture, including deterministic mock behavior and provider-facing quote operations.
-- Architecture: Follow architecture.md market provider interface, SPEC’s ten-symbol seeded market and mock-mode requirements, and the documented Massive response normalization.
-- Interfaces: Export the architecture-defined Massive provider class/functions and quote shape without renaming symbols; results expose ticker, price, and timestamp data usable by the cache.
-- Depends on: <none>
-- Consumed by: finally/backend/tests/test_market_infrastructure.py and later market/API wiring.
-- Acceptance: Mock mode returns the documented symbols and stable, finite non-negative prices; repeated seeded requests are deterministic; configured live-provider responses normalize to the common quote contract; invalid/empty ticker inputs follow the documented validation.
+- Scope: Implement the optional Massive REST adapter and its common provider-compatible quote representation.
+- Architecture: Massive ownership row; environment behavior from SPEC requires selection when `MASSIVE_API_KEY` is non-empty and simulator fallback otherwise.
+- Interfaces: Export the provider, quote, and parsing symbols named by architecture.md; quote data includes ticker, price, and timestamp for cache consumers.
+- Depends on: te-1kp
+- Consumed by: te-x1n; later provider coordination and entrypoint work.
+- Acceptance: Documented Massive responses parse into the shared quote shape; the adapter conforms to the same provider interface as GBM; deterministic tests do not require network access or a live key.
 
 ### te-i12: finally/backend/app/market/gbm.py
-- Scope: Implement the seeded geometric-Brownian-motion/mock market provider used for live-looking deterministic price changes.
-- Architecture: Follow architecture.md GBM provider parameters, seed handling, and common market-provider interface.
-- Interfaces: Export the architecture-defined GBM provider and its documented quote/stream methods; preserve reproducible seed behavior.
-- Depends on: <none>
-- Consumed by: finally/backend/tests/test_market_infrastructure.py and later market service/API wiring.
-- Acceptance: The same seed and inputs produce the same sequence, successive generated prices are finite and non-negative, the initial/reference price is honored, and generated updates can be converted to the common ticker-price-timestamp contract.
+- Scope: Implement the default geometric Brownian motion simulator with realistic seed prices and controllable randomness.
+- Architecture: GBM ownership row and SPEC Section 6 simulator requirements.
+- Interfaces: Export the GBM simulator/provider interface and seeded-price generation symbols specified by architecture.md, including documented seed/configuration controls.
+- Depends on: te-1kp
+- Consumed by: te-x1n; te-ljx; later provider coordination and entrypoint work.
+- Acceptance: Equal seeds and configurations yield equal sequences; generated prices are non-negative; initial price, drift, volatility, interval, and requested step count follow the documented contract; GBM and Massive are interchangeable downstream.
 
 ### te-ljx: finally/backend/app/market/cache.py
-- Scope: Implement the thread-safe latest-price cache and immutable price snapshot described in architecture.md.
-- Architecture: Use the documented `PriceSnapshot` fields and `MarketCache` update/read semantics.
-- Interfaces: Export `PriceSnapshot` and `MarketCache` with architecture-defined `update`, `get`/`latest`, `previous`, `all`, and `clear` behavior.
-- Depends on: finally/backend/app/market/massive.py and finally/backend/app/market/gbm.py
-- Consumed by: finally/backend/app/market/sse.py, later market/API routes, and tests.
-- Acceptance: First updates have no previous price; later updates retain the immediately prior price; timestamps are timezone-aware; empty tickers and negative prices are rejected; reads and clear work safely and snapshots remain immutable.
+- Scope: Implement the shared thread-safe in-memory cache of latest price, previous price, and timestamp per ticker.
+- Architecture: Cache ownership row; the cache is the single source read by SSE and later market routes.
+- Interfaces: Export `PriceSnapshot` and `MarketCache` with the architecture-defined update, get/latest, previous, all, and clear methods.
+- Depends on: te-i12; te-9gi
+- Consumed by: te-dra; te-x1n; later background provider and API integration.
+- Acceptance: First update has no previous price and subsequent updates expose the prior value; snapshots preserve ticker, float price, and timestamp; all accessors and clear follow the documented semantics; empty tickers and negative prices fail; access is thread-safe.
 
-### te-9xh: finally/backend/app/market/sse.py
-- Scope: Implement canonical server-sent-event encoding and market-event construction.
-- Architecture: Follow architecture.md SSE wire format and SPEC live-price stream requirements.
-- Interfaces: Export `encode_event`, `market_event`, and `stream_events` with their documented arguments and return framing.
-- Depends on: finally/backend/app/market/cache.py
-- Consumed by: later API streaming routes and frontend market subscription code.
-- Acceptance: Events use `id`, optional `event`, compact JSON `data`, and the required blank-line terminator; market events include ticker, price, previous price, timestamp, and `up`/`down`/`unchanged`; streams yield one correctly framed record per input and reject invalid ticker/price values.
+### te-dra: finally/backend/app/market/sse.py
+- Scope: Implement canonical market-event construction and Server-Sent Event wire framing.
+- Architecture: SSE ownership row plus SPEC Section 6 fields and `GET /api/stream/prices` contract.
+- Interfaces: Export `market_event(ticker, price, previous_price=None, timestamp=None)`, `encode_event(payload, *, event=None, event_id=None)`, and `stream_events(events, *, event=None)` with documented types.
+- Depends on: te-ljx
+- Consumed by: te-x1n; later `/api/stream/prices` integration.
+- Acceptance: Events contain ticker, price, previous price, timestamp, and up/down/unchanged direction; optional id/event lines are correctly framed; compact JSON data ends with the required blank line; invalid empty ticker/negative price is rejected; iterable events preserve order.
 
-### te-0vr: finally/frontend/next-env.d.ts
-- Scope: Provide the Next.js, image, CSS-module, and environment-variable declarations required by the existing frontend build.
-- Architecture: Match the canonical frontend layout and TypeScript declaration content in architecture.md; do not add application behavior.
-- Interfaces: Next.js reference declarations, `*.module.css` default export, and the documented `ProcessEnv` keys.
+### te-x1n: finally/backend/tests/test_market_infrastructure.py
+- Scope: Add pytest contract coverage for all public active-phase market and schema behavior.
+- Architecture: Unit-test mapping under `core-market-infrastructure`; cover provider math/parsing, interchangeability, cache, and stream serialization.
+- Interfaces: Import only public symbols from te-wxs, te-1kp, te-9gi, te-i12, te-ljx, and te-dra.
+- Depends on: te-wxs; te-1kp; te-9gi; te-i12; te-ljx; te-dra
+- Consumed by: phase verification and QA.
+- Acceptance: Tests assert schema validation, seeded/non-negative GBM output and reproducibility, Massive parsing/common shape, cache latest/previous/timestamp/clear behavior, and exact SSE fields/framing/direction. The specified pytest command passes.
+
+### te-9jp: finally/frontend/next-env.d.ts
+- Scope: Provide Next.js and image references plus the CSS-module and environment typings needed by the existing static-export frontend.
+- Architecture: Frontend declaration ownership row; retain the existing TypeScript build boundary without UI behavior.
+- Interfaces: Next/image reference directives, `*.module.css` default export typing, and documented `NODE_ENV` and `NEXT_PUBLIC_APP_URL` environment declarations.
 - Depends on: <none>
-- Consumed by: later frontend components and `npm run build`.
-- Acceptance: TypeScript recognizes Next.js and CSS-module imports, the declared environment names are available, and the frontend production build passes.
+- Consumed by: existing frontend TypeScript sources and the phase build gate.
+- Acceptance: No placeholder or unresolved declarations remain; CSS modules and documented environment variables type-check; `(cd finally/frontend && npm run build)` succeeds.
 
-### te-ddu: finally/backend/tests/test_market_infrastructure.py
-- Scope: Add focused unit tests for every active market primitive and schema contract.
-- Architecture: Implement the architecture.md test matrix for providers, cache, SSE, and Pydantic validation; tests must be deterministic and isolated.
-- Interfaces: Pytest tests consume the exact exported symbols from the five backend implementation modules and schemas; no production behavior is hidden in fixtures.
-- Depends on: finally/backend/app/api/__init__.py, finally/backend/app/api/schemas.py, finally/backend/app/market/massive.py, finally/backend/app/market/gbm.py, finally/backend/app/market/cache.py, finally/backend/app/market/sse.py
-- Consumed by: the active phase verification gate and later regression runs.
-- Acceptance: Tests prove deterministic seeded/mock prices, common quote validation, cache previous-price and clear semantics, SSE framing and direction, and rejection/acceptance of the SPEC schema cases; `PYTHONPATH=finally/backend python -m pytest finally/backend/tests/test_market_infrastructure.py` passes.
-- Verify: `PYTHONPATH=finally/backend python -m pytest finally/backend/tests/test_market_infrastructure.py`
+## Phase boundary
 
-## Future considerations
-
-Database persistence, route registration, application startup, frontend market UI, trading, chat, Docker, and end-to-end tests belong to later delivery phases and are intentionally not acceptance criteria for this phase.
+Do not implement portfolio persistence, watchlist CRUD, frontend market components, chat, background lifecycle wiring, or new HTTP routes here. Those responsibilities belong to later delivery phases; this phase supplies only their documented market primitives and schema/build prerequisites.

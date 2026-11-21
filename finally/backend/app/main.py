@@ -1,3 +1,5 @@
+from app.api import create_api_router
+from app.market import sse
 import asyncio
 import inspect
 import os
@@ -6,6 +8,8 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
+from .api import create_api_router
+from .market import sse
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -48,6 +52,7 @@ def create_app(provider: Any | None = None, cache: Any | None = None) -> FastAPI
     selected_provider = provider or _make_provider()
     market_cache = cache or MarketCache()
     application = FastAPI(title="FinAlly Trading Dashboard")
+    application.include_router(create_api_router())
     application.state.provider = selected_provider
     application.state.market_cache = market_cache
     application.state.market_task = None
