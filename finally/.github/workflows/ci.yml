@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  foundation-support:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate schema module
+        run: python3 -m py_compile finally/backend/db/schema.py
+      - name: Validate foundation support files
+        run: |
+          test -f finally/planning/PLAN.md
+          test -f finally/scripts/start_mac.sh
+          test -f finally/scripts/stop_mac.sh
+          test -f finally/scripts/start_windows.ps1
+          test -f finally/scripts/stop_windows.ps1
+          test -f finally/.env
+          test -f finally/.gitignore
+          test -f finally/.github/workflows/ci.yml
+          test -f finally/db/.gitkeep
+          test -f finally/backend/db/schema.py

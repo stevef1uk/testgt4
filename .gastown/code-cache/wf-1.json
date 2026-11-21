@@ -68,5 +68,47 @@
     "validated": true,
     "validated_at": "2026-11-21T07:59:10Z",
     "created_at": "2026-11-21T07:59:10Z"
+  },
+  "1:finally/.env": {
+    "content": "# Local development defaults. Do not place credentials in this file.\nAPP_ENV=development\nBACKEND_HOST=127.0.0.1\nBACKEND_PORT=8000\nFRONTEND_PORT=3000\nDATABASE_URL=sqlite:///./db/app.db",
+    "md5": "89d9061a0021f2e996b03d4d06c6b393",
+    "validated": true,
+    "validated_at": "2026-11-21T08:19:53Z",
+    "created_at": "2026-11-21T08:19:53Z"
+  },
+  "1:finally/.github/workflows/ci.yml": {
+    "content": "name: CI\n\non:\n  push:\n  pull_request:\n\njobs:\n  foundation-support:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@v4\n      - name: Set up Python\n        uses: actions/setup-python@v5\n        with:\n          python-version: \"3.11\"\n      - name: Validate schema module\n        run: python3 -m py_compile finally/backend/db/schema.py\n      - name: Validate foundation support files\n        run: |\n          test -f finally/planning/PLAN.md\n          test -f finally/scripts/start_mac.sh\n          test -f finally/scripts/stop_mac.sh\n          test -f finally/scripts/start_windows.ps1\n          test -f finally/scripts/stop_windows.ps1\n          test -f finally/.env\n          test -f finally/.gitignore\n          test -f finally/.github/workflows/ci.yml\n          test -f finally/db/.gitkeep\n          test -f finally/backend/db/schema.py",
+    "md5": "90128e2f95567056b0bdb28312577c11",
+    "validated": true,
+    "validated_at": "2026-11-21T08:19:53Z",
+    "created_at": "2026-11-21T08:19:53Z"
+  },
+  "1:finally/backend/db/schema.py": {
+    "content": "from __future__ import annotations\n\nimport os\nimport sqlite3\nfrom pathlib import Path\nfrom typing import TypeAlias\n\nConnection: TypeAlias = sqlite3.Connection\n\nDEFAULT_TICKERS = (\n    \"AAPL\",\n    \"GOOGL\",\n    \"MSFT\",\n    \"AMZN\",\n    \"TSLA\",\n    \"NVDA\",\n    \"META\",\n    \"JPM\",\n    \"V\",\n    \"NFLX\",\n)\nDEFAULT_CASH = 10_000.0\n\n\ndef database_path() -\u003e Path:\n    \"\"\"Return the configured SQLite path, defaulting to the checked-in db directory.\"\"\"\n    configured = os.getenv(\"DATABASE_URL\", \"\")\n    if configured.startswith(\"sqlite:///\"):\n        configured = configured.removeprefix(\"sqlite:///\")\n    if configured:\n        return Path(configured)\n    return Path(__file__).resolve().parents[2] / \"db\" / \"app.db\"\n\n\ndef initialize_database(connection: Connection) -\u003e None:\n    \"\"\"Create the single-user schema and seed its initial account idempotently.\"\"\"\n    connection.execute(\"PRAGMA foreign_keys = ON\")\n    connection.executescript(\n        \"\"\"\n        CREATE TABLE IF NOT EXISTS users (\n            id INTEGER PRIMARY KEY,\n            cash REAL NOT NULL CHECK (cash \u003e= 0)\n        );\n\n        CREATE TABLE IF NOT EXISTS watchlist (\n            ticker TEXT PRIMARY KEY\n        );\n\n        CREATE TABLE IF NOT EXISTS positions (\n            ticker TEXT PRIMARY KEY,\n            shares REAL NOT NULL DEFAULT 0 CHECK (shares \u003e= 0),\n            average_cost REAL NOT NULL DEFAULT 0 CHECK (average_cost \u003e= 0)\n        );\n\n        CREATE TABLE IF NOT EXISTS trades (\n            id INTEGER PRIMARY KEY AUTOINCREMENT,\n            ticker TEXT NOT NULL,\n            quantity REAL NOT NULL CHECK (quantity \u003e 0),\n            side TEXT NOT NULL CHECK (side IN ('buy', 'sell')),\n            price REAL NOT NULL CHECK (price \u003e= 0),\n            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP\n        );\n\n        CREATE TABLE IF NOT EXISTS portfolio_snapshots (\n            id INTEGER PRIMARY KEY AUTOINCREMENT,\n            total_value REAL NOT NULL,\n            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP\n        );\n\n        CREATE TABLE IF NOT EXISTS chat_messages (\n            id INTEGER PRIMARY KEY AUTOINCREMENT,\n            role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),\n            content TEXT NOT NULL,\n            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP\n        );\n        \"\"\"\n    )\n    connection.execute(\n        \"INSERT OR IGNORE INTO users (id, cash) VALUES (1, ?)\",\n        (DEFAULT_CASH,),\n    )\n    connection.executemany(\n        \"INSERT OR IGNORE INTO watchlist (ticker) VALUES (?)\",\n        ((ticker,) for ticker in DEFAULT_TICKERS),\n    )\n    connection.commit()",
+    "md5": "1b9ca7b2e2bc0f0c0cde53be4b0f7bb4",
+    "validated": true,
+    "validated_at": "2026-11-21T08:19:53Z",
+    "created_at": "2026-11-21T08:19:53Z"
+  },
+  "1:finally/planning/PLAN.md": {
+    "content": "# Project Foundation Support Plan\n\n## Scope\n\nDeliver the support artifacts required for local development, database\ninitialization, cross-platform lifecycle commands, and CI validation.\n\n## Acceptance\n\n- The checked-in `.env` contains only non-secret development defaults.\n- The SQLite schema initializes idempotently with the SPEC-defined default\n  account and ten-ticker watchlist.\n- The database directory is retained with `.gitkeep`.\n- macOS and Windows scripts use the configured backend host and port.\n- `.gitignore` excludes generated local state without hiding required source\n  artifacts.\n- CI validates the support files and schema module.\n\n## Verification\n\ntest -f finally/planning/PLAN.md\ntest -f finally/scripts/start_mac.sh\ntest -f finally/scripts/stop_mac.sh\ntest -f finally/scripts/start_windows.ps1\ntest -f finally/scripts/stop_windows.ps1\ntest -f finally/.env\ntest -f finally/.gitignore\ntest -f finally/.github/workflows/ci.yml\ntest -f finally/db/.gitkeep\ntest -f finally/backend/db/schema.py",
+    "md5": "23be10e6bada02a980150f43e6ca2518",
+    "validated": true,
+    "validated_at": "2026-11-21T08:19:53Z",
+    "created_at": "2026-11-21T08:19:53Z"
+  },
+  "1:finally/scripts/start_mac.sh": {
+    "content": "#!/usr/bin/env bash\nset -euo pipefail\n\nROOT=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/..\" \u0026\u0026 pwd)\"\ncd \"$ROOT\"\n\nif [[ -f .env ]]; then\n  set -a\n  # shellcheck disable=SC1091\n  source .env\n  set +a\nfi\n\nexec python3 -m uvicorn backend.app.main:app \\\n  --host \"${BACKEND_HOST:-127.0.0.1}\" \\\n  --port \"${BACKEND_PORT:-8000}\"",
+    "md5": "1adb65de4da52b75b58db3fe9b613123",
+    "validated": true,
+    "validated_at": "2026-11-21T08:19:53Z",
+    "created_at": "2026-11-21T08:19:53Z"
+  },
+  "1:finally/scripts/start_windows.ps1": {
+    "content": "$ErrorActionPreference = \"Stop\"\n\n$Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)\nSet-Location $Root\n\nif (Test-Path \".env\") {\n    Get-Content \".env\" | ForEach-Object {\n        if ($_ -match '^\\s*([A-Za-z_][A-Za-z0-9_]*)=(.*)$') {\n            [Environment]::SetEnvironmentVariable($matches[1], $matches[2], \"Process\")\n        }\n    }\n}\n\n$HostName = if ($env:BACKEND_HOST) { $env:BACKEND_HOST } else { \"127.0.0.1\" }\n$Port = if ($env:BACKEND_PORT) { $env:BACKEND_PORT } else { \"8000\" }\n\npython -m uvicorn backend.app.main:app --host $HostName --port $Port",
+    "md5": "b0e2bcaa0517451665ca88389f77d34f",
+    "validated": true,
+    "validated_at": "2026-11-21T08:19:53Z",
+    "created_at": "2026-11-21T08:19:53Z"
   }
 }
