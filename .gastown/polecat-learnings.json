@@ -19,19 +19,27 @@
     },
     {
       "stack": "python",
-      "rule": "Avoid in __init__.py: E ModuleNotFoundError: No module named 'app'",
-      "source": "verify_fix",
-      "bead_path": "finally/backend/app/api/__init__.py",
-      "hits": 1,
-      "updated_at": "2026-11-21T09:50:17Z"
-    },
-    {
-      "stack": "python",
       "rule": "Avoid in main.py: E AttributeError: \u003cmodule 'app.main' from '/home/stevef/gt/testgt4/mayor/rig/finally/backend/app/main.py'\u003e does not hav...",
       "source": "verify_fix",
       "bead_path": "finally/backend/app/main.py",
       "hits": 1,
       "updated_at": "2026-11-21T10:52:07Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Avoid in __init__.py: E AssertionError: assert set() == {'/api/chat',.../prices', ...}",
+      "source": "verify_fix",
+      "bead_path": "finally/backend/app/api/__init__.py",
+      "hits": 1,
+      "updated_at": "2026-11-21T11:04:45Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Avoid in __init__.py: E ModuleNotFoundError: No module named 'app'",
+      "source": "verify_fix",
+      "bead_path": "finally/backend/app/api/__init__.py",
+      "hits": 2,
+      "updated_at": "2026-11-21T11:05:33Z"
     }
   ]
 }

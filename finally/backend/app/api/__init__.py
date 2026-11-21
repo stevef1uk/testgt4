@@ -4,22 +4,27 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterator
 from datetime import datetime, timezone
-from typing import Any
 
-from fastapi import APIRouter, FastAPI, HTTPException, status
+from fastapi import APIRouter, FastAPI, status
 from fastapi.responses import StreamingResponse
 
-from ..market.sse import encode_event
-from .schemas import (
-    ChatRequest,
-    ChatResponse,
-    PortfolioHistory,
-    PortfolioResponse,
-    TradeRequest,
-    TradeResponse,
-    WatchlistItem,
-    WatchlistRequest,
-)
+from importlib import import_module
+
+try:
+    encode_event = import_module("app.market.sse").encode_event
+    _schemas = import_module("app.api.schemas")
+except ModuleNotFoundError:
+    encode_event = import_module("finally.backend.app.market.sse").encode_event
+    _schemas = import_module("finally.backend.app.api.schemas")
+
+ChatRequest = _schemas.ChatRequest
+ChatResponse = _schemas.ChatResponse
+PortfolioHistory = _schemas.PortfolioHistory
+PortfolioResponse = _schemas.PortfolioResponse
+TradeRequest = _schemas.TradeRequest
+TradeResponse = _schemas.TradeResponse
+WatchlistItem = _schemas.WatchlistItem
+WatchlistRequest = _schemas.WatchlistRequest
 
 
 def _health() -> dict[str, str]:
@@ -39,12 +44,7 @@ def _prices() -> Iterator[str]:
 
 
 def _portfolio() -> PortfolioResponse:
-    return PortfolioResponse(
-        positions=[],
-        cash=0.0,
-        total_value=0.0,
-        unrealized_pnl=0.0,
-    )
+    return PortfolioResponse(positions=[], cash=0.0, total_value=0.0, unrealized_pnl=0.0)
 
 
 def _trade(request: TradeRequest) -> TradeResponse:
@@ -85,7 +85,12 @@ def _chat(request: ChatRequest) -> ChatResponse:
 def create_api_router() -> APIRouter:
     """Create the router containing all canonical API endpoints."""
     router = APIRouter(prefix="/api")
-    router.add_api_route("/stream/prices", _prices, methods=["GET"], response_class=StreamingResponse)
+    router.add_api_route(
+        "/stream/prices",
+        _prices,
+        methods=["GET"],
+        response_class=StreamingResponse,
+    )
     router.add_api_route("/portfolio", _portfolio, methods=["GET"], response_model=PortfolioResponse)
     router.add_api_route(
         "/portfolio/trade",
@@ -113,8 +118,9 @@ def register_routes(
     *,
     router_factory: Callable[[], APIRouter] = create_api_router,
 ) -> FastAPI:
-    """Register the canonical API router on an existing application."""
-    app.include_router(router_factory())
+    """Register canonical API routes on an existing FastAPI application."""
+    router = router_factory()
+    app.router.routes.extend(router.routes)
     return app
 
 

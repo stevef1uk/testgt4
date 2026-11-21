@@ -1,10 +1,11 @@
+import importlib
+
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 
-from app.api import register_routes
-
 
 def test_register_routes_exposes_canonical_api_paths() -> None:
+    register_routes = importlib.import_module("finally.backend.app.api").register_routes
     app = FastAPI()
     register_routes(app)
 
