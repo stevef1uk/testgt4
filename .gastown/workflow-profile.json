@@ -318,7 +318,8 @@
       }
     ],
     "explicit_delivery_contract": true,
-    "active_phase_id": "core-market-infrastructure",
+    "active_phase_id": "project-foundation",
+    "rewound_from_phase_id": "core-market-infrastructure",
     "completed_phase_ids": [
       "project-foundation",
       "project-foundation-support"

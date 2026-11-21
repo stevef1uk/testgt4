@@ -16,6 +16,14 @@
       "bead_path": "finally/backend/app/api/__init__.py",
       "hits": 1,
       "updated_at": "2026-11-21T08:55:49Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Avoid in __init__.py: E ModuleNotFoundError: No module named 'app'",
+      "source": "verify_fix",
+      "bead_path": "finally/backend/app/api/__init__.py",
+      "hits": 1,
+      "updated_at": "2026-11-21T09:50:17Z"
     }
   ]
 }

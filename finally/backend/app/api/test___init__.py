@@ -3,6 +3,13 @@
 from __future__ import annotations
 
 import importlib
+import sys
+from pathlib import Path
+
+
+_BACKEND_ROOT = Path(__file__).parents[2]
+if str(_BACKEND_ROOT) not in sys.path:
+    sys.path.insert(0, str(_BACKEND_ROOT))
 
 
 def test_api_package_imports_without_application_or_route_side_effects() -> None:
