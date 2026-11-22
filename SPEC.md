@@ -482,6 +482,8 @@ The container is designed to deploy to AWS App Runner, Render, or any container 
 
 **Content assertion rule**: The "health and dashboard are available" test must assert the actual dashboard content — the page heading ("Market Dashboard"), at least one watchlist ticker, and the cash/portfolio figure — via `getByText`/`getByRole`/`toHaveText`/`toContainText`. A test that only checks `200 + content-type + body visible` is **insufficient** and must be rejected by QA: it passes when the app serves a placeholder page. Tests must never assert placeholder text (e.g. "Finally", "Coming soon").
 
+**Browser interaction rule**: At least one mandatory E2E test must drive a real user action in the browser — click a button, submit a form, or type into an input — and assert the resulting DOM state or API state change (for example: cash decreases and a position appears after Buy; a ticker appears after Add; an assistant message appears after Send). A static page loaded with `page.goto` plus content assertions alone does **not** satisfy this SPEC. QA must reject `all_passed` when this interaction-and-state-change evidence is missing.
+
 ## 13. Playwright E2E Testing Specification
 
 This section defines the **mandatory** Playwright end-to-end testing strategy. Every UI feature described in Sections 2 and 10 MUST have a corresponding Playwright test. No feature ships without E2E coverage.
@@ -627,6 +629,8 @@ Every scenario must use `page.getByRole()`, `page.getByText()`, or `page.getByTe
 ### Content Assertion Rule (repeated for emphasis)
 
 **Every Playwright test that checks dashboard content MUST assert real rendered content** — ticker names, cash figures, portfolio values, chat messages. Tests that only assert HTTP 200, `response.ok()`, or `element.isVisible()` are **insufficient** and will be rejected by QA. The purpose of E2E tests is to verify the user sees real data, not that the page loads.
+
+**Browser interaction requirement (repeated for emphasis)**: E2E coverage must include a real control interaction followed by a DOM/API state-change assertion. Page load, HTTP status, static heading, or body visibility checks alone are insufficient; a static dashboard cannot pass QA or complete the workflow.
 
 ## Delivery Phases
 

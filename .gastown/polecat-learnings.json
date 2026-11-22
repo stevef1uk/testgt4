@@ -3,22 +3,6 @@
   "entries": [
     {
       "stack": "python",
-      "rule": "Avoid in main.py: E AssertionError: 503 != 404",
-      "source": "verify_fix",
-      "bead_path": "finally/backend/app/main.py",
-      "hits": 1,
-      "updated_at": "2026-11-21T08:01:28Z"
-    },
-    {
-      "stack": "python",
-      "rule": "Avoid in __init__.py: E AssertionError: Traceback (most recent call last):",
-      "source": "verify_fix",
-      "bead_path": "finally/backend/app/api/__init__.py",
-      "hits": 1,
-      "updated_at": "2026-11-21T08:55:49Z"
-    },
-    {
-      "stack": "python",
       "rule": "Avoid in main.py: E AttributeError: \u003cmodule 'app.main' from '/home/stevef/gt/testgt4/mayor/rig/finally/backend/app/main.py'\u003e does not hav...",
       "source": "verify_fix",
       "bead_path": "finally/backend/app/main.py",
@@ -54,8 +38,32 @@
       "rule": "Avoid in __init__.py: E AssertionError: assert set() == {'/api/chat',.../prices', ...}",
       "source": "verify_fix",
       "bead_path": "finally/backend/app/api/__init__.py",
-      "hits": 2,
-      "updated_at": "2026-11-21T16:03:13Z"
+      "hits": 3,
+      "updated_at": "2026-11-21T16:12:11Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Avoid in schemas.py: E ModuleNotFoundError: No module named 'app'",
+      "source": "verify_fix",
+      "bead_path": "finally/backend/app/api/schemas.py",
+      "hits": 1,
+      "updated_at": "2026-11-21T16:12:46Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Avoid in gbm.py: E TypeError: generate_prices() got an unexpected keyword argument 'periods'",
+      "source": "verify_fix",
+      "bead_path": "finally/backend/app/market/gbm.py",
+      "hits": 1,
+      "updated_at": "2026-11-21T16:13:17Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Avoid in main.py: E AssertionError: None != {'status': 'ok'}",
+      "source": "verify_fix",
+      "bead_path": "finally/backend/app/main.py",
+      "hits": 1,
+      "updated_at": "2026-11-21T16:21:29Z"
     }
   ]
 }

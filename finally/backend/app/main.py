@@ -1,5 +1,3 @@
-from app.api import create_api_router
-from app.market import sse
 import asyncio
 import inspect
 import os
@@ -23,36 +21,25 @@ TICKERS = ("AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA", "META", "JPM", "V", 
 
 def _make_provider() -> Any:
     if os.getenv("MARKET_PROVIDER", "gbm").lower() == "massive":
-        return MassiveProvider()
+        return MassiveProvider(api_key=os.environ["MASSIVE_API_KEY"])
     return GBMProvider()
 
 
 def _snapshot(cache: Any) -> dict[str, Any]:
-    for name in ("snapshot", "get_all", "all"):
-        method = getattr(cache, name, None)
-        if callable(method):
-            value = method()
-            return value if isinstance(value, dict) else {"prices": value}
     if isinstance(cache, dict):
         return dict(cache)
-    return {}
+    value = cache.all()
+    return value if isinstance(value, dict) else {"prices": value}
 
 
 def _event_stream(cache: Any):
-    async def stream():
-        while True:
-            payload = _snapshot(cache)
-            yield f"data: {__import__('json').dumps(payload)}\\n\\n"
-            await asyncio.sleep(1)
-
-    return stream()
+    return sse.event_stream(cache, snapshot=_snapshot)
 
 
 def create_app(provider: Any | None = None, cache: Any | None = None) -> FastAPI:
     selected_provider = provider or _make_provider()
     market_cache = cache or MarketCache()
     application = FastAPI(title="FinAlly Trading Dashboard")
-    application.include_router(create_api_router())
     application.state.provider = selected_provider
     application.state.market_cache = market_cache
     application.state.market_task = None
