@@ -135,7 +135,6 @@ delivery_phases:
       finally/frontend/app/page.tsx: [finally/frontend/app/layout.tsx]
       finally/frontend/next.config.js: [finally/frontend/package.json, finally/frontend/tsconfig.json]
   - id: project-foundation-support
-
     title: Project Foundation Support
     spec_focus: Project Foundation
     required_files:
@@ -297,7 +296,7 @@ The release harness runs the complete app in the declared compose test environme
 The dependency graph is executable: foundation precedes support, market infrastructure precedes the database engine, market UI precedes trading UI, and both precede chat, polish, and release. Each phase command checks all files it delivers and runs a relevant behavioral check; every phase that delivers frontend source runs `npm run build`. The full release command starts from a clean compose state, uses the real Dockerfile, sets deterministic mock mode, runs Playwright, and removes compose resources on completion. API assertions use the exact SPEC paths and request shapes; browser assertions use roles, text, or test IDs and never bless placeholder output.
 
 ## Docker & Deployment
-The multi-stage image uses node:20-alpine for the frontend build stage and python:3.12-slim for the runtime stage. The Node stage installs the dependencies from `finally/frontend/package.json`, runs the production export, and the Python stage copies the resulting `finally/frontend/out/` plus the backend sources and installs the Python requirements. The runtime exposes port 8000 and its Dockerfile instruction is CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]; compose publishes host port 8000 to container port 8000 and mounts the database directory.
+The multi-stage image uses node:20-slim for the frontend build stage and python:3.12-slim for the runtime stage. The Node stage installs the dependencies from `finally/frontend/package.json`, runs the production export, and the Python stage copies the resulting `finally/frontend/out/` plus the backend sources and installs the Python requirements. The runtime exposes port 8000 and its Dockerfile instruction is CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]; compose publishes host port 8000 to container port 8000 and mounts the database directory.
 
 
 `finally/Dockerfile` uses a Node build stage to produce the default static export at `finally/frontend/out/`, then a Python 3.12/uv runtime stage. It copies that exact export to the runtime location expected by `finally/backend/app/main.py`, exposes port 8000, and runs uvicorn. `finally/docker-compose.yml` provides the single application service, environment loading, port mapping, and persistent `finally/db/` volume. `finally/test/docker-compose.test.yml` builds from the `finally/` root via its compose-relative context, mounts the project for Playwright, sets `BASE_URL` and `LLM_MOCK=true`, checks `/api/health`, and runs the full test command.
