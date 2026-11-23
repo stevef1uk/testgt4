@@ -10,11 +10,12 @@ Bead ID: te-x44
 Phase: project-foundation
 Scenarios:
 - GET /api/health returns the documented success status and JSON object.
-- GET / serves the exported dashboard containing “FinAlly”, “$10,000”, and AAPL, MSFT, GOOGL, AMZN, NVDA, TSLA, META, JPM, V, and NFLX.
-- When the frontend export is absent, GET / returns the documented diagnostic error response (including its documented detail), without fallback dashboard content; do not require an unsupported status code.
+- GET / serves the exported dashboard whose page title contains “FinAlly”, with “$10,000” and AAPL, MSFT, GOOGL, AMZN, NVDA, TSLA, META, JPM, V, and NFLX in its decoded/text content.
+- When the frontend export is absent, GET / returns HTTP 503 with the documented diagnostic detail and no fallback dashboard content or placeholder HTML.
 Assertions:
-- Assert the documented status, decoded JSON values, and value types for health and the missing-export diagnostic.
-- Assert the heading, starting amount, and every required ticker in the dashboard; assert stale fallback content is absent.
+- Assert the documented health status, decoded JSON values, and value types.
+- Assert the dashboard title contains “FinAlly”, and assert the starting amount and all ten required ticker symbols occur in decoded/text content.
+- Assert missing export returns exactly 503, includes the documented diagnostic, and excludes stale dashboard/fallback HTML.
 
 ### project-foundation-support
 Requirement: Initialize all six SPEC database tables with their documented columns and constraints, and seed the exact default profile, ten tickers, and $10,000 cash idempotently.
@@ -65,10 +66,11 @@ Bead ID: pending
 Phase: watchlist-market-ui
 Scenarios:
 - Load the running dashboard and verify the required watchlist symbols and market values are rendered.
-- Add/remove or otherwise perform each documented watchlist interaction, including the documented invalid/empty state.
+- Click the documented Add ticker control, type PYPL, submit it, and verify PYPL appears in the watchlist; remove it using the real remove control and verify it disappears.
+- Submit the documented empty/invalid ticker interaction and verify the visible validation or error state.
 Assertions:
-- Assert visible controls, symbols, values, loading/error states, and accessible labels from the SPEC.
-- Assert the UI sends the documented request and reflects the persisted result without showing stale data.
+- Assert the real add/remove controls, input, symbols, values, loading/error states, and accessible labels are visible in the DOM.
+- Assert the add request and resulting DOM state include PYPL, and the remove request and resulting DOM state no longer include PYPL; assert no stale row remains after persistence.
 
 ### portfolio-visualisation-trading
 Requirement: Render the documented portfolio visualisations and support the specified trading flow with the documented validation and result states.
@@ -78,10 +80,12 @@ Bead ID: pending
 Phase: portfolio-visualisation-trading
 Scenarios:
 - Render portfolio value/holdings visualisations from the documented API data, including empty and populated states.
-- Submit valid buy/sell orders and exercise invalid quantity, symbol, and insufficient-funds/holdings cases.
+- Use the real Buy control to submit a valid order and verify cash decreases and a position is added; use the real Sell control only for an owned quantity and verify the position/cash update.
+- Exercise invalid quantity, symbol, insufficient-funds, and selling-more-than-owned cases. The conflicting “sell short” wording is resolved in favor of the explicit SPEC rule that selling more than owned is rejected; do not add a short-selling test.
 Assertions:
 - Assert charts/summary values and labels correspond to decoded API values.
-- Assert successful trades update cash, holdings, and history; assert rejected trades show the documented error and do not change displayed state.
+- Assert the Buy interaction changes the displayed cash and adds the purchased position, and the valid Sell interaction changes holdings/cash and history.
+- Assert rejected trades show the documented error and leave displayed cash, holdings, positions, and trade history unchanged.
 
 ### ai-trading-assistant
 Requirement: Provide the documented assistant interaction, persistence, and response/error behavior.
@@ -90,11 +94,11 @@ Test file: finally/backend/tests/test_chat.py
 Bead ID: pending
 Phase: ai-trading-assistant
 Scenarios:
-- Submit a valid assistant message and retrieve the documented chat response/history shape.
+- Type a valid message into the real assistant chat control and submit it; verify the assistant response appears inline and retrieve the documented chat response/history shape.
 - Verify empty/invalid messages and the documented unavailable-provider/error path.
 Assertions:
-- Assert documented status, content type, decoded JSON keys/types, and persisted chat message fields.
-- Assert invalid or provider-error requests return the documented diagnostic without creating an invalid assistant record.
+- Assert the submitted message and returned assistant response are visible in the chat DOM, while the API response has the documented status, content type, decoded JSON keys/types, and persisted chat fields.
+- Assert invalid or provider-error requests return the documented diagnostic without creating an invalid assistant record or displaying a fabricated response.
 
 ### application-polish
 Requirement: Meet the documented application-wide responsive, accessible, navigation, loading, and error-state behavior.
@@ -103,11 +107,11 @@ Test file: finally/test/application-polish.spec.ts
 Bead ID: pending
 Phase: application-polish
 Scenarios:
-- Exercise the documented primary navigation and dashboard flows at supported viewport sizes.
-- Verify loading, empty, API-error, and responsive/accessibility states for the shipped screens.
+- Click each documented primary navigation control and verify the corresponding screen/landmark appears at supported viewport sizes.
+- Trigger the documented loading, empty, and API-error states and verify their visible messages; use keyboard focus and activation on the shipped controls.
 Assertions:
-- Assert required navigation targets, visible page landmarks, keyboard-accessible controls, and responsive layout behavior.
-- Assert user-visible errors and loading indicators are present and stale/placeholder content is not presented as live data.
+- Assert navigation changes the visible DOM to the expected screen, controls have accessible names and keyboard focus/activation works, and the layout remains usable at each supported viewport.
+- Assert loading indicators, empty-state text, and API-error text are visible in the DOM, while stale or placeholder content is absent.
 
 ### testing-release
 Requirement: Run the documented release validation and test strategy across backend, frontend, integration, and required artifact checks.
@@ -117,7 +121,9 @@ Bead ID: pending
 Phase: testing-release
 Scenarios:
 - Run the documented backend and frontend test commands against a clean checkout and verify the required release artifacts.
-- Exercise the documented end-to-end smoke path from dashboard load through market data, portfolio/trade, and assistant surfaces.
+- In the running browser, load the dashboard and assert the title contains “FinAlly”, the page contains “Market Dashboard”, all ten required ticker symbols, and “$10,000”.
+- Click Add ticker, type and submit PYPL, and assert PYPL appears; use the real Buy control and assert cash changes and a position is added; type and submit a chat message and assert the assistant response appears inline.
 Assertions:
 - Assert all required test suites and artifact checks exit successfully.
-- Assert the smoke path completes with documented statuses and decoded payloads, with no missing required file or unhandled error.
+- Assert the smoke path's decoded API responses have the documented statuses, content types, keys, and types, with no missing required file or unhandled error.
+- Assert the browser DOM changes after each interaction: PYPL is added, cash decreases and the purchased position appears after Buy, and the submitted message plus assistant response appear inline.
