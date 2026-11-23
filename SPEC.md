@@ -411,6 +411,10 @@ Stage 2: Python 3.12 slim
 
 FastAPI serves the static frontend files and all API routes on port 8000.
 
+The Docker build contract has two explicitly related stages. Stage 1 is the Node build stage: it uses `node:20-slim`, installs the frontend dependencies declared in `finally/frontend/package.json`, and runs the production build that produces the static export at `finally/frontend/out/`. Stage 2 is the Python runtime stage: it uses `python:3.12-slim`, installs `uv`, copies the backend sources and the Stage 1 export, installs Python dependencies from the lockfile with `uv sync`, exposes port 8000, and starts the server with `uvicorn app.main:app --host 0.0.0.0 --port 8000`. Stage 2 consumes the `finally/frontend/out/` artifact produced by Stage 1; the stages are not independent builds.
+
+`architecture.md` must restate these two stages in its `## Docker & Deployment` section, naming each base image, the concrete work performed in each stage, the `finally/frontend/out/` handoff between them, the exposed port, and the CMD/entrypoint. A prose paragraph that only mentions base images, port 8000, and CMD without explicitly describing both stages and their relationship is insufficient for design review.
+
 ### Docker Volume
 
 The SQLite database persists via a named Docker volume:
