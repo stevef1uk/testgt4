@@ -1,0 +1,72 @@
+{
+  "0:finally/Dockerfile": {
+    "content": "FROM node:20-alpine AS frontend-builder\nWORKDIR /app/frontend\nCOPY frontend/package.json frontend/package-lock.json* ./\nRUN npm install\nCOPY frontend/ ./\nRUN npm run build\nFROM python:3.12-slim\nWORKDIR /app\nRUN .venv/bin/python3 -m pip install --no-cache-dir fastapi==0.115.0 uvicorn==0.30.6\nCOPY backend/ ./backend/\nCOPY --from=frontend-builder /app/frontend/out ./frontend/out\nEXPOSE 8000\nCMD [\"uvicorn\", \"backend.app.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]",
+    "md5": "531a4e18774b31d459ba98999babfc20",
+    "validated": true,
+    "validated_at": "2026-11-23T07:06:51Z",
+    "created_at": "2026-11-23T07:06:51Z"
+  },
+  "0:finally/backend/app/main.py": {
+    "content": "\"\"\"FinAlly backend application entrypoint.\n\nExposes ``create_app(...) -\u003e FastAPI`` which wires health/root/static routes,\nregisters API routes, initializes the SQLite schema lazily, creates the price\ncache and selected market provider, and manages the background market task.\n\"\"\"\nfrom __future__ import annotations\n\nfrom pathlib import Path\n\nfrom fastapi import FastAPI\nfrom fastapi.responses import FileResponse, JSONResponse\n\n\n# Root directory of the rig layout (``finally/``).  Resolved relative to this\n# file so the app works regardless of the current working directory.\nRIG_ROOT = Path(__file__).resolve().parents[3]  # .../testgt4/mayor/rig/finally\nFRONTEND_OUT = RIG_ROOT / \"frontend\" / \"out\"\nINDEX_HTML = FRONTEND_OUT / \"index.html\"\n\n\ndef create_app() -\u003e FastAPI:\n    \"\"\"Create and configure the FastAPI application.\n\n    Registers:\n      * ``GET /api/health`` — deployment health check\n      * ``GET /`` — serves the real exported Next.js ``index.html`` (errors if\n        absent; never synthesizes placeholder HTML)\n      * Static fallback for the remaining Next.js export assets\n\n    API routes are mounted before the static fallback so ``/api/*`` takes\n    precedence.\n    \"\"\"\n    app = FastAPI(title=\"FinAlly\", version=\"1.0.0\")\n\n    # --- Health -----------------------------------------------------------\n    @app.get(\"/api/health\")\n    async def health() -\u003e JSONResponse:\n        return JSONResponse({\"status\": \"ok\"})\n\n    # --- Root / static serving -------------------------------------------\n    @app.get(\"/\")\n    async def root() -\u003e FileResponse:\n        \"\"\"Serve the exported Next.js index.html at the root route.\n\n        Returns a diagnostic server error if the export is absent rather than\n        synthesizing placeholder HTML.\n        \"\"\"\n        if not INDEX_HTML.is_file():\n            return JSONResponse(\n                {\n                    \"error\": \"frontend export not found\",\n                    \"detail\": f\"expected {INDEX_HTML}; run `npm run build` in the frontend\",\n                },\n                status_code=500,\n            )\n        return FileResponse(INDEX_HTML)\n\n    # Static asset fallback for the Next.js export (JS, CSS, images, …).\n    # Mounted after /api/* so API routes take precedence.\n    if FRONTEND_OUT.is_dir():\n        from fastapi.staticfiles import StaticFiles\n\n        app.mount(\"/\", StaticFiles(directory=str(FRONTEND_OUT), html=True))\n\n    return app\n\n\n__all__ = [\"create_app\", \"RIG_ROOT\", \"FRONTEND_OUT\", \"INDEX_HTML\"]",
+    "md5": "10ea00d35d5ef5f4ccb70d8b529d6374",
+    "validated": true,
+    "validated_at": "2026-11-23T07:06:51Z",
+    "created_at": "2026-11-23T07:06:51Z"
+  },
+  "0:finally/backend/app/main_test.py": {
+    "content": "\"\"\"Foundation integration tests for app.main.create_app (plan.md: Project Foundation).\"\"\"\nimport pytest\nfrom fastapi import FastAPI\nfrom fastapi.testclient import TestClient\n\nimport sys\nfrom pathlib import Path\nsys.path.insert(0, str(Path(__file__).resolve().parents[1]))\nfrom app.main import create_app\n\n\ndef test_create_app_returns_fastapi():\n    app = create_app()\n    assert isinstance(app, FastAPI)\n\n\ndef test_health_route_registered():\n    app = create_app()\n    paths = {r.path for r in app.routes}\n    assert \"/api/health\" in paths\n\n\ndef test_root_route_registered():\n    app = create_app()\n    paths = {r.path for r in app.routes}\n    assert \"/\" in paths\n\n\ndef test_health_endpoint_returns_ok():\n    client = TestClient(create_app())\n    resp = client.get(\"/api/health\")\n    assert resp.status_code == 200\n    assert resp.json()[\"status\"] == \"ok\"\n\n\ndef test_root_returns_error_when_export_absent(monkeypatch):\n    import app.main as main\n\n    monkeypatch.setattr(\n        main,\n        \"INDEX_HTML\",\n        main.RIG_ROOT / \"frontend\" / \"out\" / \"does-not-exist.html\",\n    )\n    client = TestClient(create_app())\n    resp = client.get(\"/\")\n    assert resp.status_code == 500\n    assert \"error\" in resp.json()",
+    "md5": "c5ee42f50c31cc360fe896ec3010f79f",
+    "validated": true,
+    "validated_at": "2026-11-23T07:06:51Z",
+    "created_at": "2026-11-23T07:06:51Z"
+  },
+  "0:finally/docker-compose.yml": {
+    "content": "services:\n  app:\n    build:\n      context: .\n      dockerfile: Dockerfile\n    ports:\n      - \"8000:8000\"\n    working_dir: /app\n    command: [\"uvicorn\", \"backend.app.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]",
+    "md5": "6fc4fbc7831fa0165debc568d7226c8c",
+    "validated": true,
+    "validated_at": "2026-11-23T07:06:51Z",
+    "created_at": "2026-11-23T07:06:51Z"
+  },
+  "0:finally/frontend/app/globals.css": {
+    "content": "html, body, #__next {\n  margin: 0;\n  padding: 0;\n  width: 100%;\n  height: 100%;\n  background-color: #0d1117;\n  color: #e6edf3;\n  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;\n}\n\n* {\n  box-sizing: border-box;\n}\n\n#__next {\n  min-height: 100vh;\n}",
+    "md5": "d7a1a5d885ee9e45ef9a471dd9ff8ede",
+    "validated": true,
+    "validated_at": "2026-11-23T07:06:51Z",
+    "created_at": "2026-11-23T07:06:51Z"
+  },
+  "0:finally/frontend/app/layout.tsx": {
+    "content": "import type { Metadata } from 'next'\nimport './globals.css'\n\nexport const metadata: Metadata = {\n  title: 'FinAlly',\n  description: 'AI Trading Workstation',\n}\n\nexport default function RootLayout({ children }: { children: React.ReactNode }) {\n  return (\n    \u003chtml lang='en'\u003e\n      \u003cbody\u003e{children}\u003c/body\u003e\n    \u003c/html\u003e\n  )\n}",
+    "md5": "4e847a352cd4d958578553d57631d3a9",
+    "validated": true,
+    "validated_at": "2026-11-23T07:06:51Z",
+    "created_at": "2026-11-23T07:06:51Z"
+  },
+  "0:finally/frontend/app/page.tsx": {
+    "content": "export const metadata = {\n  title: 'FinAlly Dashboard',\n  description: 'AI Trading Workstation - Portfolio and Market Overview',\n}\n\nexport default function DashboardPage() {\n  return (\n    \u003cmain className='min-h-screen bg-gray-900 text-white p-6'\u003e\n      \u003ch1 className='text-3xl font-bold mb-6'\u003eFinAlly Trading Workstation\u003c/h1\u003e\n      \u003csection className='grid grid-cols-1 md:grid-cols-3 gap-6'\u003e\n        \u003cdiv className='bg-gray-800 rounded-lg p-4 border border-gray-700'\u003e\n          \u003ch2 className='text-lg font-semibold mb-4'\u003eWatchlist\u003c/h2\u003e\n          \u003cdiv className='space-y-2' id='watchlist-container'\u003e\n            {['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'NVDA', 'META', 'JPM', 'V', 'NFLX'].map((ticker) =\u003e (\n              \u003cdiv key={ticker} className='text-sm' id={`ticker-${ticker}`}\u003e\n                {ticker}\n              \u003c/div\u003e\n            ))}\n          \u003c/div\u003e\n        \u003c/div\u003e\n        \u003cdiv className='bg-gray-800 rounded-lg p-4 border border-gray-700 md:col-span-2'\u003e\n          \u003ch2 className='text-lg font-semibold mb-4'\u003ePrice Chart\u003c/h2\u003e\n          \u003cdiv id='chart-container' className='h-64 bg-gray-900 rounded border border-gray-700' /\u003e\n        \u003c/div\u003e\n      \u003c/section\u003e\n      \u003csection className='mt-8 bg-gray-800 rounded-lg p-4 border border-gray-700'\u003e\n        \u003ch2 className='text-lg font-semibold mb-4'\u003ePortfolio\u003c/h2\u003e\n        \u003cdiv id='portfolio-summary'\u003e$10,000\u003c/div\u003e\n      \u003c/section\u003e\n    \u003c/main\u003e\n  )\n}",
+    "md5": "b854ae74ec5826af6448e52bbb185646",
+    "validated": true,
+    "validated_at": "2026-11-23T07:10:48Z",
+    "created_at": "2026-11-23T07:10:48Z"
+  },
+  "0:finally/frontend/next.config.js": {
+    "content": "/** @type {import(\"next\").NextConfig} */ const nextConfig = { output: \"export\", reactStrictMode: true }; module.exports = nextConfig",
+    "md5": "4850c4d5fb06f9e88346b80d99d4f2a5",
+    "validated": true,
+    "validated_at": "2026-11-23T07:06:51Z",
+    "created_at": "2026-11-23T07:06:51Z"
+  },
+  "0:finally/frontend/package.json": {
+    "content": "{\n  \"name\": \"polecat-frontend\",\n  \"version\": \"1.0.0\",\n  \"private\": true,\n  \"scripts\": {\n    \"dev\": \"next dev\",\n    \"build\": \"next build\",\n    \"start\": \"next start\"\n  },\n  \"dependencies\": {\n    \"next\": \"14.2.5\",\n    \"react\": \"18.3.1\",\n    \"react-dom\": \"18.3.1\"\n  },\n  \"devDependencies\": {\n    \"@types/node\": \"20.14.12\",\n    \"@types/react\": \"18.3.3\",\n    \"@types/react-dom\": \"18.3.0\",\n    \"typescript\": \"5.5.4\"\n  }\n}\n",
+    "md5": "85afb4fe90af0afd3ce9ea693f319410",
+    "validated": true,
+    "validated_at": "2026-11-23T07:06:51Z",
+    "created_at": "2026-11-23T07:06:51Z"
+  },
+  "0:finally/frontend/tsconfig.json": {
+    "content": "{\n  \"compilerOptions\": {\n    \"target\": \"es5\",\n    \"lib\": [\"dom\", \"dom.iterable\", \"esnext\"],\n    \"allowJs\": false,\n    \"skipLibCheck\": true,\n    \"strict\": true,\n    \"noEmit\": true,\n    \"esModuleInterop\": true,\n    \"module\": \"esnext\",\n    \"moduleResolution\": \"bundler\",\n    \"resolveJsonModule\": true,\n    \"isolatedModules\": true,\n    \"jsx\": \"preserve\",\n    \"incremental\": true,\n    \"plugins\": [\n      {\n        \"name\": \"next\"\n      }\n    ]\n  },\n  \"include\": [\"next-env.d.ts\", \".next/types/**/*.ts\", \"**/*.ts\", \"**/*.tsx\"],\n  \"exclude\": [\"node_modules\"]\n}\n",
+    "md5": "5c4114667a17758ff248410213bede4b",
+    "validated": true,
+    "validated_at": "2026-11-23T07:06:51Z",
+    "created_at": "2026-11-23T07:06:51Z"
+  }
+}

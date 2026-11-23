@@ -12,7 +12,7 @@ This is the capstone project for an agentic AI coding course. It is built entire
 
 ### First Launch
 
-The user runs a single Docker command (or a provided start script). A browser opens to `http://localhost:8000`. No login, no signup. They immediately see:
+The user runs a single Docker command (or a provided start script). A browser opens to `http://localhost:8010`. No login, no signup. They immediately see:
 
 - A watchlist of 10 default tickers with live-updating prices in a grid
 - $10,000 in virtual cash
@@ -49,7 +49,7 @@ The user runs a single Docker command (or a provided start script). A browser op
 
 ```
 ┌─────────────────────────────────────────────────┐
-│  Docker Container (port 8000)                   │
+│  Docker Container (port 8010)                   │
 │                                                 │
 │  FastAPI (Python/uv)                            │
 │  ├── /api/*          REST endpoints             │
@@ -405,22 +405,22 @@ Stage 2: Python 3.12 slim
   - Copy backend/
   - uv sync (install Python dependencies from lockfile)
   - Copy frontend build output into a static/ directory
-  - Expose port 8000
-  - CMD: uvicorn app.main:app --host 0.0.0.0 --port 8000
+  - Expose port 8010
+  - CMD: uvicorn app.main:app --host 0.0.0.0 --port 8010
 ```
 
-FastAPI serves the static frontend files and all API routes on port 8000.
+FastAPI serves the static frontend files and all API routes on port 8010.
 
-The Docker build contract has two explicitly related stages. Stage 1 is the Node build stage: it uses `node:20-slim`, installs the frontend dependencies declared in `finally/frontend/package.json`, and runs the production build that produces the static export at `finally/frontend/out/`. Stage 2 is the Python runtime stage: it uses `python:3.12-slim`, installs `uv`, copies the backend sources and the Stage 1 export, installs Python dependencies from the lockfile with `uv sync`, exposes port 8000, and starts the server with `uvicorn app.main:app --host 0.0.0.0 --port 8000`. Stage 2 consumes the `finally/frontend/out/` artifact produced by Stage 1; the stages are not independent builds.
+The Docker build contract has two explicitly related stages. Stage 1 is the Node build stage: it uses `node:20-slim`, installs the frontend dependencies declared in `finally/frontend/package.json`, and runs the production build that produces the static export at `finally/frontend/out/`. Stage 2 is the Python runtime stage: it uses `python:3.12-slim`, installs `uv`, copies the backend sources and the Stage 1 export, installs Python dependencies from the lockfile with `uv sync`, exposes port 8010, and starts the server with `uvicorn app.main:app --host 0.0.0.0 --port 8010`. Stage 2 consumes the `finally/frontend/out/` artifact produced by Stage 1; the stages are not independent builds.
 
-`architecture.md` must restate these two stages in its `## Docker & Deployment` section, naming each base image, the concrete work performed in each stage, the `finally/frontend/out/` handoff between them, the exposed port, and the CMD/entrypoint. A prose paragraph that only mentions base images, port 8000, and CMD without explicitly describing both stages and their relationship is insufficient for design review.
+`architecture.md` must restate these two stages in its `## Docker & Deployment` section, naming each base image, the concrete work performed in each stage, the `finally/frontend/out/` handoff between them, the exposed port, and the CMD/entrypoint. A prose paragraph that only mentions base images, port 8010, and CMD without explicitly describing both stages and their relationship is insufficient for design review.
 
 ### Docker Volume
 
 The SQLite database persists via a named Docker volume:
 
 ```bash
-docker run -v finally-data:/app/db -p 8000:8000 --env-file .env finally
+docker run -v finally-data:/app/db -p 8010:8010 --env-file .env finally
 ```
 
 The `db/` directory in the project root maps to `/app/db` in the container. The backend writes `finally.db` to this path.
@@ -470,8 +470,8 @@ The container is designed to deploy to AWS App Runner, Render, or any container 
 
 **Harness contract** (`test/docker-compose.test.yml`) — compose paths resolve relative to the compose file's own directory:
 - `app.build.context` must point at the project root (`finally/`, i.e. `context: ..`), so the real `Dockerfile` is used.
-- The `playwright` service mounts the project root at `/app` (`volumes: - ..:/app`), sets `BASE_URL=http://app:8000`, and runs `cd /app/test && npm install && npx playwright test --project=chromium`.
-- The app healthcheck must hit `curl -f http://localhost:8000/api/health` (`/`, not `/`-only), with `LLM_MOCK=true` set for determinism and no lockfile assumption (`npm install`, not `npm ci`, unless `package-lock.json` is committed).
+- The `playwright` service mounts the project root at `/app` (`volumes: - ..:/app`), sets `BASE_URL=http://app:8010`, and runs `cd /app/test && npm install && npx playwright test --project=chromium`.
+- The app healthcheck must hit `curl -f http://localhost:8010/api/health` (`/`, not `/`-only), with `LLM_MOCK=true` set for determinism and no lockfile assumption (`npm install`, not `npm ci`, unless `package-lock.json` is committed).
 
 **Environment**: Tests run with `LLM_MOCK=true` by default for speed and determinism.
 
@@ -484,7 +484,7 @@ The container is designed to deploy to AWS App Runner, Render, or any container 
 - AI chat (mocked): send a message, receive a response, trade execution appears inline
 - SSE resilience: disconnect and verify reconnection
 
-**Content assertion rule**: The "health and dashboard are available" test must assert the actual dashboard content — the page heading ("Market Dashboard"), at least one watchlist ticker, and the cash/portfolio figure — via `getByText`/`getByRole`/`toHaveText`/`toContainText`. A test that only checks `200 + content-type + body visible` is **insufficient** and must be rejected by QA: it passes when the app serves a placeholder page. Tests must never assert placeholder text (e.g. "Finally", "Coming soon").
+**Content assertion rule**: The "health and dashboard are available" test must assert the actual dashboard content — the page heading (`getByRole('heading', { level: 1, name: 'Trading dashboard' })`), the FinAlly brand text (`getByText('FinAlly')`), at least one watchlist ticker, and the cash/portfolio figure — via `getByText`/`getByRole`/`toHaveText`/`toContainText`. A test that only checks `200 + content-type + body visible` is **insufficient** and must be rejected by QA: it passes when the app serves a placeholder page. Tests must never assert placeholder text (e.g. "Finally", "Coming soon").
 
 **Browser interaction rule**: At least one mandatory E2E test must drive a real user action in the browser — click a button, submit a form, or type into an input — and assert the resulting DOM state or API state change (for example: cash decreases and a position appears after Buy; a ticker appears after Add; an assistant message appears after Send). A static page loaded with `page.goto` plus content assertions alone does **not** satisfy this SPEC. QA must reject `all_passed` when this interaction-and-state-change evidence is missing.
 
@@ -522,7 +522,7 @@ test/
 ```
 
 **Playwright configuration** (`playwright.config.ts`):
-- `baseURL` from `process.env.BASE_URL || 'http://localhost:8000'`
+- `baseURL` from `process.env.BASE_URL || 'http://localhost:8010'`
 - `timeout`: 30s per test, 60s per assertion
 - `retries`: 1 (CI flake tolerance)
 - `projects`: `[{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }]`
@@ -636,9 +636,87 @@ Every scenario must use `page.getByRole()`, `page.getByText()`, or `page.getByTe
 
 **Browser interaction requirement (repeated for emphasis)**: E2E coverage must include a real control interaction followed by a DOM/API state-change assertion. Page load, HTTP status, static heading, or body visibility checks alone are insufficient; a static dashboard cannot pass QA or complete the workflow.
 
+## 14. Design Output Contract (`architecture.md`)
+
+The `architecture.md` design artifact is checked by an automated workflow validator. The design state is **rejected** unless the artifact satisfies every rule in this section. These rules are normative: reproduce the structure literally rather than paraphrasing it. This section exists so that a correct design can be produced on the first pass instead of being repaired through repeated rework cycles.
+
+### 14.1 Required sections
+
+`architecture.md` MUST contain the following headings:
+
+- `## Overview`
+- `## Planned file layout`
+- `## Module / bead ownership`
+- `## HTTP + entrypoint integration`
+- `## Delivery phases`
+- `## Requirements`
+- `## Unit tests`
+- `## Integration and testing`
+- `## Docker & Deployment`
+- `## E2E / integration testing`
+- `## Acceptance mapping`
+
+### 14.2 Requirement IDs
+
+Every delivery phase listed in Section 14.3 MUST have at least one `### <req-id>` heading in `architecture.md`, where `<req-id>` is exactly the phase ID from that table. The Tester's anti-hallucination check rejects any `### <req-id>` in `TEST_PLAN.md` that has no matching `### <req-id>` in `architecture.md` or in this SPEC. Only reference requirement IDs that appear in Section 14.3; do not invent new ones.
+
+The nine canonical phase IDs are:
+
+1. `project-foundation`
+2. `project-foundation-support`
+3. `core-market-infrastructure`
+4. `database-portfolio-engine`
+5. `watchlist-market-ui`
+6. `portfolio-visualisation-trading`
+7. `ai-trading-assistant`
+8. `application-polish`
+9. `testing-release`
+
+### 14.3 Delivery phase contract
+
+The `## Delivery phases` section of `architecture.md` MUST contain a YAML block named `delivery_phases` with one entry per canonical phase ID. Each entry MUST declare `id`, `title`, `spec_focus`, `required_files`, `qa_verify_command`, and `depends_on`. Every `required_files` entry MUST be an exact literal path under `finally/`; wildcard paths such as `test_*.py` or `*_test.go` are forbidden. Each `qa_verify_command` MUST be a single quoted shell scalar that verifies every file owned by that phase.
+
+**Frontend build gate (hard requirement).** If a phase's `required_files` includes ANY path under `finally/frontend/`, that phase's `qa_verify_command` MUST contain the exact fragment `(cd finally/frontend && npm run build)` in addition to any backend or test gates. The workflow validator enforces this and a missing build gate causes design rejection. The following phases deliver frontend files and therefore all require the build gate:
+
+| Phase | Representative frontend files delivered |
+|---|---|
+| `project-foundation` | `finally/frontend/package.json`, `finally/frontend/tsconfig.json`, `finally/frontend/next.config.js`, `finally/frontend/app/layout.tsx`, `finally/frontend/app/page.tsx`, `finally/frontend/app/globals.css` |
+| `project-foundation-support` | `finally/frontend/next-env.d.ts` |
+| `watchlist-market-ui` | `finally/frontend/components/Header.tsx`, `Sidebar.tsx`, `MarketOverview.tsx`, `Watchlist.tsx`, `PriceChart.tsx` |
+| `portfolio-visualisation-trading` | `finally/frontend/components/PortfolioSummary.tsx`, `finally/frontend/components/TradingPanel.tsx` |
+| `ai-trading-assistant` | `finally/frontend/components/ChatAssistant.tsx`, `finally/frontend/components/ChatAssistant.test.tsx` |
+| `application-polish` | `finally/frontend/app/polish.css` |
+
+`database-portfolio-engine` and `testing-release` deliver no frontend source in their baseline contract; add the build gate to them only if their `required_files` is extended with a frontend path. When editing a `qa_verify_command` to add the gate, append the fragment before the closing quote and verify the resulting command text contains `npm run build` exactly once and remains a single quoted YAML scalar.
+
+### 14.4 Route verbatim rule
+
+Any HTTP route table in `architecture.md` MUST match Section 8 of this SPEC exactly — method, path, request shape, and response contract. No aliases, no renamed paths, and no extra convenience routes.
+
+### 14.5 File path prefix rule
+
+The layout root is `finally`. All file paths anywhere in `architecture.md` MUST use the `finally/` prefix. Never use `./`, bare `backend/...`, or bare `frontend/...` in backticked paths.
+
+### 14.6 Docker section rule
+
+The `## Docker & Deployment` section of `architecture.md` MUST explicitly describe both build stages: the Node build stage on `node:20-slim` and the Python runtime stage on `python:3.12-slim`. It MUST name the `finally/frontend/out/` handoff from the first stage to the second, the exposed port 8010, and the exact CMD/entrypoint. A paragraph that only names base images, the port, and the CMD without describing the handoff is insufficient for design review.
+
 ## Delivery Phases
 
 These delivery phases are designed for an AI-driven software development pipeline. Each phase delivers a vertically integrated, testable milestone rather than isolated technical components, ensuring continuous progress toward a fully functional application.
+
+The eight user-facing phases below map to the nine canonical phase IDs in Section 14.3. `project-foundation-support` is a machine-facing split of Phase 1 so that support artifacts and SQLite initialization can be verified independently. When producing `architecture.md`, use the canonical IDs from Section 14.3 verbatim; do not treat the "Phase N" labels as IDs.
+
+| User-facing phase | Canonical design phase ID(s) |
+|---|---|
+| Phase 1 — Project Foundation | `project-foundation`, `project-foundation-support` |
+| Phase 2 — Core Market Infrastructure | `core-market-infrastructure` |
+| Phase 3 — Database & Portfolio Engine | `database-portfolio-engine` |
+| Phase 4 — Watchlist & Market UI | `watchlist-market-ui` |
+| Phase 5 — Portfolio Visualisation & Trading | `portfolio-visualisation-trading` |
+| Phase 6 — AI Trading Assistant | `ai-trading-assistant` |
+| Phase 7 — Application Polish | `application-polish` |
+| Phase 8 — Testing & Release | `testing-release` |
 
 ---
 

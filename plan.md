@@ -1,105 +1,104 @@
 # Implementation plan
 
-## Phase context
+## Scope and verification
 
-Active phase: `project-foundation`. Implement only the ten required paths in this map. The common phase
-verification command is:
+This project-foundation phase implements exactly the ten required foundation files under `finally/`. It establishes a runnable FastAPI container, a static-export Next.js dashboard, and the local compose entrypoint; later-phase trading, data, and integration work is out of scope. Acceptance is grounded in SPEC.md and architecture.md: the frontend must render the FinAlly Trading Workstation heading, the ten specified watchlist tickers, chart container, and `$10,000` portfolio summary; the backend must expose the architecture-defined FastAPI `app` and serve the foundation application; and the container/compose configuration must build and run that application on port 8000.
 
-`test -f finally/backend/app/main.py && test -f finally/backend/app/main_test.py && test -f finally/frontend/package.json && test -f finally/frontend/tsconfig.json && test -f finally/frontend/next.config.js && test -f finally/frontend/app/layout.tsx && test -f finally/frontend/app/page.tsx && test -f finally/frontend/app/globals.css && test -f finally/Dockerfile && test -f finally/docker-compose.yml && PYTHONPATH=finally/backend python -m pytest finally/backend/app/main_test.py && (cd finally/frontend && npm run build)`
+Phase verification:
+`test -f finally/backend/app/main.py && test -f finally/frontend/package.json && test -f finally/frontend/tsconfig.json && test -f finally/frontend/next.config.js && test -f finally/frontend/next-env.d.ts && test -f finally/frontend/app/layout.tsx && test -f finally/frontend/app/page.tsx && test -f finally/frontend/app/globals.css && test -f finally/Dockerfile && test -f finally/docker-compose.yml && (cd finally/frontend && npm run build)`
 
 ## Bead map
 
 ### te-0oc: finally/backend/app/main.py
-- Scope: Implement the foundation HTTP app, `/api/health`, and static export root serving.
-- Architecture: `architecture.md` backend foundation/static-serving section; SPEC HTTP contract.
-- Interfaces: `GET /api/health` succeeds; `GET /` serves `finally/frontend/out/index.html`; missing export returns HTTP 503 with a diagnostic response.
-- Depends on: finally/frontend/next.config.js, finally/frontend/app/page.tsx
-- Consumed by: finally/backend/app/main_test.py, finally/Dockerfile, finally/docker-compose.yml
-- Acceptance: Health succeeds. Root serves the real export, whose HTML contains the dashboard heading, AAPL, GOOGL, MSFT, AMZN, TSLA, NVDA, META, JPM, V, NFLX, and `$10,000`. If `finally/frontend/out/index.html` is missing, root returns 503 with a diagnostic and never placeholder HTML.
-- Verify: the common phase verification command above.
-
-### te-x44: finally/backend/app/main_test.py
-- Scope: Add tests for the foundation HTTP contract.
-- Architecture: `architecture.md` backend test section and SPEC foundation acceptance cases.
-- Interfaces: Exercise `/api/health` and `/`, asserting status and response content.
-- Depends on: finally/backend/app/main.py
-- Consumed by: phase verification
-- Acceptance: Tests assert successful `GET /api/health`; root returns real export HTML containing the dashboard heading, all ten tickers (AAPL, GOOGL, MSFT, AMZN, TSLA, NVDA, META, JPM, V, NFLX), and `$10,000`; and a missing `finally/frontend/out/index.html` returns 503 diagnostic output, never placeholder HTML.
-- Verify: the common phase verification command above.
+- Scope: Implement the architecture-defined FastAPI application entry module and its foundation/static-serving behavior, preserving the exported `app` consumed by Uvicorn and the container.
+- Architecture: architecture.md backend application section; use the SPEC foundation API and application layout without adding later-phase trading behavior.
+- Interfaces: exports `create_app(...) -> FastAPI` and application object `app`; the module is launched as `app.main:app` from `/app/backend`.
+- Depends on: finally/frontend/app/page.tsx, finally/frontend/app/layout.tsx
+- Consumed by: finally/Dockerfile, finally/docker-compose.yml
+- Acceptance: the module imports successfully; `app` is the FastAPI entrypoint named by both container commands; the foundation response/static behavior described by SPEC is available without inventing extra routes.
+- Verify: `python -c "from backend.app.main import app; print(app)"` from `finally`
 
 ### te-drp: finally/frontend/package.json
-- Scope: Define the Next.js foundation manifest, dependencies, and static-export build script.
-- Architecture: `architecture.md` frontend project-manifest section.
-- Interfaces: `npm run build` is the frontend build entrypoint and emits the export consumed by the backend.
+- Scope: Define the Next.js 14, React 18, and TypeScript project manifest and the `dev`, `build`, and `start` scripts required by the architecture.
+- Architecture: architecture.md frontend project configuration section.
+- Interfaces: scripts `dev`, `build`, `start`; dependencies `next`, `react`, `react-dom`; development dependencies for Node/React typings and TypeScript.
 - Depends on: <none>
-- Consumed by: finally/frontend/tsconfig.json, finally/frontend/next.config.js, finally/Dockerfile, finally/docker-compose.yml
-- Acceptance: The manifest identifies a Next.js App Router TypeScript application, supplies the required React/Next tooling, and makes `npm run build` produce `finally/frontend/out/index.html`; it adds no later-phase data/API behavior.
-- Verify: the common phase verification command above.
+- Consumed by: finally/Dockerfile, finally/frontend/tsconfig.json
+- Acceptance: the manifest is valid JSON, marks the package private, pins the architecture versions, and `npm run build` is the defined production build command.
+- Verify: `cd finally/frontend && npm run build`
 
 ### te-5ew: finally/frontend/tsconfig.json
-- Scope: Configure strict TypeScript, JSX, module resolution, and App Router source inclusion.
-- Architecture: `architecture.md` frontend TypeScript configuration section.
-- Interfaces: Configuration type-checks `layout.tsx`, `page.tsx`, and their CSS import.
-- Depends on: finally/frontend/package.json
-- Consumed by: finally/frontend/app/layout.tsx, finally/frontend/app/page.tsx
-- Acceptance: The foundation pages compile through the project build with Next conventions and do not require later-phase modules.
-- Verify: the common phase verification command above.
+- Scope: Configure strict, no-emit TypeScript with Next.js bundler resolution, JSX preservation, Next plugin, and the architecture include/exclude sets.
+- Architecture: architecture.md frontend project configuration section.
+- Interfaces: compiler configuration consumed by Next.js/TypeScript; includes `next-env.d.ts`, Next generated types, and all `.ts`/`.tsx` sources.
+- Depends on: finally/frontend/package.json, finally/frontend/next-env.d.ts
+- Consumed by: finally/frontend/app/layout.tsx, finally/frontend/app/page.tsx, finally/frontend/next.config.js
+- Acceptance: valid JSON enables strict type checking, no emit, ESNext module resolution, JSX preserve, incremental compilation, and excludes node_modules as specified.
+- Verify: `cd finally/frontend && npx tsc --noEmit`
 
 ### te-x3g: finally/frontend/next.config.js
-- Scope: Configure deterministic static export behavior.
-- Architecture: `architecture.md` frontend static-export configuration section.
-- Interfaces: Next configuration enables an export with `finally/frontend/out/index.html`.
+- Scope: Configure the Next.js application for static export and strict React mode as required for the container's copied `out` directory.
+- Architecture: architecture.md frontend build configuration section.
+- Interfaces: exports the Next.js config object with `output: "export"` and `reactStrictMode: true`.
 - Depends on: finally/frontend/package.json
-- Consumed by: finally/backend/app/main.py, finally/frontend/app/page.tsx, finally/Dockerfile
-- Acceptance: The foundation build emits `out/index.html` and the root page needs no server-only runtime; configuration is limited to static-export behavior.
-- Verify: the common phase verification command above.
+- Consumed by: finally/frontend/app/layout.tsx, finally/frontend/app/page.tsx, finally/Dockerfile
+- Acceptance: Next recognizes the config, produces a static `out` directory, and the production build succeeds with the two architecture-required options.
+- Verify: `cd finally/frontend && npm run build`
+
+### te-95q: finally/frontend/next-env.d.ts
+- Scope: Provide the standard generated Next.js ambient type references required by the TypeScript project.
+- Architecture: architecture.md frontend type-environment section.
+- Interfaces: ambient references for `next` and `next/image-types/global`; no runtime exports.
+- Depends on: finally/frontend/package.json
+- Consumed by: finally/frontend/tsconfig.json
+- Acceptance: the file contains the standard Next.js type references, is included by tsconfig, and permits the app files to type-check without runtime code.
+- Verify: `cd finally/frontend && npx tsc --noEmit`
 
 ### te-2yb: finally/frontend/app/layout.tsx
-- Scope: Provide the App Router root layout, document metadata, and global stylesheet import.
-- Architecture: `architecture.md` frontend root-layout section.
-- Interfaces: Export the root layout component and render children in a valid HTML shell.
-- Depends on: finally/frontend/tsconfig.json, finally/frontend/app/globals.css
-- Consumed by: finally/frontend/app/page.tsx, finally/frontend/next.config.js
-- Acceptance: Layout builds, imports global CSS, supplies meaningful dashboard metadata/title, and renders page content; it introduces no later-phase interactions.
-- Verify: the common phase verification command above.
+- Scope: Implement the root App Router layout, import global CSS, set the FinAlly metadata, and render the required English HTML/body shell.
+- Architecture: architecture.md frontend layout section.
+- Interfaces: exports `metadata` with title `FinAlly` and description `AI Trading Workstation`; default export `RootLayout({ children }: { children: React.ReactNode })`.
+- Depends on: finally/frontend/tsconfig.json, finally/frontend/next-env.d.ts, finally/frontend/app/globals.css
+- Consumed by: Next.js App Router and finally/frontend/app/page.tsx
+- Acceptance: build succeeds; the layout imports globals.css, emits `<html lang='en'>`, and wraps children in `<body>` with the specified metadata.
+- Verify: `cd finally/frontend && npm run build`
 
 ### te-stl: finally/frontend/app/page.tsx
-- Scope: Implement the static foundation dashboard at `/`.
-- Architecture: `architecture.md` frontend dashboard-foundation section and SPEC initial dashboard content.
-- Interfaces: Export the App Router page component.
+- Scope: Implement the static dashboard foundation from SPEC: heading, watchlist, chart placeholder, and portfolio summary.
+- Architecture: architecture.md dashboard page section.
+- Interfaces: default export `DashboardPage`; renders IDs `watchlist-container`, `chart-container`, and `portfolio-summary`.
 - Depends on: finally/frontend/tsconfig.json, finally/frontend/app/layout.tsx, finally/frontend/app/globals.css
-- Consumed by: finally/frontend/next.config.js, finally/backend/app/main.py, finally/backend/app/main_test.py
-- Acceptance: Exported root HTML has a clear dashboard heading, visibly includes AAPL, GOOGL, MSFT, AMZN, TSLA, NVDA, META, JPM, V, NFLX, and displays `$10,000`. It remains static foundation content, with no later quotes/orders/portfolio behavior.
-- Verify: the common phase verification command above.
+- Consumed by: Next.js App Router
+- Acceptance: rendered page contains `FinAlly Trading Workstation`; watchlist contains exactly the specified foundation tickers AAPL, GOOGL, MSFT, AMZN, TSLA, NVDA, META, JPM, V, NFLX; chart section has the required chart container; portfolio displays `$10,000`; build succeeds.
+- Verify: `cd finally/frontend && npm run build`
 
 ### te-2d8: finally/frontend/app/globals.css
-- Scope: Supply global foundation styling imported by the root layout.
-- Architecture: `architecture.md` frontend global-style section.
-- Interfaces: Provide global CSS for the layout and page markup; no runtime API.
+- Scope: Provide the global reset and dark FinAlly visual foundation used by the root layout and dashboard.
+- Architecture: architecture.md frontend styling section.
+- Interfaces: global CSS selectors for `html`, `body`, `#__next`, and `*`; establishes zero margin/padding, full-height layout, dark background, light text, font stack, and border-box sizing.
 - Depends on: <none>
 - Consumed by: finally/frontend/app/layout.tsx, finally/frontend/app/page.tsx
-- Acceptance: CSS loads in the build and establishes a readable baseline for the foundation page, heading, ticker content, and `$10,000`, without later-phase widgets or behavior.
-- Verify: the common phase verification command above.
+- Acceptance: stylesheet is importable by the layout and applies the architecture-required dark background, light foreground, full-height root, reset, and box-sizing behavior without adding unsupported UI features.
+- Verify: `cd finally/frontend && npm run build`
 
 ### te-n92: finally/Dockerfile
-- Scope: Build the frontend export and package it with the backend application.
-- Architecture: `architecture.md` containerization section.
-- Interfaces: `finally/` is the build context; image contains backend and `frontend/out/index.html` and launches the real app.
-- Depends on: finally/backend/app/main.py, finally/frontend/package.json, finally/frontend/next.config.js, finally/frontend/app/page.tsx
+- Scope: Build the frontend static export, assemble it with the Python backend in a slim runtime image, install the pinned FastAPI/Uvicorn runtime, expose port 8000, and launch `app.main:app`.
+- Architecture: architecture.md container section.
+- Interfaces: multi-stage frontend-builder output `/app/frontend/out`; runtime command `uvicorn backend.app.main:app --host 0.0.0.0 --port 8000`; exposed port 8000.
+- Depends on: finally/frontend/package.json, finally/frontend/tsconfig.json, finally/frontend/next.config.js, finally/backend/app/main.py
 - Consumed by: finally/docker-compose.yml
-- Acceptance: Image build produces the static export before backend startup, retains `frontend/out/index.html`, and launches the real application rather than a placeholder command; no later-phase services are added.
-- Verify: the common phase verification command above.
+- Acceptance: Docker build runs the real `npm run build`, copies backend and static export into the runtime image, installs the architecture-pinned runtime, exposes 8000, and starts the actual FastAPI app rather than a placeholder.
+- Verify: `docker build -f finally/Dockerfile finally`
 
 ### te-cwv: finally/docker-compose.yml
-- Scope: Define the foundation service, Dockerfile build context, runtime, and application port.
-- Architecture: `architecture.md` compose/deployment section.
-- Interfaces: Compose builds `finally/Dockerfile`, starts the real backend with its export, and exposes `/` and `/api/health`.
-- Depends on: finally/Dockerfile
-- Consumed by: operator deployment and phase verification
-- Acceptance: Compose uses the specified project context and Dockerfile, starts the real app with generated export available, and exposes the documented HTTP service; no fake server or later-phase service is present.
-- Verify: the common phase verification command above.
+- Scope: Define the single `app` service that builds the real Dockerfile, maps host port 8000 to container port 8000, uses `/app/backend`, mounts the database volume, and launches the FastAPI application.
+- Architecture: architecture.md compose section.
+- Interfaces: service `app`; build context `.` and Dockerfile `Dockerfile`; port mapping `8000:8000`; Uvicorn command targeting `app.main:app`.
+- Depends on: finally/Dockerfile, finally/backend/app/main.py
+- Consumed by: local deployment and the phase verification workflow
+- Acceptance: compose configuration is valid, builds the real app image, exposes port 8000, and does not substitute a mock/placeholder service or command.
+- Verify: `docker compose -f finally/docker-compose.yml config`
 
 ## Future considerations
 
-Later phases may add data, portfolio, trading, and richer dashboard behavior. Those features are intentionally
-outside this foundation phase.
+Trading data, persistence, authentication, order execution, and richer chart interactions belong to later delivery phases and must not be added to these foundation beads.

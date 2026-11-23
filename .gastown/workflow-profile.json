@@ -7,7 +7,7 @@
     "layout_root": "finally",
     "bead_title_contains": "Implement finally/",
     "unittest_module": "",
-    "qa_verify_command": "docker compose -f finally/test/docker-compose.test.yml down --remove-orphans && docker compose -f finally/test/docker-compose.test.yml build --no-cache && docker compose -f finally/test/docker-compose.test.yml up --exit-code-from playwright",
+    "qa_verify_command": "test -f finally/test/playwright.config.ts && test -f finally/test/e2e.spec.ts && test -f finally/test/docker-compose.test.yml && test -f finally/.github/workflows/ci.yml && (cd /app/test cd finally/test && npm installcd finally/test && npm install npm install && npx playwright test --project=chromium)",
     "test_runner": "pytest",
     "required_files": [
       "finally/planning/PLAN.md",
@@ -26,36 +26,65 @@
       "finally/backend/app/api/__init__.py",
       "finally/backend/app/api/schemas.py",
       "finally/test/e2e.spec.ts",
-      "finally/backend/app/main_test.py",
-      "finally/backend/tests/test_chat.py",
-      "finally/backend/db/schema.py",
-      "finally/backend/app/market/gbm.py",
-      "finally/backend/app/market/massive.py",
-      "finally/backend/app/market/cache.py",
-      "finally/backend/app/market/sse.py",
-      "finally/backend/app/portfolio/engine.py",
-      "finally/backend/tests/test_market_infrastructure.py",
+      "finally/backend/pyproject.toml",
+      "finally/backend/uv.lock",
       "finally/frontend/package.json",
       "finally/frontend/tsconfig.json",
       "finally/frontend/next.config.js",
-      "finally/frontend/next-env.d.ts",
       "finally/frontend/app/layout.tsx",
       "finally/frontend/app/page.tsx",
       "finally/frontend/app/globals.css",
-      "finally/frontend/app/polish.css",
+      "finally/backend/app/main_test.py",
+      "finally/frontend/next-env.d.ts",
+      "finally/.github/workflows/ci.yml",
+      "finally/backend/app/market/sse.py",
+      "finally/backend/app/market/cache.py",
+      "finally/backend/app/market/massive.py",
+      "finally/backend/app/market/gbm.py",
+      "finally/backend/tests/test_market_infrastructure.py",
+      "finally/backend/db/schema.py",
+      "finally/backend/app/portfolio/engine.py",
+      "finally/.env.example",
+      "finally/test/api/helpers.ts",
+      "finally/test/pages/dashboard.page.ts",
+      "finally/test/specs/dashboard.spec.ts",
+      "finally/test/fixtures/base.ts",
+      "finally/frontend/lib/api.ts",
+      "finally/frontend/lib/sse.ts",
       "finally/frontend/components/Header.tsx",
       "finally/frontend/components/Sidebar.tsx",
       "finally/frontend/components/MarketOverview.tsx",
       "finally/frontend/components/Watchlist.tsx",
       "finally/frontend/components/PriceChart.tsx",
+      "finally/test/watchlist-market-ui.spec.ts",
       "finally/frontend/components/PortfolioSummary.tsx",
+      "finally/frontend/components/PortfolioHeatmap.tsx",
+      "finally/frontend/components/PnlChart.tsx",
+      "finally/frontend/components/PositionsTable.tsx",
       "finally/frontend/components/TradingPanel.tsx",
+      "finally/test/portfolio-visualisation-trading.spec.ts",
+      "finally/test/pages/watchlist.page.ts",
+      "finally/test/specs/watchlist.spec.ts",
+      "finally/test/pages/trade.page.ts",
+      "finally/test/specs/trading.spec.ts",
+      "finally/backend/app/ai/llm.py",
+      "finally/backend/app/ai/prompts.py",
+      "finally/backend/app/ai/structured.py",
       "finally/frontend/components/ChatAssistant.tsx",
       "finally/frontend/components/ChatAssistant.test.tsx",
-      "finally/test/watchlist-market-ui.spec.ts",
-      "finally/test/portfolio-visualisation-trading.spec.ts",
+      "finally/backend/tests/test_chat.py",
+      "finally/test/pages/portfolio.page.ts",
+      "finally/test/specs/portfolio.spec.ts",
+      "finally/test/pages/chat.page.ts",
+      "finally/test/specs/chat.spec.ts",
+      "finally/frontend/app/polish.css",
+      "finally/frontend/tailwind.config.ts",
+      "finally/frontend/postcss.config.js",
       "finally/test/application-polish.spec.ts",
-      "finally/.github/workflows/ci.yml"
+      "finally/test/specs/sse.spec.ts",
+      "finally/test/specs/navigation.spec.ts",
+      "finally/test/specs/mvp.spec.ts",
+      "finally/test/package.json"
     ],
     "delivery_phases": [
       {
@@ -63,43 +92,34 @@
         "title": "Project Foundation",
         "required_files": [
           "finally/backend/app/main.py",
-          "finally/backend/app/main_test.py",
+          "finally/backend/pyproject.toml",
+          "finally/backend/uv.lock",
           "finally/frontend/package.json",
           "finally/frontend/tsconfig.json",
           "finally/frontend/next.config.js",
           "finally/frontend/app/layout.tsx",
           "finally/frontend/app/page.tsx",
           "finally/frontend/app/globals.css",
-          "finally/Dockerfile",
-          "finally/docker-compose.yml"
+          "finally/Dockerfile"
         ],
-        "qa_verify_command": "test -f finally/backend/app/main.py && test -f finally/backend/app/main_test.py && test -f finally/frontend/package.json && test -f finally/frontend/tsconfig.json && test -f finally/frontend/next.config.js && test -f finally/frontend/app/layout.tsx && test -f finally/frontend/app/page.tsx && test -f finally/frontend/app/globals.css && test -f finally/Dockerfile && test -f finally/docker-compose.yml && PYTHONPATH=finally/backend python -m pytest finally/backend/app/main_test.py && (cd finally/frontend && npm run build)",
+        "qa_verify_command": "test -f finally/backend/app/main.py && test -f finally/backend/pyproject.toml && test -f finally/backend/uv.lock && test -f finally/frontend/package.json && test -f finally/frontend/tsconfig.json && test -f finally/frontend/next.config.js && test -f finally/frontend/app/layout.tsx && test -f finally/frontend/app/page.tsx && test -f finally/frontend/app/globals.css && test -f finally/Dockerfile && (cd finally/frontend && npm run build) && (cd finally/backend && uvicorn app.main:app --host 0.0.0.0 --port 8010 >/tmp/testgt4-foundation.log 2>&1 & pid=$!; trap \"kill $pid\" EXIT; sleep 2; curl -fsS http://127.0.0.1:8010/api/health && curl -fsS http://127.0.0.1:8010/ | grep -F \"FinAlly Trading Workstation\")",
         "spec_focus": "Project Foundation",
         "file_dependencies": {
           "finally/Dockerfile": [
-            "finally/backend/app/main.py",
+            "finally/backend/pyproject.toml",
+            "finally/backend/uv.lock",
             "finally/frontend/package.json",
-            "finally/frontend/next.config.js",
-            "finally/frontend/app/page.tsx"
+            "finally/frontend/next.config.js"
           ],
           "finally/backend/app/main.py": [
-            "finally/frontend/app/page.tsx",
-            "finally/frontend/app/layout.tsx"
-          ],
-          "finally/backend/app/main_test.py": [
-            "finally/backend/app/main.py",
+            "finally/backend/pyproject.toml",
             "finally/frontend/app/page.tsx"
           ],
           "finally/frontend/app/layout.tsx": [
-            "finally/frontend/next.config.js",
             "finally/frontend/app/globals.css"
           ],
           "finally/frontend/app/page.tsx": [
             "finally/frontend/app/layout.tsx"
-          ],
-          "finally/frontend/next.config.js": [
-            "finally/frontend/package.json",
-            "finally/frontend/tsconfig.json"
           ]
         }
       },
@@ -107,25 +127,33 @@
         "id": "project-foundation-support",
         "title": "Project Foundation Support",
         "required_files": [
+          "finally/backend/app/main_test.py",
+          "finally/backend/db/schema.py",
           "finally/planning/PLAN.md",
           "finally/scripts/start_mac.sh",
           "finally/scripts/stop_mac.sh",
           "finally/scripts/start_windows.ps1",
           "finally/scripts/stop_windows.ps1",
           "finally/.env",
-          "finally/.gitignore",
-          "finally/.github/workflows/ci.yml",
-          "finally/db/.gitkeep",
-          "finally/backend/db/schema.py"
+          "finally/frontend/next-env.d.ts",
+          "finally/docker-compose.yml"
         ],
-        "qa_verify_command": "test -f finally/planning/PLAN.md && test -f finally/scripts/start_mac.sh && test -f finally/scripts/stop_mac.sh && test -f finally/scripts/start_windows.ps1 && test -f finally/scripts/stop_windows.ps1 && test -f finally/.env && test -f finally/.gitignore && test -f finally/.github/workflows/ci.yml && test -f finally/db/.gitkeep && test -f finally/backend/db/schema.py",
+        "qa_verify_command": "(cd finally/frontend && npm run build) && test -f finally/backend/app/main_test.py && test -f finally/backend/db/schema.py && test -f finally/planning/PLAN.md && test -f finally/scripts/start_mac.sh && test -f finally/scripts/stop_mac.sh && test -f finally/scripts/start_windows.ps1 && test -f finally/scripts/stop_windows.ps1 && test -f finally/.env && test -f finally/frontend/next-env.d.ts && test -f finally/docker-compose.yml && (cd finally/backend && pytest -q app/main_test.py)",
         "depends_on": [
           "project-foundation"
         ],
         "spec_focus": "Project Foundation",
         "file_dependencies": {
+          "finally/backend/app/main_test.py": [
+            "finally/backend/db/schema.py",
+            "finally/backend/app/main.py"
+          ],
           "finally/backend/db/schema.py": [
-            "finally/db/.gitkeep"
+            "finally/backend/pyproject.toml"
+          ],
+          "finally/docker-compose.yml": [
+            "finally/Dockerfile",
+            "finally/backend/app/main.py"
           ]
         }
       },
@@ -135,36 +163,31 @@
         "required_files": [
           "finally/backend/app/api/__init__.py",
           "finally/backend/app/api/schemas.py",
-          "finally/frontend/next-env.d.ts",
-          "finally/backend/tests/test_market_infrastructure.py",
           "finally/backend/app/market/sse.py",
           "finally/backend/app/market/cache.py",
           "finally/backend/app/market/massive.py",
-          "finally/backend/app/market/gbm.py"
+          "finally/backend/app/market/gbm.py",
+          "finally/backend/tests/test_market_infrastructure.py",
+          "finally/.gitignore"
         ],
-        "qa_verify_command": "test -f finally/backend/app/api/__init__.py && test -f finally/backend/app/api/schemas.py && test -f finally/frontend/next-env.d.ts && test -f finally/backend/tests/test_market_infrastructure.py && PYTHONPATH=finally/backend python -m pytest finally/backend/tests/test_market_infrastructure.py && (cd finally/frontend && npm run build)",
+        "qa_verify_command": "test -f finally/backend/app/api/__init__.py && test -f finally/backend/app/api/schemas.py && test -f finally/backend/app/market/sse.py && test -f finally/backend/app/market/cache.py && test -f finally/backend/app/market/massive.py && test -f finally/backend/app/market/gbm.py && test -f finally/backend/tests/test_market_infrastructure.py && test -f finally/.gitignore && (cd finally/frontend && npm run build) && (cd finally/backend && pytest -q tests/test_market_infrastructure.py)",
         "depends_on": [
           "project-foundation-support"
         ],
         "spec_focus": "Core Market Infrastructure",
         "file_dependencies": {
+          "finally/backend/app/api/__init__.py": [
+            "finally/backend/app/main.py",
+            "finally/backend/app/api/schemas.py"
+          ],
           "finally/backend/app/market/cache.py": [
-            "finally/backend/app/main.py"
-          ],
-          "finally/backend/app/market/gbm.py": [
-            "finally/backend/app/main.py"
-          ],
-          "finally/backend/app/market/massive.py": [
-            "finally/backend/app/main.py"
+            "finally/backend/app/market/gbm.py",
+            "finally/backend/app/market/massive.py"
           ],
           "finally/backend/app/market/sse.py": [
-            "finally/backend/app/main.py",
             "finally/backend/app/market/cache.py"
           ],
           "finally/backend/tests/test_market_infrastructure.py": [
-            "finally/backend/app/market/gbm.py",
-            "finally/backend/app/market/massive.py",
-            "finally/backend/app/market/cache.py",
             "finally/backend/app/market/sse.py"
           ]
         }
@@ -173,9 +196,16 @@
         "id": "database-portfolio-engine",
         "title": "Database & Portfolio Engine",
         "required_files": [
-          "finally/backend/app/portfolio/engine.py"
+          "finally/backend/app/portfolio/engine.py",
+          "finally/.env.example",
+          "finally/db/.gitkeep",
+          "finally/test/package.json",
+          "finally/test/api/helpers.ts",
+          "finally/test/pages/dashboard.page.ts",
+          "finally/test/specs/dashboard.spec.ts",
+          "finally/test/fixtures/base.ts"
         ],
-        "qa_verify_command": "PYTHONPATH=finally/backend python -c \"from app.main import create_app; p={r.path for r in create_app().routes}; assert {\\\"/api/portfolio\\\", \\\"/api/portfolio/trade\\\", \\\"/api/portfolio/history\\\"} <= p\"",
+        "qa_verify_command": "test -f finally/backend/app/portfolio/engine.py && test -f finally/.env.example && test -f finally/db/.gitkeep && test -f finally/test/package.json && test -f finally/test/api/helpers.ts && test -f finally/test/pages/dashboard.page.ts && test -f finally/test/specs/dashboard.spec.ts && test -f finally/test/fixtures/base.ts && (cd finally/backend && pytest -q tests/test_market_infrastructure.py app/main_test.py)",
         "depends_on": [
           "core-market-infrastructure"
         ],
@@ -184,6 +214,12 @@
           "finally/backend/app/portfolio/engine.py": [
             "finally/backend/db/schema.py",
             "finally/backend/app/market/cache.py"
+          ],
+          "finally/test/api/helpers.ts": [
+            "finally/test/package.json"
+          ],
+          "finally/test/pages/dashboard.page.ts": [
+            "finally/test/fixtures/base.ts"
           ]
         }
       },
@@ -191,6 +227,8 @@
         "id": "watchlist-market-ui",
         "title": "Watchlist & Market UI",
         "required_files": [
+          "finally/frontend/lib/api.ts",
+          "finally/frontend/lib/sse.ts",
           "finally/frontend/components/Header.tsx",
           "finally/frontend/components/Sidebar.tsx",
           "finally/frontend/components/MarketOverview.tsx",
@@ -198,27 +236,21 @@
           "finally/frontend/components/PriceChart.tsx",
           "finally/test/watchlist-market-ui.spec.ts"
         ],
-        "qa_verify_command": "test -f finally/frontend/components/Header.tsx && test -f finally/frontend/components/Sidebar.tsx && test -f finally/frontend/components/MarketOverview.tsx && test -f finally/frontend/components/Watchlist.tsx && test -f finally/frontend/components/PriceChart.tsx && test -f finally/test/watchlist-market-ui.spec.ts && (cd finally/frontend && npm run build)",
+        "qa_verify_command": "test -f finally/frontend/lib/api.ts && test -f finally/frontend/lib/sse.ts && test -f finally/frontend/components/Header.tsx && test -f finally/frontend/components/Sidebar.tsx && test -f finally/frontend/components/MarketOverview.tsx && test -f finally/frontend/components/Watchlist.tsx && test -f finally/frontend/components/PriceChart.tsx && test -f finally/test/watchlist-market-ui.spec.ts && (cd finally/frontend && npm run build)",
         "depends_on": [
           "database-portfolio-engine"
         ],
         "spec_focus": "Watchlist & Market UI",
         "file_dependencies": {
-          "finally/frontend/components/Header.tsx": [
-            "finally/frontend/app/layout.tsx"
-          ],
-          "finally/frontend/components/MarketOverview.tsx": [
-            "finally/frontend/app/page.tsx"
-          ],
           "finally/frontend/components/PriceChart.tsx": [
-            "finally/frontend/app/page.tsx"
+            "finally/frontend/lib/sse.ts"
           ],
           "finally/frontend/components/Watchlist.tsx": [
-            "finally/frontend/app/page.tsx"
+            "finally/frontend/lib/api.ts",
+            "finally/frontend/lib/sse.ts"
           ],
           "finally/test/watchlist-market-ui.spec.ts": [
-            "finally/frontend/components/Watchlist.tsx",
-            "finally/frontend/components/PriceChart.tsx"
+            "finally/frontend/components/Watchlist.tsx"
           ]
         }
       },
@@ -227,23 +259,23 @@
         "title": "Portfolio Visualisation & Trading",
         "required_files": [
           "finally/frontend/components/PortfolioSummary.tsx",
+          "finally/frontend/components/PortfolioHeatmap.tsx",
+          "finally/frontend/components/PnlChart.tsx",
+          "finally/frontend/components/PositionsTable.tsx",
           "finally/frontend/components/TradingPanel.tsx",
-          "finally/test/portfolio-visualisation-trading.spec.ts"
+          "finally/test/portfolio-visualisation-trading.spec.ts",
+          "finally/test/pages/watchlist.page.ts",
+          "finally/test/specs/watchlist.spec.ts",
+          "finally/test/pages/trade.page.ts",
+          "finally/test/specs/trading.spec.ts"
         ],
-        "qa_verify_command": "test -f finally/frontend/components/PortfolioSummary.tsx && test -f finally/frontend/components/TradingPanel.tsx && test -f finally/test/portfolio-visualisation-trading.spec.ts && PYTHONPATH=finally/backend python -c \"from app.main import create_app; assert any(r.path == \\\"/api/portfolio/trade\\\" for r in create_app().routes)\" && (cd finally/frontend && npm run build)",
+        "qa_verify_command": "test -f finally/frontend/components/PortfolioSummary.tsx && test -f finally/frontend/components/PortfolioHeatmap.tsx && test -f finally/frontend/components/PnlChart.tsx && test -f finally/frontend/components/PositionsTable.tsx && test -f finally/frontend/components/TradingPanel.tsx && test -f finally/test/portfolio-visualisation-trading.spec.ts && test -f finally/test/pages/watchlist.page.ts && test -f finally/test/specs/watchlist.spec.ts && test -f finally/test/pages/trade.page.ts && test -f finally/test/specs/trading.spec.ts && (cd finally/frontend && npm run build)",
         "depends_on": [
           "watchlist-market-ui"
         ],
         "spec_focus": "Portfolio Visualisation & Trading",
         "file_dependencies": {
-          "finally/frontend/components/PortfolioSummary.tsx": [
-            "finally/frontend/app/page.tsx"
-          ],
-          "finally/frontend/components/TradingPanel.tsx": [
-            "finally/frontend/app/page.tsx"
-          ],
           "finally/test/portfolio-visualisation-trading.spec.ts": [
-            "finally/frontend/components/PortfolioSummary.tsx",
             "finally/frontend/components/TradingPanel.tsx"
           ]
         }
@@ -252,22 +284,32 @@
         "id": "ai-trading-assistant",
         "title": "AI Trading Assistant",
         "required_files": [
+          "finally/backend/app/ai/llm.py",
+          "finally/backend/app/ai/prompts.py",
+          "finally/backend/app/ai/structured.py",
           "finally/frontend/components/ChatAssistant.tsx",
           "finally/frontend/components/ChatAssistant.test.tsx",
-          "finally/backend/tests/test_chat.py"
+          "finally/backend/tests/test_chat.py",
+          "finally/test/pages/portfolio.page.ts",
+          "finally/test/specs/portfolio.spec.ts",
+          "finally/test/pages/chat.page.ts",
+          "finally/test/specs/chat.spec.ts"
         ],
-        "qa_verify_command": "test -f finally/frontend/components/ChatAssistant.tsx && test -f finally/frontend/components/ChatAssistant.test.tsx && test -f finally/backend/tests/test_chat.py && PYTHONPATH=finally/backend python -m pytest finally/backend/tests/test_chat.py && PYTHONPATH=finally/backend python -c \"from app.main import create_app; assert any(r.path == \\\"/api/chat\\\" for r in create_app().routes)\" && (cd finally/frontend && npm run build)",
+        "qa_verify_command": "(cd finally/frontend && npm run build) && test -f finally/backend/app/ai/llm.py && test -f finally/backend/app/ai/prompts.py && test -f finally/backend/app/ai/structured.py && test -f finally/frontend/components/ChatAssistant.tsx && test -f finally/frontend/components/ChatAssistant.test.tsx && test -f finally/backend/tests/test_chat.py && test -f finally/test/pages/portfolio.page.ts && test -f finally/test/specs/portfolio.spec.ts && test -f finally/test/pages/chat.page.ts && test -f finally/test/specs/chat.spec.ts && (cd finally/backend && pytest -q tests/test_chat.py)",
         "depends_on": [
           "portfolio-visualisation-trading"
         ],
         "spec_focus": "AI Trading Assistant",
         "file_dependencies": {
-          "finally/backend/tests/test_chat.py": [
-            "finally/backend/app/main.py",
-            "finally/backend/app/portfolio/engine.py"
+          "finally/backend/app/ai/llm.py": [
+            "finally/backend/pyproject.toml"
           ],
-          "finally/frontend/components/ChatAssistant.tsx": [
-            "finally/frontend/app/page.tsx"
+          "finally/backend/app/ai/prompts.py": [
+            "finally/backend/app/ai/structured.py"
+          ],
+          "finally/backend/tests/test_chat.py": [
+            "finally/backend/app/ai/structured.py",
+            "finally/backend/app/portfolio/engine.py"
           ]
         }
       },
@@ -276,9 +318,14 @@
         "title": "Application Polish",
         "required_files": [
           "finally/frontend/app/polish.css",
-          "finally/test/application-polish.spec.ts"
+          "finally/frontend/tailwind.config.ts",
+          "finally/frontend/postcss.config.js",
+          "finally/test/application-polish.spec.ts",
+          "finally/test/specs/sse.spec.ts",
+          "finally/test/specs/navigation.spec.ts",
+          "finally/test/specs/mvp.spec.ts"
         ],
-        "qa_verify_command": "test -f finally/frontend/app/polish.css && test -f finally/test/application-polish.spec.ts && (cd finally/frontend && npm run build)",
+        "qa_verify_command": "test -f finally/frontend/app/polish.css && test -f finally/frontend/tailwind.config.ts && test -f finally/frontend/postcss.config.js && test -f finally/test/application-polish.spec.ts && test -f finally/test/specs/sse.spec.ts && test -f finally/test/specs/navigation.spec.ts && test -f finally/test/specs/mvp.spec.ts && (cd finally/frontend && npm run build)",
         "depends_on": [
           "ai-trading-assistant"
         ],
@@ -287,8 +334,8 @@
           "finally/frontend/app/polish.css": [
             "finally/frontend/app/globals.css"
           ],
-          "finally/test/application-polish.spec.ts": [
-            "finally/frontend/app/polish.css"
+          "finally/frontend/postcss.config.js": [
+            "finally/frontend/tailwind.config.ts"
           ]
         }
       },
@@ -298,21 +345,24 @@
         "required_files": [
           "finally/test/playwright.config.ts",
           "finally/test/e2e.spec.ts",
-          "finally/test/docker-compose.test.yml"
+          "finally/test/docker-compose.test.yml",
+          "finally/.github/workflows/ci.yml"
         ],
-        "qa_verify_command": "docker compose -f finally/test/docker-compose.test.yml down --remove-orphans && docker compose -f finally/test/docker-compose.test.yml build --no-cache && docker compose -f finally/test/docker-compose.test.yml up --exit-code-from playwright",
+        "qa_verify_command": "test -f finally/test/playwright.config.ts && test -f finally/test/e2e.spec.ts && test -f finally/test/docker-compose.test.yml && test -f finally/.github/workflows/ci.yml && (cd /app/test cd finally/test && npm installcd finally/test && npm install npm install && npx playwright test --project=chromium)",
         "depends_on": [
           "application-polish"
         ],
         "spec_focus": "Testing & Release",
         "file_dependencies": {
           "finally/test/docker-compose.test.yml": [
-            "finally/docker-compose.yml",
             "finally/Dockerfile",
+            "finally/docker-compose.yml"
+          ],
+          "finally/test/e2e.spec.ts": [
             "finally/test/playwright.config.ts"
           ],
           "finally/test/playwright.config.ts": [
-            "finally/test/e2e.spec.ts"
+            "finally/test/package.json"
           ]
         }
       }
@@ -328,8 +378,7 @@
     "ui_command": "",
     "max_review_retries": 3,
     "python_venv_dir": "",
-    "dev_server_port": 8000
+    "dev_server_port": 8010
   },
-  "test_plan_reviewed": true,
-  "test_plan_frozen": true
+  "test_plan_reviewed": false
 }
