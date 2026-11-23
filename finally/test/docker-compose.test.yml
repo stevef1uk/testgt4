@@ -1,0 +1,36 @@
+# Docker compose test harness for single-container rig
+# Template variables: playwright-go-test:latest, /app, npx playwright test --project=chromium --config=test/playwright.config.ts, http://app:8000, 8000, .., "CMD", "curl", "-f", "http://localhost:8000/api/health", PORT=8000
+# App runs in its own container; Playwright reaches it over the internal compose network.
+# Multi-stage Dockerfile is used to pre-install npm dependencies.
+# Source files are mounted via volumes so test changes don't require image rebuilds.
+
+services:
+  app:
+    build:
+      context: ..
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  playwright:
+    build:
+      context: ..
+      dockerfile: Dockerfile.playwright
+      target: playwright
+    working_dir: /app
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      - BASE_URL=http://app:8000
+      - CI=1
+      - PLAYWRIGHT_HTML_OPEN=never
+    volumes:
+      - ../:/src:ro
+    command: sh -c "tar -C /src --exclude=./node_modules --exclude=./.git --exclude=./playwright-report --exclude=./test-results -cf - . | tar -C /app -xf - && npx playwright test --project=chromium --config=test/playwright.config.ts"

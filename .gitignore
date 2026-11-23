@@ -8,3 +8,35 @@ node_modules/
 dist/
 .env.local
 .DS_Store
+
+# Gas Town (added by gt)
+.runtime/
+.claude/
+.logs/
+state.json
+CLAUDE.md
+CLAUDE.local.md
+.gt-agent
+typescript
+AGENTS.md
+project_label
+progress_report
+gt-agent-state.json
+
+# Gas Town mayor/rig (rig-flow checkpoints)
+codeindex.json
+**/codeindex.json
+*.db
+server
+!**/server/
+block:
+env/
+polecat/
+test-execution-command
+tests_skipped.txt
+spec_file_path.txt
+run-tests
+run-tests.sh
+run-tests.sh_backup
+qa/implementation-progress.json
+qa/qa-review-progress.json

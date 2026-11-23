@@ -1,0 +1,18 @@
+# Multi-stage Dockerfile for Playwright E2E testing in docker-compose.
+# The "playwright" target installs npm deps + browsers so compose can
+# build the test-runner image from the rig's layout root.
+# Template variables: v1.62.1-jammy
+#
+# Source files (package.json, playwright.config.ts, e2e/) are NOT copied here.
+# They are mounted via docker-compose volumes at runtime, so changes to test
+# files don't require rebuilding the image. Only package.json is copied during
+# build to cache npm install — the rest comes from the volume mount.
+
+FROM mcr.microsoft.com/playwright:v1.62.1-jammy AS playwright
+
+WORKDIR /app
+
+# Copy package manifest and install dependencies (cached layer)
+# Source files will be mounted via docker-compose volumes at runtime.
+COPY package.json package-lock.json* ./
+RUN npm install
