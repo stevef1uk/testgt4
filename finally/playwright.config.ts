@@ -9,7 +9,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: [['html', { open: 'never' }], ['list']],
   use: {
-    baseURL: process.env.BASE_URL || 'http://app:8000',
+    baseURL: process.env.BASE_URL || 'http://app:8010',
     trace: 'on-first-retry',
   },
   projects: [
