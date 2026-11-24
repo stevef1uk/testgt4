@@ -348,7 +348,7 @@
           "finally/test/docker-compose.test.yml",
           "finally/.github/workflows/ci.yml"
         ],
-        "qa_verify_command": "cd finally/test && npm install && npx playwright test --project=chromium",
+        "qa_verify_command": "test -f finally/test/playwright.config.ts && test -f finally/test/e2e.spec.ts && test -f finally/test/docker-compose.test.yml && test -f finally/.github/workflows/ci.yml && (cd /app/test cd finally/test && npm installcd finally/test && npm install npm install && npx playwright test --project=chromium)",
         "depends_on": [
           "application-polish"
         ],
