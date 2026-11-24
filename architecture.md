@@ -116,11 +116,8 @@ uvicorn app.main:app --host 0.0.0.0 --port 8010
 | Path | Method | Purpose | Response |
 | --- | --- | --- | --- |
 | / | GET | Serves `finally/frontend/out/index.html` static export | HTML / 503 if missing |
-| /_next/* | GET | Static assets from Next.js export | Static file assets |
 | /api/health | GET | Health check | {"status": "ok"} |
 | /api/stream/prices | GET | SSE price ticker stream | SSE event stream (text/event-stream) |
-| /api/market/tickers | GET | List tracked tickers & prices | List[TickData] |
-| /api/market/history/{ticker} | GET | Historical OHLC candles | List[CandleData] |
 | /api/portfolio | GET | Current portfolio summary | PortfolioSummary |
 | /api/portfolio/trade | POST | Execute trade order | TradeResponse |
 | /api/portfolio/history | GET | Trade execution history log | List[TradeRecord] |
