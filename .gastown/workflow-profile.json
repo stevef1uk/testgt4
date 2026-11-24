@@ -102,7 +102,7 @@
           "finally/frontend/app/globals.css",
           "finally/Dockerfile"
         ],
-        "qa_verify_command": "test -f finally/backend/app/main.py && test -f finally/backend/pyproject.toml && test -f finally/backend/uv.lock && test -f finally/frontend/package.json && test -f finally/frontend/tsconfig.json && test -f finally/frontend/next.config.js && test -f finally/frontend/app/layout.tsx && test -f finally/frontend/app/page.tsx && test -f finally/frontend/app/globals.css && test -f finally/Dockerfile && (cd finally/frontend && npm run build) && (cd finally/backend && uvicorn app.main:app --host 0.0.0.0 --port 8010 >/tmp/testgt4-foundation.log 2>&1 & pid=$!; trap \"kill $pid\" EXIT; sleep 2; curl -fsS http://127.0.0.1:8010/api/health && curl -fsS http://127.0.0.1:8010/ | grep -F \"FinAlly Trading Workstation\")",
+        "qa_verify_command": "test -f finally/backend/app/main.py && test -f finally/backend/pyproject.toml && test -f finally/backend/uv.lock && test -f finally/frontend/package.json && test -f finally/frontend/tsconfig.json && test -f finally/frontend/next.config.js && test -f finally/frontend/app/layout.tsx && test -f finally/frontend/app/page.tsx && test -f finally/frontend/app/globals.css && test -f finally/Dockerfile && (cd finally/frontend && npm run build) && (cd finally/backend && uvicorn app.main:app --host 0.0.0.0 --port 8010 >/tmp/testgt4-foundation.log 2>&1 & pid=$!; trap \"kill $pid\" EXIT; sleep 2; curl -fsS http://127.0.0.1:8010/api/health && curl -fsS http://127.0.0.1:8010/ | grep -F \"Trading dashboard\" && curl -fsS http://127.0.0.1:8010/ | grep -F \"FinAlly\")",
         "spec_focus": "Project Foundation",
         "file_dependencies": {
           "finally/Dockerfile": [

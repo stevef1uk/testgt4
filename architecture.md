@@ -5,7 +5,7 @@ layout_root: finally
 
 FinAlly is a single-origin AI trading workstation. A static-exported Next.js frontend is built from `finally/frontend/` and served by FastAPI on port 8010. SQLite is lazily initialized at `finally/db/finally.db`, seeded with the ten SPEC tickers and $10,000 cash. The simulator is the default market provider; a non-empty MASSIVE_API_KEY selects Massive. LLM_MOCK=true supplies deterministic chat responses.
 
-GET `/` reads `finally/frontend/out/index.html` and never emits placeholder HTML. If the export is absent it returns HTTP 503 with `{"error":"Frontend export unavailable"}`. The real dashboard contains the FinAlly heading, ten tickers with prices, cash, portfolio, watchlist, chart, trading, and chat surfaces. Manual and AI trades share validation. Browser tests assert rendered content and state changes after real interactions.
+GET `/` reads `finally/frontend/out/index.html` and never emits placeholder HTML. If the export is absent it returns HTTP 503 with `{"error":"Frontend export unavailable"}`. The real dashboard contains the level-1 heading Trading dashboard and brand text FinAlly, ten tickers with prices, cash, portfolio, watchlist, chart, trading, and chat surfaces. Manual and AI trades share validation. Browser tests assert rendered content and state changes after real interactions.
 
 ## Planned file layout
 
@@ -102,7 +102,7 @@ The exact SPEC runtime command, run from the backend working directory, is:
 
 The entrypoint parses configuration, lazily initializes SQLite, selects GBM or Massive, creates cache and portfolio services, registers routes, serves the export, and starts FastAPI. The root derives the frontend directory from `Path(__file__).resolve().parents[2] / "frontend"` and reads `frontend_root / "out" / "index.html"`.
 
-The routes match SPEC exactly: GET `/api/stream/prices`; GET `/api/portfolio`; POST `/api/portfolio/trade` with `{ticker, quantity, side}`; GET `/api/portfolio/history`; GET and POST `/api/watchlist`; DELETE `/api/watchlist/{ticker}`; POST `/api/chat`; and GET `/api/health`. SSE events contain ticker, price, previous price, timestamp, and direction. No alias or convenience route is introduced.
+The routes match SPEC exactly: GET `/api/stream/prices`; GET `/api/portfolio`; POST `/api/portfolio/trade` with `{ticker, quantity, side}`; GET `/api/portfolio/history`; GET and POST `/api/watchlist`; DELETE `/api/watchlist/{ticker}`; POST `/api/chat`; and GET /api/health. SSE events contain ticker, price, previous price, timestamp, and direction. No alias or convenience route is introduced.
 
 ## Delivery phases
 
@@ -122,7 +122,7 @@ delivery_phases:
       - finally/frontend/app/page.tsx
       - finally/frontend/app/globals.css
       - finally/Dockerfile
-    qa_verify_command: 'test -f finally/backend/app/main.py && test -f finally/backend/pyproject.toml && test -f finally/backend/uv.lock && test -f finally/frontend/package.json && test -f finally/frontend/tsconfig.json && test -f finally/frontend/next.config.js && test -f finally/frontend/app/layout.tsx && test -f finally/frontend/app/page.tsx && test -f finally/frontend/app/globals.css && test -f finally/Dockerfile && (cd finally/frontend && npm run build) && (cd finally/backend && uvicorn app.main:app --host 0.0.0.0 --port 8010 >/tmp/testgt4-foundation.log 2>&1 & pid=$!; trap "kill $pid" EXIT; sleep 2; curl -fsS http://127.0.0.1:8010/api/health && curl -fsS http://127.0.0.1:8010/ | grep -F "FinAlly Trading Workstation")'
+    qa_verify_command: 'test -f finally/backend/app/main.py && test -f finally/backend/pyproject.toml && test -f finally/backend/uv.lock && test -f finally/frontend/package.json && test -f finally/frontend/tsconfig.json && test -f finally/frontend/next.config.js && test -f finally/frontend/app/layout.tsx && test -f finally/frontend/app/page.tsx && test -f finally/frontend/app/globals.css && test -f finally/Dockerfile && (cd finally/frontend && npm run build) && (cd finally/backend && uvicorn app.main:app --host 0.0.0.0 --port 8010 >/tmp/testgt4-foundation.log 2>&1 & pid=$!; trap "kill $pid" EXIT; sleep 2; curl -fsS http://127.0.0.1:8010/api/health && curl -fsS http://127.0.0.1:8010/ | grep -F "Trading dashboard" && curl -fsS http://127.0.0.1:8010/ | grep -F "FinAlly")'
     depends_on: []
     file_dependencies:
       finally/backend/app/main.py:
@@ -324,7 +324,7 @@ delivery_phases:
 
 ### project-foundation
 
-Deliver the runnable Next static export and FastAPI skeleton, uv metadata, Docker stages, and real health/root behavior. The gate builds the frontend, launches FastAPI with the exact SPEC command, probes `/api/health`, and asserts real dashboard content rather than placeholder HTML.
+Deliver the runnable Next static export and FastAPI skeleton, uv metadata, Docker stages, and real health/root behavior. The gate builds the frontend, launches FastAPI with the exact SPEC command, probes /api/health, and asserts real dashboard content rather than placeholder HTML.
 
 ### project-foundation-support
 
@@ -348,7 +348,7 @@ Deliver summary, meaningful treemap heatmap, P&L chart, positions table, and man
 
 ### ai-trading-assistant
 
-Deliver LiteLLM through OpenRouter using `openrouter/openai/gpt-oss-120b` with Cerebras inference, structured parsing, context prompts, deterministic mock mode, persistence, recovery, and engine-validated trades and watchlist actions.
+Deliver LiteLLM through OpenRouter using openrouter/openai/gpt-oss-120b with Cerebras inference, structured parsing, context prompts, deterministic mock mode, persistence, recovery, and engine-validated trades and watchlist actions.
 
 ### application-polish
 
@@ -368,11 +368,11 @@ Each phase gate checks every concrete file it owns. Every phase delivering front
 
 ## Docker & Deployment
 
-Stage 1 is the Node build stage based on `node:20-slim`. It copies the project in `finally/frontend/`, installs dependencies from `finally/frontend/package.json`, and runs `npm install && npm run build`, producing `finally/frontend/out/`. Stage 2 is the Python runtime stage based on `python:3.12-slim`. It installs uv, copies `finally/backend/`, runs `uv sync --frozen` using `finally/backend/uv.lock`, and consumes the Stage 1 artifact with `COPY --from=frontend /frontend/out /app/frontend/out`. This is the explicit `finally/frontend/out/` handoff; the stages are not independent. Stage 2 exposes port 8010 and starts exactly with `uvicorn app.main:app --host 0.0.0.0 --port 8010`. The named volume command is `docker run -v finally-data:/app/db -p 8010:8010 --env-file finally/.env finally`.
+Stage 1 is the Node build stage based on `node:20-slim`. It copies the project in `finally/frontend/`, installs dependencies from `finally/frontend/package.json`, and runs `npm install && npm run build`, producing `finally/frontend/out/`. Stage 2 is the Python runtime stage based on `python:3.12-slim`. It installs uv, copies `finally/backend/`, runs `uv sync --frozen` using `finally/backend/uv.lock`, and consumes the Stage 1 artifact with COPY --from=frontend /frontend/out /app/frontend/out. This is the explicit `finally/frontend/out/` handoff; the stages are not independent. Stage 2 exposes port 8010 and starts exactly with `uvicorn app.main:app --host 0.0.0.0 --port 8010`. The named volume command is `docker run -v finally-data:/app/db -p 8010:8010 --env-file finally/.env finally`.
 
 ## E2E / integration testing
 
-`finally/test/docker-compose.test.yml` uses the real `finally/Dockerfile` with build context `..`; the Playwright service mounts `..:/app`, sets BASE_URL and LLM_MOCK=true, waits on `/api/health`, and runs `cd /app/test && npm install && npx playwright test --project=chromium`. Scenarios cover the dashboard, all ten tickers, prices, watchlist CRUD, trade validation and cash changes, heatmap, P&L chart, positions, chat actions, SSE reconnection, navigation, and the full happy path. Every interactive scenario proves a state change.
+`finally/test/docker-compose.test.yml` uses the real `finally/Dockerfile` with build context `..`; the Playwright service mounts `..:/app`, sets BASE_URL and LLM_MOCK=true, waits on /api/health, and runs `cd /app/test && npm install && npx playwright test --project=chromium`. Scenarios cover the dashboard, all ten tickers, prices, watchlist CRUD, trade validation and cash changes, heatmap, P&L chart, positions, chat actions, SSE reconnection, navigation, and the full happy path. Every interactive scenario proves a state change.
 
 ## Acceptance mapping
 
