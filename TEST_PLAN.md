@@ -3,31 +3,35 @@
 ## Requirements → tests
 
 ### project-foundation
-Requirement: GET / serves the real Next.js static export (dashboard heading, ten default tickers, $10,000 cash) and GET /api/health returns HTTP 200 with {"status": "ok"}.
+Requirement: The FastAPI app in backend/app/main.py serves the Next.js static export at GET / and returns HTTP 200 with {"status": "ok"} from GET /api/health.
 Level: integration
 Test file: finally/backend/app/main_test.py
 Bead ID: te-ol5
 Phase: project-foundation
 Scenarios:
-- Export present: GET / returns the real index.html from finally/frontend/out
-- Export missing: GET / returns HTTP 503 with {"error":"Frontend export unavailable"}, never a placeholder page
+- GET / returns the exported index.html when finally/frontend/out exists
+- GET / returns HTTP 503 with {"error":"Frontend export unavailable"} when the export is missing
 - GET /api/health returns HTTP 200 with status "ok"
 Assertions:
-- Body of GET / contains the dashboard heading text, not "Coming soon" or any placeholder string
+- Body of GET / is the exported dashboard page, not a placeholder string
 - 503 body decodes to {"error": "Frontend export unavailable"}
-- Health JSON decodes to status "ok"
+- Health JSON decodes to status "ok" with HTTP 200
 
 ### project-foundation-support
-Requirement: Docker, Compose, start/stop scripts, and the Playwright test infrastructure manifest and helpers exist and load without error.
+Requirement: GET / serves the real Next.js static export (dashboard heading, ten default tickers, $10,000 cash) and GET /api/health returns HTTP 200 with {"status": "ok"}; Docker, Compose, start/stop scripts, and the Playwright test infrastructure manifest and helpers exist and load without error.
 Level: integration
 Test file: finally/backend/app/main_test.py
 Bead ID: te-ol5
 Phase: project-foundation-support
 Scenarios:
+- Export present: GET / returns the real index.html from finally/frontend/out
+- Export missing: GET / returns HTTP 503 with {"error":"Frontend export unavailable"}, never a placeholder page
+- GET /api/health returns HTTP 200 with status "ok"
 - Application served by the same app factory used in the Dockerfile CMD (uvicorn app.main:app on port 8010)
-- Health endpoint reachable on the configured port
 Assertions:
-- Health check status code is 200 and JSON status is "ok"
+- Body of GET / contains the dashboard heading text, not "Coming soon" or any placeholder string
+- 503 body decodes to {"error": "Frontend export unavailable"}
+- Health JSON decodes to status "ok" with HTTP 200
 - Static root returns the export, not a fallback page
 
 ### core-market-infrastructure
