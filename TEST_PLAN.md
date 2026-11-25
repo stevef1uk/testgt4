@@ -17,22 +17,6 @@ Assertions:
 - 503 body decodes to {"error": "Frontend export unavailable"}
 - Health JSON decodes to status "ok"
 
-### project-foundation
-Requirement: GET / serves the real dashboard from finally/frontend/out/index.html (dashboard heading, FinAlly brand text, ten default tickers, $10,000 cash), returns 503 with {"error":"Frontend export unavailable"} when the export is missing, and GET /api/health returns HTTP 200 with {"status": "ok"}.
-Level: integration
-Test file: finally/backend/app/main_test.py
-Bead ID: te-ol5
-Phase: project-foundation
-Scenarios:
-- Export present: GET / returns the real index.html served from finally/frontend/out, with the dashboard content rendered
-- Export missing: with the export path pointed at an empty directory, GET / returns HTTP 503 and the JSON body {"error":"Frontend export unavailable"}
-- GET /api/health returns HTTP 200 with status "ok"
-Assertions:
-- Body of GET / contains the heading text "Trading dashboard", the text "FinAlly", each of the ten default tickers (AAPL, GOOGL, MSFT, AMZN, TSLA, NVDA, META, JPM, V, NFLX), and "$10,000"
-- Body of GET / does not contain "Coming soon", "Finally</h1>", or any other placeholder string
-- 503 body decodes to {"error": "Frontend export unavailable"}
-- Health JSON decodes to {"status": "ok"} with HTTP 200
-
 ### project-foundation-support
 Requirement: Docker, Compose, start/stop scripts, and the Playwright test infrastructure manifest and helpers exist and load without error.
 Level: integration
