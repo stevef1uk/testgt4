@@ -151,6 +151,6 @@ Assertions:
 - Cash and position figures change as expected after each trade
 
 ## Coverage summary
-- 8 test-carrying phases covered. project-foundation is setup-only (build gate only) and has no section. project-foundation-support owns finally/backend/app/main_test.py (bead te-ol5), covering GET / and /api/health.
+- 8 test-carrying phases covered: project-foundation-support, core-market-infrastructure, database-portfolio-engine, watchlist-market-ui, portfolio-visualisation-trading, ai-trading-assistant, application-polish, testing-release. project-foundation is setup-only (build gate only) and has no section. project-foundation-support owns finally/backend/app/main_test.py (bead te-ol5, the source bead for main.py, which the companion test covers), covering GET / and /api/health.
 - Levels: 1 integration (project-foundation-support), 3 unit (market, portfolio, chat backend), 4 ui (watchlist, trading, polish, release); the chat component test is a companion unit test under ai-trading-assistant.
 - Future-phase bead IDs are pending until planning creates them; active-phase bead te-ol5 is the source owner for main_test.py.
