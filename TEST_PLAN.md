@@ -11,7 +11,7 @@ Phase: project-foundation
 Scenarios:
 - Export present: GET / returns the real index.html from finally/frontend/out
 - Export missing: GET / returns HTTP 503 with {"error":"Frontend export unavailable"}, never a placeholder page
-- GET /api/health returns HTTP 200 and status "ok"
+- GET /api/health returns HTTP 200 with status "ok"
 Assertions:
 - Body of GET / contains the dashboard heading text, not "Coming soon" or any placeholder string
 - 503 body decodes to {"error": "Frontend export unavailable"}
@@ -151,6 +151,6 @@ Assertions:
 - Cash and position figures change as expected after each trade
 
 ## Coverage summary
-- 9 test-carrying phases covered. project-foundation is test-carrying: its companion test finally/backend/app/main_test.py (bead te-ol5) covers GET / and /api/health. project-foundation-support covers Docker, Compose, and script infrastructure via the same test file.
-- Levels: 2 integration (foundation phases), 3 unit (market, portfolio, chat backend), 4 ui (watchlist, trading, polish, release); the chat component test is a companion unit test under ai-trading-assistant.
+- 8 test-carrying phases covered. project-foundation is setup-only (build gate only) and has no section. project-foundation-support owns finally/backend/app/main_test.py (bead te-ol5), covering GET / and /api/health.
+- Levels: 1 integration (project-foundation-support), 3 unit (market, portfolio, chat backend), 4 ui (watchlist, trading, polish, release); the chat component test is a companion unit test under ai-trading-assistant.
 - Future-phase bead IDs are pending until planning creates them; active-phase bead te-ol5 is the source owner for main_test.py.
