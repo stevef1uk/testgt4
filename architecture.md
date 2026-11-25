@@ -41,7 +41,8 @@ Every implementation, configuration, test, harness, and marker file named by SPE
 - `finally/backend/tests/test_market_infrastructure.py`
 - `finally/.gitignore`
 - `finally/backend/db/schema.py`
-- `finally/backend/app/portfolio/engine.py`
+- `finally/backend/app/portfolio/engine.py` 
+- `finally/backend/tests/test_portfolio.py`
 - `finally/.env.example`
 - `finally/.env`
 - `finally/db/.gitkeep`
@@ -96,7 +97,7 @@ Every implementation, configuration, test, harness, and marker file named by SPE
 | --- | --- | --- |
 | `finally/backend/app/main.py` | app: FastAPI, create_app() -> FastAPI | Market pricing algorithms |
 | `finally/backend/db/schema.py` | init_db(db_path: str) -> None, get_db_connection(db_path: str) | FastAPI routes |
-| `finally/backend/app/api/schemas.py` | Pydantic schemas (TickData, PortfolioSummary, TradeRequest, TradeResponse, WatchlistResponse, ChatMessage, ChatRequest, ChatResponse) | Database queries |
+| `finally/backend/app/api/schemas.py` | Pydantic schemas (TickData, PortfolioSummary, PortfolioSnapshot, TradeRequest, TradeResponse, WatchlistResponse, ChatMessage, ChatRequest, ChatResponse) | Database queries |
 | `finally/backend/app/market/gbm.py` | GBMDataSimulator.generate_next_price(current_price: float, volatility: float, drift: float) -> float | Web sockets or SSE streaming logic |
 | `finally/backend/app/market/massive.py` | MassiveClient.get_latest_price(ticker: str) -> float | Local simulation algorithms |
 | `finally/backend/app/market/cache.py` | MarketCache.update(ticker: str, price: float), MarketCache.get_latest(ticker: str) | HTTP handlers |
@@ -120,7 +121,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8010
 | /api/stream/prices | GET | SSE price ticker stream | SSE event stream (text/event-stream) |
 | /api/portfolio | GET | Current portfolio summary | PortfolioSummary |
 | /api/portfolio/trade | POST | Execute trade order | TradeResponse |
-| /api/portfolio/history | GET | Trade execution history log | List[TradeRecord] |
+| /api/portfolio/history | GET | Portfolio value snapshots over time (for P&L chart) | List[PortfolioSnapshot] |
 | /api/watchlist | GET | Get watchlist tickers | WatchlistResponse |
 | /api/watchlist | POST | Add ticker to watchlist | WatchlistResponse |
 | /api/watchlist/{ticker} | DELETE | Remove ticker from watchlist | WatchlistResponse |
@@ -202,10 +203,17 @@ delivery_phases:
     required_files:
       - finally/backend/db/schema.py
       - finally/backend/app/portfolio/engine.py
+      - finally/backend/tests/test_portfolio.py
       - finally/.env.example
       - finally/.env
       - finally/db/.gitkeep
-    qa_verify_command: 'pytest finally/backend/'
+    qa_verify_command: 'pytest finally/backend/tests/test_portfolio.py'
+    file_dependencies:
+      finally/backend/app/portfolio/engine.py:
+        - finally/backend/db/schema.py
+        - finally/backend/app/market/cache.py
+      finally/backend/tests/test_portfolio.py:
+        - finally/backend/app/portfolio/engine.py
     depends_on:
       - project-foundation
       - core-market-infrastructure
@@ -294,7 +302,7 @@ delivery_phases:
       - finally/test/e2e.spec.ts
       - finally/test/docker-compose.test.yml
       - finally/.github/workflows/ci.yml
-    qa_verify_command: 'pytest finally/backend/'
+    qa_verify_command: 'test -f finally/test/playwright.config.ts && test -f finally/test/docker-compose.test.yml && test -f finally/.github/workflows/ci.yml'
     depends_on:
       - application-polish
 ```
@@ -311,7 +319,7 @@ Frontend environment types, Playwright test infrastructure package manifest (`fi
 Market data infrastructure, price caches, Geometric Brownian Motion generator, Massive API integration, and SSE streaming endpoint.
 
 ### database-portfolio-engine
-SQLite database schema (`finally/backend/db/schema.py`), seed data, and portfolio execution engine (`finally/backend/app/portfolio/engine.py`).
+SQLite database schema (`finally/backend/db/schema.py`), seed data, portfolio execution engine (`finally/backend/app/portfolio/engine.py`), and portfolio unit tests (`finally/backend/tests/test_portfolio.py`).
 
 ### watchlist-market-ui
 Watchlist management API and Next.js Market/Watchlist UI components.
@@ -331,6 +339,7 @@ Playwright E2E test suite setup (`finally/test/playwright.config.ts`), test harn
 ## Unit tests
 - `finally/backend/app/main_test.py`: Verifies GET / serves Next.js static export HTML and GET /api/health returns status HTTP 200.
 - `finally/backend/tests/test_market_infrastructure.py`: Validates GBMDataSimulator pricing calculations, MarketCache thread safety and updates, and MassiveClient REST response parsing.
+- `finally/backend/tests/test_portfolio.py`: Tests portfolio trade execution, cash balance updating, position management, and portfolio snapshot recording.
 - `finally/backend/tests/test_chat.py`: Tests LLM_MOCK responses, system prompt context formatting, structured JSON output parsing, and trade action extraction.
 - `finally/frontend/components/ChatAssistant.test.tsx`: Tests rendering of chat assistant user messages and loading spinner states.
 

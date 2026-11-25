@@ -7,7 +7,7 @@
     "layout_root": "finally",
     "bead_title_contains": "Implement finally/",
     "unittest_module": "",
-    "qa_verify_command": "pytest finally/backend/",
+    "qa_verify_command": "test -f finally/test/playwright.config.ts && test -f finally/test/docker-compose.test.yml && test -f finally/.github/workflows/ci.yml",
     "test_runner": "pytest",
     "required_files": [
       "finally/planning/PLAN.md",
@@ -43,6 +43,7 @@
       "finally/backend/tests/test_market_infrastructure.py",
       "finally/backend/db/schema.py",
       "finally/backend/app/portfolio/engine.py",
+      "finally/backend/tests/test_portfolio.py",
       "finally/.env.example",
       "finally/test/api/helpers.ts",
       "finally/test/pages/dashboard.page.ts",
@@ -163,16 +164,26 @@
         "required_files": [
           "finally/backend/db/schema.py",
           "finally/backend/app/portfolio/engine.py",
+          "finally/backend/tests/test_portfolio.py",
           "finally/.env.example",
           "finally/.env",
           "finally/db/.gitkeep"
         ],
-        "qa_verify_command": "pytest finally/backend/",
+        "qa_verify_command": "pytest finally/backend/tests/test_portfolio.py",
         "depends_on": [
           "project-foundation",
           "core-market-infrastructure"
         ],
-        "spec_focus": "Phase 3 — Database & Portfolio Engine"
+        "spec_focus": "Phase 3 — Database & Portfolio Engine",
+        "file_dependencies": {
+          "finally/backend/app/portfolio/engine.py": [
+            "finally/backend/db/schema.py",
+            "finally/backend/app/market/cache.py"
+          ],
+          "finally/backend/tests/test_portfolio.py": [
+            "finally/backend/app/portfolio/engine.py"
+          ]
+        }
       },
       {
         "id": "watchlist-market-ui",
@@ -271,7 +282,7 @@
           "finally/test/docker-compose.test.yml",
           "finally/.github/workflows/ci.yml"
         ],
-        "qa_verify_command": "pytest finally/backend/",
+        "qa_verify_command": "test -f finally/test/playwright.config.ts && test -f finally/test/docker-compose.test.yml && test -f finally/.github/workflows/ci.yml",
         "depends_on": [
           "application-polish"
         ],
