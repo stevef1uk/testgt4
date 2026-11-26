@@ -34,13 +34,6 @@
     },
     {
       "stack": "python",
-      "rule": "Test review lesson: Root cause: phase verify fails at `docker build -f Dockerfile` in finally/ before pytest ever runs — 'failed to rea...",
-      "source": "qa_rework",
-      "hits": 1,
-      "updated_at": "2026-11-26T18:38:37Z"
-    },
-    {
-      "stack": "python",
       "rule": "Test review lesson: Repair implementation beads: te-44z",
       "source": "qa_rework",
       "hits": 4,
@@ -59,6 +52,13 @@
       "source": "qa_rework",
       "hits": 1,
       "updated_at": "2026-11-26T19:48:58Z"
+    },
+    {
+      "stack": "python",
+      "rule": "QA lesson: {\"summary\":\"Stage 1 and Stage 2 pass for core-market-infrastructure",
+      "source": "qa_rework",
+      "hits": 1,
+      "updated_at": "2026-11-26T19:58:08Z"
     }
   ]
 }
