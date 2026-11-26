@@ -1,99 +1,271 @@
 {
   "version": 1,
-  "generated_at": "2026-11-26T17:11:44Z",
+  "generated_at": "2026-11-26T17:12:28Z",
   "source": "deterministic",
   "confidence": "high",
   "validation": {
     "layout_root": "finally",
     "bead_title_contains": "Implement finally/",
     "unittest_module": "",
-    "qa_verify_command": "cd finally && pytest",
-    "test_runner": "npm",
+    "qa_verify_command": "(cd finally/backend && uv run pytest tests/test_api.py -q) && (cd finally/test && npm install --ignore-scripts && npx playwright test --list)",
+    "test_runner": "pytest",
     "required_files": [
-      "finally/test/playwright.config.ts",
-      "finally/test/e2e.spec.ts",
+      "finally/planning/PLAN.md",
       "finally/scripts/start_mac.sh",
       "finally/scripts/stop_mac.sh",
       "finally/scripts/start_windows.ps1",
       "finally/scripts/stop_windows.ps1",
+      "finally/test/docker-compose.test.yml",
+      "finally/test/playwright.config.ts",
       "finally/db/.gitkeep",
+      "finally/Dockerfile",
+      "finally/docker-compose.yml",
       "finally/.env",
       "finally/.gitignore",
       "finally/backend/app/main.py",
       "finally/backend/app/api/__init__.py",
       "finally/backend/app/api/schemas.py",
+      "finally/test/e2e.spec.ts",
       "finally/frontend/app/page.tsx",
-      "finally/Dockerfile",
-      "finally/docker-compose.yml",
-      "finally/test/docker-compose.test.yml"
+      "finally/backend/pyproject.toml",
+      "finally/backend/app/api/routes_portfolio.py",
+      "finally/backend/app/api/routes_watchlist.py",
+      "finally/backend/app/api/routes_chat.py",
+      "finally/backend/app/db/schema.sql",
+      "finally/backend/app/db/seed.py",
+      "finally/backend/app/db/connection.py",
+      "finally/backend/app/market/base.py",
+      "finally/backend/app/market/simulator.py",
+      "finally/backend/app/market/massive_client.py",
+      "finally/backend/app/market/cache.py",
+      "finally/backend/app/market/stream.py",
+      "finally/backend/app/market/poller.py",
+      "finally/backend/app/portfolio/repository.py",
+      "finally/backend/app/portfolio/engine.py",
+      "finally/backend/app/portfolio/snapshots.py",
+      "finally/backend/app/llm/client.py",
+      "finally/backend/app/llm/prompts.py",
+      "finally/backend/app/llm/parser.py",
+      "finally/backend/app/llm/chat_service.py",
+      "finally/backend/tests/test_market.py",
+      "finally/backend/tests/test_portfolio.py",
+      "finally/backend/tests/test_portfolio_api.py",
+      "finally/backend/tests/test_watchlist_api.py",
+      "finally/backend/tests/test_llm.py",
+      "finally/backend/tests/test_api.py",
+      "finally/frontend/package.json",
+      "finally/frontend/tsconfig.json",
+      "finally/frontend/next.config.js",
+      "finally/frontend/next-env.d.ts",
+      "finally/frontend/app/layout.tsx",
+      "finally/frontend/app/globals.css",
+      "finally/frontend/app/polish.css",
+      "finally/frontend/components/Header.tsx",
+      "finally/frontend/components/Sidebar.tsx",
+      "finally/frontend/components/MarketOverview.tsx",
+      "finally/frontend/components/Watchlist.tsx",
+      "finally/frontend/components/PriceChart.tsx",
+      "finally/frontend/components/PortfolioSummary.tsx",
+      "finally/frontend/components/TradingPanel.tsx",
+      "finally/frontend/components/PositionsTable.tsx",
+      "finally/frontend/components/PnlChart.tsx",
+      "finally/frontend/components/PortfolioHeatmap.tsx",
+      "finally/frontend/components/ChatAssistant.tsx",
+      "finally/frontend/components/ChatAssistant.test.tsx",
+      "finally/backend/uv.lock",
+      "finally/frontend/package-lock.json",
+      "finally/backend/app/market/__init__.py",
+      "finally/backend/app/db/__init__.py",
+      "finally/backend/app/portfolio/__init__.py",
+      "finally/backend/app/llm/__init__.py",
+      "finally/test/package.json"
     ],
     "delivery_phases": [
       {
-        "id": "requirements",
-        "title": "`## Requirements`",
-        "required_files": [],
-        "qa_verify_command": "cd finally && echo 'verify ok (no automated tests for this phase)'",
-        "spec_focus": "`## Requirements`"
-      },
-      {
-        "id": "unit-tests",
-        "title": "`## Unit tests`",
-        "required_files": [],
-        "qa_verify_command": "cd finally && echo 'verify ok (no automated tests for this phase)'",
-        "spec_focus": "`## Unit tests`"
-      },
-      {
-        "id": "integration-and-testing",
-        "title": "`## Integration and testing`",
+        "id": "project-foundation",
+        "title": "Project Foundation",
         "required_files": [
-          "finally/test/playwright.config.ts",
-          "finally/test/e2e.spec.ts",
-          "finally/docker-compose.yml"
-        ],
-        "qa_verify_command": "cd finally && docker compose -f docker-compose.yml down && docker compose -f docker-compose.yml up --exit-code-from playwright",
-        "spec_focus": "`## Integration and testing`"
-      },
-      {
-        "id": "docker-deployment",
-        "title": "`## Docker & Deployment`",
-        "required_files": [],
-        "qa_verify_command": "cd finally && echo 'verify ok (no automated tests for this phase)'",
-        "spec_focus": "`## Docker & Deployment`"
-      },
-      {
-        "id": "e2e-integration-testing",
-        "title": "`## E2E / integration testing`",
-        "required_files": [],
-        "qa_verify_command": "cd finally && echo 'verify ok (no automated tests for this phase)'",
-        "spec_focus": "`## E2E / integration testing`"
-      },
-      {
-        "id": "acceptance-mapping",
-        "title": "`## Acceptance mapping`",
-        "required_files": [
-          "finally/scripts/start_mac.sh",
-          "finally/scripts/stop_mac.sh",
-          "finally/scripts/start_windows.ps1",
-          "finally/scripts/stop_windows.ps1",
-          "finally/db/.gitkeep",
-          "finally/.env",
-          "finally/.gitignore",
+          "finally/backend/pyproject.toml",
           "finally/backend/app/main.py",
           "finally/backend/app/api/__init__.py",
-          "finally/backend/app/api/schemas.py",
-          "finally/frontend/app/page.tsx",
           "finally/Dockerfile",
           "finally/docker-compose.yml",
-          "finally/test/docker-compose.test.yml"
+          "finally/.env",
+          "finally/.gitignore",
+          "finally/db/.gitkeep",
+          "finally/scripts/start_mac.sh",
+          "finally/scripts/stop_mac.sh"
         ],
-        "qa_verify_command": "cd finally && test -f docker-compose.yml && echo 'compose file ok'",
-        "spec_focus": "`## Acceptance mapping`\n\n### 14.2 Requirement IDs\nEvery delivery phase listed in Section 14.3 MUST have at least one `### <req-id>` heading in `architecture.md`, where `<req-id>` is exactly the phase ID from that table. The Tester's anti-hallucination check rejects any `### <req-id>` in `TEST_PLAN.md` that has no matching `### <req-id>` in `architecture.md` or in this SPEC. Only reference requirement IDs that appear in Section 14.3; do not invent new ones.\nThe nine canonical phase IDs are:\n1. `project-foundation`\n2. `project-foundation-support`\n3. `core-market-infrastructure`\n4. `database-portfolio-engine`\n5. `watchlist-market-ui`\n6. `portfolio-visualisation-trading`\n7. `ai-trading-assistant`\n8. `application-polish`\n9. `testing-release`\n### 14.3 Delivery phase contract\nThe `## Delivery phases` section of `architecture.md` MUST contain a YAML block named `delivery_phases` with one entry per canonical phase ID. Each entry MUST declare `id`, `title`, `spec_focus`, `required_files`, `qa_verify_command`, and `depends_on`. Every `required_files` entry MUST be an exact literal path under `finally/`; wildcard paths such as `test_*.py` or `*_test.go` are forbidden. Each `qa_verify_command` MUST be a single quoted shell scalar that verifies every file owned by that phase.\n**Frontend build gate (hard requirement).** If a phase's `required_files` includes ANY path under `finally/frontend/`, that phase's `qa_verify_command` MUST contain the exact fragment `(cd finally/frontend && npm run build)` in addition to any backend or test gates. The workflow validator enforces this and a missing build gate causes design rejection. The following phases deliver frontend files and therefore all require the build gate:\n| Phase | Representative frontend files delivered |\n|---|---|\n| `project-foundation` | `finally/frontend/package.json`, `finally/frontend/tsconfig.json`, `finally/frontend/next.config.js`, `finally/frontend/app/layout.tsx`, `finally/frontend/app/page.tsx`, `finally/frontend/app/globals.css` |\n| `project-foundation-support` | `finally/frontend/next-env.d.ts` |\n| `watchlist-market-ui` | `finally/frontend/components/Header.tsx`, `Sidebar.tsx`, `MarketOverview.tsx`, `Watchlist.tsx`, `PriceChart.tsx` |\n| `portfolio-visualisation-trading` | `finally/frontend/components/PortfolioSummary.tsx`, `finally/frontend/components/TradingPanel.tsx`, `finally/frontend/components/PositionsTable.tsx`, `finally/frontend/components/PnlChart.tsx`, `finally/frontend/components/PortfolioHeatmap.tsx` |\n| `ai-trading-assistant` | `finally/frontend/components/ChatAssistant.tsx`, `finally/frontend/components/ChatAssistant.test.tsx` |\n| `application-polish` | `finally/frontend/app/polish.css` |\n`database-portfolio-engine` and `testing-release` deliver no frontend source in their baseline contract; add the build gate to them only if their `required_files` is extended with a frontend path. When editing a `qa_verify_command` to add the gate, append the fragment before the closing quote and verify the resulting command text contains `npm run build` exactly once and remains a single quoted YAML scalar.\n### 14.4 Route verbatim rule\nAny HTTP route table in `architecture.md` MUST match Section 8 of this SPEC exactly — method, path, request shape, and response contract. No aliases, no renamed paths, and no extra convenience routes.\n### 14.5 File path prefix rule\nThe layout root is `finally`. All file paths anywhere in `architecture.md` MUST use the `finally/` prefix. Never use `./`, bare `backend/...`, or bare `frontend/...` in backticked paths.\n### 14.6 Docker section rule\nThe `## Docker & Deployment` section of `architecture.md` MUST explicitly describe both build stages: the Node build stage on `node:20-slim` and the Python runtime stage on `python:3.12-slim`. It MUST name the `finally/frontend/out/` handoff from the first stage to the second, the exposed port 8010, and the exact CMD/entrypoint. A paragraph that only names base images, the port, and the CMD without describing the handoff is insufficient for design review."
+        "qa_verify_command": "test -f finally/backend/app/main.py && test -f finally/scripts/start_mac.sh && (cd finally/backend && uv sync && uv run python -c \"import app.main\")",
+        "spec_focus": "Project Foundation"
+      },
+      {
+        "id": "project-foundation-support",
+        "title": "Project Foundation Support",
+        "required_files": [
+          "finally/frontend/next-env.d.ts",
+          "finally/frontend/package-lock.json",
+          "finally/backend/app/db/schema.sql",
+          "finally/backend/app/db/seed.py",
+          "finally/frontend/package.json",
+          "finally/frontend/tsconfig.json",
+          "finally/frontend/next.config.js",
+          "finally/frontend/app/layout.tsx",
+          "finally/frontend/app/page.tsx",
+          "finally/frontend/app/globals.css"
+        ],
+        "qa_verify_command": "test -f finally/backend/app/db/schema.sql && test -f finally/backend/app/db/seed.py && (cd finally/frontend && npm install --ignore-scripts) && test -f finally/frontend/package-lock.json && (cd finally/frontend && npm run build) && test -f finally/frontend/out/index.html",
+        "depends_on": [
+          "project-foundation"
+        ],
+        "spec_focus": "Project Foundation"
+      },
+      {
+        "id": "core-market-infrastructure",
+        "title": "Core Market Infrastructure",
+        "required_files": [
+          "finally/backend/app/market/__init__.py",
+          "finally/backend/app/market/base.py",
+          "finally/backend/app/market/simulator.py",
+          "finally/backend/app/market/massive_client.py",
+          "finally/backend/app/market/cache.py",
+          "finally/backend/app/market/stream.py",
+          "finally/backend/app/market/poller.py",
+          "finally/backend/tests/test_market.py",
+          "finally/backend/uv.lock"
+        ],
+        "qa_verify_command": "(cd finally/backend && uv run pytest tests/test_market.py -q)",
+        "depends_on": [
+          "project-foundation-support"
+        ],
+        "spec_focus": "Core Market Infrastructure"
+      },
+      {
+        "id": "database-portfolio-engine",
+        "title": "Database & Portfolio Engine",
+        "required_files": [
+          "finally/backend/app/db/__init__.py",
+          "finally/backend/app/db/connection.py",
+          "finally/backend/app/portfolio/__init__.py",
+          "finally/backend/app/portfolio/repository.py",
+          "finally/backend/app/portfolio/engine.py",
+          "finally/backend/app/portfolio/snapshots.py",
+          "finally/backend/app/api/schemas.py",
+          "finally/backend/app/api/routes_portfolio.py",
+          "finally/backend/tests/test_portfolio.py",
+          "finally/backend/tests/test_portfolio_api.py"
+        ],
+        "qa_verify_command": "(cd finally/backend && uv run pytest tests/test_portfolio.py tests/test_portfolio_api.py -q)",
+        "depends_on": [
+          "core-market-infrastructure"
+        ],
+        "spec_focus": "Database & Portfolio Engine"
+      },
+      {
+        "id": "watchlist-market-ui",
+        "title": "Watchlist & Market UI",
+        "required_files": [
+          "finally/backend/app/api/routes_watchlist.py",
+          "finally/backend/tests/test_watchlist_api.py",
+          "finally/frontend/components/Header.tsx",
+          "finally/frontend/components/Sidebar.tsx",
+          "finally/frontend/components/MarketOverview.tsx",
+          "finally/frontend/components/Watchlist.tsx",
+          "finally/frontend/components/PriceChart.tsx"
+        ],
+        "qa_verify_command": "(cd finally/backend && uv run pytest tests/test_watchlist_api.py -q) && (cd finally/frontend && npm run build)",
+        "depends_on": [
+          "database-portfolio-engine"
+        ],
+        "spec_focus": "Watchlist & Market UI"
+      },
+      {
+        "id": "portfolio-visualisation-trading",
+        "title": "Portfolio Visualisation & Trading",
+        "required_files": [
+          "finally/frontend/components/PortfolioSummary.tsx",
+          "finally/frontend/components/TradingPanel.tsx",
+          "finally/frontend/components/PositionsTable.tsx",
+          "finally/frontend/components/PnlChart.tsx",
+          "finally/frontend/components/PortfolioHeatmap.tsx"
+        ],
+        "qa_verify_command": "(cd finally/backend && uv run pytest tests/test_portfolio_api.py -q) && (cd finally/frontend && npm run build)",
+        "depends_on": [
+          "database-portfolio-engine",
+          "watchlist-market-ui"
+        ],
+        "spec_focus": "Portfolio Visualisation & Trading"
+      },
+      {
+        "id": "ai-trading-assistant",
+        "title": "AI Trading Assistant",
+        "required_files": [
+          "finally/backend/app/llm/__init__.py",
+          "finally/backend/app/llm/client.py",
+          "finally/backend/app/llm/prompts.py",
+          "finally/backend/app/llm/parser.py",
+          "finally/backend/app/llm/chat_service.py",
+          "finally/backend/app/api/routes_chat.py",
+          "finally/backend/tests/test_llm.py",
+          "finally/frontend/components/ChatAssistant.tsx",
+          "finally/frontend/components/ChatAssistant.test.tsx"
+        ],
+        "qa_verify_command": "(cd finally/backend && LLM_MOCK=true uv run pytest tests/test_llm.py -q) && (cd finally/frontend && npm run build)",
+        "depends_on": [
+          "portfolio-visualisation-trading"
+        ],
+        "spec_focus": "AI Trading Assistant"
+      },
+      {
+        "id": "application-polish",
+        "title": "Application Polish",
+        "required_files": [
+          "finally/frontend/app/polish.css",
+          "finally/frontend/app/page.tsx",
+          "finally/scripts/start_windows.ps1",
+          "finally/scripts/stop_windows.ps1"
+        ],
+        "qa_verify_command": "test -f finally/scripts/start_windows.ps1 && test -f finally/scripts/stop_windows.ps1 && (cd finally/frontend && npm run build)",
+        "depends_on": [
+          "ai-trading-assistant"
+        ],
+        "spec_focus": "Application Polish",
+        "file_dependencies": {
+          "finally/frontend/app/page.tsx": [
+            "finally/frontend/components/Header.tsx",
+            "finally/frontend/components/Watchlist.tsx",
+            "finally/frontend/components/MarketOverview.tsx",
+            "finally/frontend/components/PriceChart.tsx",
+            "finally/frontend/components/PortfolioSummary.tsx",
+            "finally/frontend/components/PositionsTable.tsx",
+            "finally/frontend/components/TradingPanel.tsx",
+            "finally/frontend/components/ChatAssistant.tsx"
+          ]
+        }
+      },
+      {
+        "id": "testing-release",
+        "title": "Testing & Release",
+        "required_files": [
+          "finally/backend/tests/test_api.py",
+          "finally/test/package.json",
+          "finally/test/playwright.config.ts",
+          "finally/test/docker-compose.test.yml",
+          "finally/test/e2e.spec.ts",
+          "finally/planning/PLAN.md"
+        ],
+        "qa_verify_command": "(cd finally/backend && uv run pytest tests/test_api.py -q) && (cd finally/test && npm install --ignore-scripts && npx playwright test --list)",
+        "depends_on": [
+          "application-polish"
+        ],
+        "spec_focus": "Testing & Release"
       }
     ],
-    "active_phase_id": "requirements",
+    "explicit_delivery_contract": true,
+    "active_phase_id": "project-foundation",
     "spec_summary": "",
-    "min_architecture_bytes": 4000,
-    "min_plan_bytes": 1000,
+    "min_architecture_bytes": 3200,
+    "min_plan_bytes": 800,
     "min_implementation_file_bytes": 400,
     "min_substantive_lines": 3,
     "min_test_plan_bytes": 400,
