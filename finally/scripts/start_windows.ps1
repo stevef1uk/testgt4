@@ -6,8 +6,21 @@ Set-Location $Root
 if (Test-Path ".env") {
     Get-Content ".env" | ForEach-Object {
         if ($_ -match '^\s*([A-Za-z_][A-Za-z0-9_]*)=(.*)$') {
-            [Environment]::SetEnvironmentVariable($matches[1], $matches[2], "Process")
+            $existingValue = [Environment]::GetEnvironmentVariable($matches[1], "Process")
+            if ([string]::IsNullOrEmpty($existingValue)) {
+                [Environment]::SetEnvironmentVariable($matches[1], $matches[2], "Process")
+            }
         }
+    }
+}
+
+if (-not (Test-Path "frontend/out/index.html")) {
+    Push-Location (Join-Path $Root "frontend")
+    try {
+        npm run build
+        if ($LASTEXITCODE -ne 0) { throw "Frontend build failed." }
+    } finally {
+        Pop-Location
     }
 }
 

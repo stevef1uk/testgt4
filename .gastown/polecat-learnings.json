@@ -27,13 +27,6 @@
     },
     {
       "stack": "python",
-      "rule": "QA lesson: ...(truncated)",
-      "source": "qa_rework",
-      "hits": 5,
-      "updated_at": "2026-11-26T18:01:59Z"
-    },
-    {
-      "stack": "python",
       "rule": "Test review lesson: Repair implementation beads: te-44z",
       "source": "qa_rework",
       "hits": 4,
@@ -59,6 +52,13 @@
       "source": "qa_rework",
       "hits": 1,
       "updated_at": "2026-11-26T21:33:45Z"
+    },
+    {
+      "stack": "python",
+      "rule": "QA lesson: ...(truncated)",
+      "source": "qa_rework",
+      "hits": 6,
+      "updated_at": "2026-11-26T21:39:28Z"
     }
   ]
 }
