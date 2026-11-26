@@ -88,7 +88,7 @@ No aliases or extra routes. Frontend and tests must use these paths verbatim.
 - Verify: cd finally/frontend && npm run build
 
 ### te-733: finally/backend/tests/test_trading_flow.py
-- Status: closed. Coverage-only for this phase. Do not reopen; QA re-verifies it through the canonical command.
+- Status: closed/coverage-only for this phase. Do not reopen; QA re-verifies it through the canonical command.
 - Scope: End-to-end backend test of buy then sell through POST /api/portfolio/trade, checking cash and positions via GET /api/portfolio.
 - Architecture: architecture.md, testing section for trading flow.
 - Interfaces: test module only; exercises the three routes in the contract table above.
