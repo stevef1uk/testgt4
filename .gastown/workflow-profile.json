@@ -74,9 +74,12 @@
       "finally/frontend/components/ChatAssistant.test.tsx",
       "finally/backend/uv.lock",
       "finally/frontend/package-lock.json",
+      "finally/backend/tests/test_health.py",
+      "finally/backend/tests/test_schema.py",
       "finally/backend/app/market/__init__.py",
       "finally/backend/app/db/__init__.py",
       "finally/backend/app/portfolio/__init__.py",
+      "finally/backend/tests/test_trading_flow.py",
       "finally/backend/app/llm/__init__.py",
       "finally/test/package.json"
     ],
@@ -88,33 +91,33 @@
           "finally/backend/pyproject.toml",
           "finally/backend/app/main.py",
           "finally/backend/app/api/__init__.py",
+          "finally/backend/tests/test_health.py",
           "finally/Dockerfile",
           "finally/docker-compose.yml",
           "finally/.env",
-          "finally/.gitignore",
-          "finally/db/.gitkeep",
           "finally/scripts/start_mac.sh",
-          "finally/scripts/stop_mac.sh"
+          "finally/scripts/stop_mac.sh",
+          "finally/db/.gitkeep"
         ],
-        "qa_verify_command": "test -f finally/backend/app/main.py && test -f finally/scripts/start_mac.sh && (cd finally/backend && uv sync && uv run python -c \"import app.main\")",
+        "qa_verify_command": "test -f finally/backend/app/main.py && test -f finally/scripts/start_mac.sh && (cd finally/backend && uv sync && uv run python -c \"import app.main\") && (cd finally/backend && uv run pytest tests/test_health.py -q)",
         "spec_focus": "Project Foundation"
       },
       {
         "id": "project-foundation-support",
         "title": "Project Foundation Support",
         "required_files": [
-          "finally/frontend/next-env.d.ts",
-          "finally/frontend/package-lock.json",
           "finally/backend/app/db/schema.sql",
           "finally/backend/app/db/seed.py",
+          "finally/backend/tests/test_schema.py",
           "finally/frontend/package.json",
+          "finally/frontend/package-lock.json",
           "finally/frontend/tsconfig.json",
           "finally/frontend/next.config.js",
           "finally/frontend/app/layout.tsx",
           "finally/frontend/app/page.tsx",
           "finally/frontend/app/globals.css"
         ],
-        "qa_verify_command": "test -f finally/backend/app/db/schema.sql && test -f finally/backend/app/db/seed.py && (cd finally/frontend && npm install --ignore-scripts) && test -f finally/frontend/package-lock.json && (cd finally/frontend && npm run build) && test -f finally/frontend/out/index.html",
+        "qa_verify_command": "test -f finally/backend/app/db/schema.sql && test -f finally/backend/app/db/seed.py && (cd finally/frontend && npm install --ignore-scripts) && test -f finally/frontend/package-lock.json && (cd finally/frontend && npm run build) && test -f finally/frontend/out/index.html && (cd finally/backend && uv run pytest tests/test_schema.py -q)",
         "depends_on": [
           "project-foundation"
         ],
@@ -187,9 +190,10 @@
           "finally/frontend/components/TradingPanel.tsx",
           "finally/frontend/components/PositionsTable.tsx",
           "finally/frontend/components/PnlChart.tsx",
-          "finally/frontend/components/PortfolioHeatmap.tsx"
+          "finally/frontend/components/PortfolioHeatmap.tsx",
+          "finally/backend/tests/test_trading_flow.py"
         ],
-        "qa_verify_command": "(cd finally/backend && uv run pytest tests/test_portfolio_api.py -q) && (cd finally/frontend && npm run build)",
+        "qa_verify_command": "(cd finally/backend && uv run pytest tests/test_portfolio_api.py tests/test_trading_flow.py -q) && (cd finally/frontend && npm run build)",
         "depends_on": [
           "database-portfolio-engine",
           "watchlist-market-ui"
@@ -221,11 +225,13 @@
         "title": "Application Polish",
         "required_files": [
           "finally/frontend/app/polish.css",
+          "finally/frontend/next-env.d.ts",
+          "finally/.gitignore",
           "finally/frontend/app/page.tsx",
           "finally/scripts/start_windows.ps1",
           "finally/scripts/stop_windows.ps1"
         ],
-        "qa_verify_command": "test -f finally/scripts/start_windows.ps1 && test -f finally/scripts/stop_windows.ps1 && (cd finally/frontend && npm run build)",
+        "qa_verify_command": "test -f finally/scripts/start_windows.ps1 && test -f finally/scripts/stop_windows.ps1 && test -f finally/.gitignore && test -f finally/frontend/next-env.d.ts && (cd finally/frontend && npm run build)",
         "depends_on": [
           "ai-trading-assistant"
         ],

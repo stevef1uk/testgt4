@@ -25,7 +25,7 @@ Frontend (Next.js static export to `finally/frontend/out/`): `finally/frontend/p
 
 E2E harness: `finally/test/package.json`, `finally/test/playwright.config.ts`, `finally/test/docker-compose.test.yml`, `finally/test/e2e.spec.ts`.
 
-Generated, not hand-written: `finally/backend/uv.lock`, `finally/frontend/package-lock.json`, `finally/frontend/out/`.
+Generated, not hand-written: `finally/backend/uv.lock`, `finally/frontend/package-lock.json`, `finally/frontend/next-env.d.ts`, `finally/frontend/out/`.
 
 ## Module / bead ownership
 
@@ -67,30 +67,30 @@ delivery_phases:
       - finally/backend/pyproject.toml
       - finally/backend/app/main.py
       - finally/backend/app/api/__init__.py
+      - finally/backend/tests/test_health.py
       - finally/Dockerfile
       - finally/docker-compose.yml
       - finally/.env
-      - finally/.gitignore
-      - finally/db/.gitkeep
       - finally/scripts/start_mac.sh
       - finally/scripts/stop_mac.sh
-    qa_verify_command: 'test -f finally/backend/app/main.py && test -f finally/scripts/start_mac.sh && (cd finally/backend && uv sync && uv run python -c "import app.main")'
+      - finally/db/.gitkeep
+    qa_verify_command: 'test -f finally/backend/app/main.py && test -f finally/scripts/start_mac.sh && (cd finally/backend && uv sync && uv run python -c "import app.main") && (cd finally/backend && uv run pytest tests/test_health.py -q)'
     depends_on: []
   - id: project-foundation-support
     title: Project Foundation Support
     spec_focus: Project Foundation
     required_files:
-      - finally/frontend/next-env.d.ts
-      - finally/frontend/package-lock.json
       - finally/backend/app/db/schema.sql
       - finally/backend/app/db/seed.py
+      - finally/backend/tests/test_schema.py
       - finally/frontend/package.json
+      - finally/frontend/package-lock.json
       - finally/frontend/tsconfig.json
       - finally/frontend/next.config.js
       - finally/frontend/app/layout.tsx
       - finally/frontend/app/page.tsx
       - finally/frontend/app/globals.css
-    qa_verify_command: 'test -f finally/backend/app/db/schema.sql && test -f finally/backend/app/db/seed.py && (cd finally/frontend && npm install --ignore-scripts) && test -f finally/frontend/package-lock.json && (cd finally/frontend && npm run build) && test -f finally/frontend/out/index.html'
+    qa_verify_command: 'test -f finally/backend/app/db/schema.sql && test -f finally/backend/app/db/seed.py && (cd finally/frontend && npm install --ignore-scripts) && test -f finally/frontend/package-lock.json && (cd finally/frontend && npm run build) && test -f finally/frontend/out/index.html && (cd finally/backend && uv run pytest tests/test_schema.py -q)'
     depends_on: [project-foundation]
   - id: core-market-infrastructure
     title: Core Market Infrastructure
@@ -145,7 +145,8 @@ delivery_phases:
       - finally/frontend/components/PositionsTable.tsx
       - finally/frontend/components/PnlChart.tsx
       - finally/frontend/components/PortfolioHeatmap.tsx
-    qa_verify_command: '(cd finally/backend && uv run pytest tests/test_portfolio_api.py -q) && (cd finally/frontend && npm run build)'
+      - finally/backend/tests/test_trading_flow.py
+    qa_verify_command: '(cd finally/backend && uv run pytest tests/test_portfolio_api.py tests/test_trading_flow.py -q) && (cd finally/frontend && npm run build)'
     depends_on: [database-portfolio-engine, watchlist-market-ui]
   - id: ai-trading-assistant
     title: AI Trading Assistant
@@ -167,10 +168,12 @@ delivery_phases:
     spec_focus: Application Polish
     required_files:
       - finally/frontend/app/polish.css
+      - finally/frontend/next-env.d.ts
+      - finally/.gitignore
       - finally/frontend/app/page.tsx
       - finally/scripts/start_windows.ps1
       - finally/scripts/stop_windows.ps1
-    qa_verify_command: 'test -f finally/scripts/start_windows.ps1 && test -f finally/scripts/stop_windows.ps1 && (cd finally/frontend && npm run build)'
+    qa_verify_command: 'test -f finally/scripts/start_windows.ps1 && test -f finally/scripts/stop_windows.ps1 && test -f finally/.gitignore && test -f finally/frontend/next-env.d.ts && (cd finally/frontend && npm run build)'
     depends_on: [ai-trading-assistant]
     file_dependencies:
       finally/frontend/app/page.tsx: [finally/frontend/components/Header.tsx, finally/frontend/components/Watchlist.tsx, finally/frontend/components/MarketOverview.tsx, finally/frontend/components/PriceChart.tsx, finally/frontend/components/PortfolioSummary.tsx, finally/frontend/components/PositionsTable.tsx, finally/frontend/components/TradingPanel.tsx, finally/frontend/components/ChatAssistant.tsx]
@@ -191,9 +194,11 @@ delivery_phases:
 ## Requirements
 
 ### project-foundation
-Runnable skeleton: uv project, `create_app`, static serving of the Next.js export, GET /api/health, Dockerfile, compose file, start/stop scripts, `.env` loading. GET / returns real dashboard HTML once the export exists.
+Test ownership: `finally/backend/tests/test_health.py` covers the health endpoint and the 503 diagnostic when the export is absent. Real dashboard content is asserted in `finally/backend/tests/test_api.py`.
+Runnable skeleton: uv project, SQLite data directory marker `finally/db/.gitkeep`, `create_app`, static serving of the Next.js export, GET /api/health, Dockerfile, compose file, start/stop scripts, `.env` loading. GET / returns real dashboard HTML once the export exists.
 
 ### project-foundation-support
+Test ownership: `finally/backend/tests/test_schema.py` covers schema creation, lazy initialisation, and the ten seeded tickers with $10,000 cash for user "default".
 SQLite schema, lazy initialization on first start, seed of ten default tickers and $10,000 cash for user "default". Next.js project setup (package.json, tsconfig, next config, layout, page, globals.css) and frontend skeleton builds to `finally/frontend/out/`.
 
 ### core-market-infrastructure
@@ -206,13 +211,14 @@ Trade execution, positions, cash, P&L, snapshots every 30 seconds and after trad
 Watchlist CRUD routes, header with connection status, watchlist with sparklines and price flash, main price chart.
 
 ### portfolio-visualisation-trading
+Test ownership: `finally/backend/tests/test_trading_flow.py` drives buy and sell through the trade route and asserts cash, position and valuation state changes.
 Trade bar, positions table, heatmap, P&L chart, portfolio summary, all driven by live valuation.
 
 ### ai-trading-assistant
 LiteLLM to OpenRouter with mock mode, live-price context, resilient parser, auto-execution with `✓ Trade Fill` badges, docked ChatAssistant.
 
 ### application-polish
-Dark terminal styling, animations, loading and empty states, accessibility, and full composition of Header, Watchlist, MarketOverview, PriceChart, PortfolioSummary, PositionsTable, TradingPanel, and ChatAssistant on page.tsx. `finally/frontend/app/page.tsx` is a skeleton from project-foundation-support; this phase amends it to mount Header, Watchlist, MarketOverview, PriceChart, PortfolioSummary, PositionsTable, TradingPanel and ChatAssistant together.
+Owns `finally/.gitignore` and the Next.js generated `finally/frontend/next-env.d.ts`. Dark terminal styling, animations, loading and empty states, accessibility, and full composition of Header, Watchlist, MarketOverview, PriceChart, PortfolioSummary, PositionsTable, TradingPanel, and ChatAssistant on page.tsx. `finally/frontend/app/page.tsx` is a skeleton from project-foundation-support; this phase amends it to mount Header, Watchlist, MarketOverview, PriceChart, PortfolioSummary, PositionsTable, TradingPanel and ChatAssistant together.
 
 ### testing-release
 Planning documentation at `finally/planning/PLAN.md`. Backend pytest suites, Playwright E2E per SPEC Section 13, and the docker compose test harness.
@@ -224,7 +230,10 @@ Planning documentation at `finally/planning/PLAN.md`. Backend pytest suites, Pla
 - `finally/backend/tests/test_portfolio_api.py`: status codes and shapes for /api/portfolio routes.
 - `finally/backend/tests/test_watchlist_api.py`: add, duplicate rejection, removal.
 - `finally/backend/tests/test_llm.py`: parser variants, malformed input, chat trade validation, mock determinism.
-- `finally/backend/tests/test_api.py`: health, GET / real content, 503 when the export is missing.
+- `finally/backend/tests/test_api.py`: full API contract across routes, GET / real dashboard content (FinAlly heading, ten tickers, $10,000 cash), no placeholder page.
+- `finally/backend/tests/test_health.py`: health endpoint and 503 diagnostic when the export is missing.
+- `finally/backend/tests/test_schema.py`: schema creation and lazy seeding of ten tickers and $10,000 cash.
+- `finally/backend/tests/test_trading_flow.py`: trade route state changes reflected in cash, positions and valuation.
 - `finally/frontend/components/ChatAssistant.test.tsx`: bubble rendering, thinking state, JSON unwrapping.
 
 ## Integration and testing
