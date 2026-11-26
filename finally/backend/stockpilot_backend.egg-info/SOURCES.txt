@@ -1,0 +1,6 @@
+pyproject.toml
+stockpilot_backend.egg-info/PKG-INFO
+stockpilot_backend.egg-info/SOURCES.txt
+stockpilot_backend.egg-info/dependency_links.txt
+stockpilot_backend.egg-info/requires.txt
+stockpilot_backend.egg-info/top_level.txt
