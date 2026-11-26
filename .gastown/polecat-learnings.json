@@ -41,13 +41,6 @@
     },
     {
       "stack": "python",
-      "rule": "QA lesson: {\"summary\":\"Stage 1: watchlist-market-ui components are orphaned — not wired into the application entry point",
-      "source": "qa_rework",
-      "hits": 1,
-      "updated_at": "2026-11-26T20:36:48Z"
-    },
-    {
-      "stack": "python",
       "rule": "Test review lesson: Root cause: the ai-trading-assistant ChatAssistant implementation and its test do not satisfy the SPEC Section 10 / T...",
       "source": "qa_rework",
       "hits": 1,
@@ -59,6 +52,13 @@
       "source": "qa_rework",
       "hits": 1,
       "updated_at": "2026-11-26T21:30:32Z"
+    },
+    {
+      "stack": "python",
+      "rule": "QA lesson: {\"summary\":\"Stage 1 (Spec compliance) fails: page.tsx (bead te-5b4) lacks inline interactive controls and client-side behavior...",
+      "source": "qa_rework",
+      "hits": 1,
+      "updated_at": "2026-11-26T21:33:45Z"
     }
   ]
 }
