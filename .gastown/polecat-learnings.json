@@ -27,13 +27,6 @@
     },
     {
       "stack": "python",
-      "rule": "QA lesson: {\"summary\":\"Stage 2 (code quality/security) requires add allow-secret markers to start_mac.sh lines 21 and 24",
-      "source": "qa_rework",
-      "hits": 1,
-      "updated_at": "2026-11-26T17:58:23Z"
-    },
-    {
-      "stack": "python",
       "rule": "QA lesson: ...(truncated)",
       "source": "qa_rework",
       "hits": 5,
@@ -59,6 +52,13 @@
       "source": "qa_rework",
       "hits": 1,
       "updated_at": "2026-11-26T19:03:10Z"
+    },
+    {
+      "stack": "python",
+      "rule": "QA lesson: {\"summary\":\"The start_mac.sh script (outside the active phase's required_files) contains duplicated allow-secret markers on li...",
+      "source": "qa_rework",
+      "hits": 1,
+      "updated_at": "2026-11-26T19:48:58Z"
     }
   ]
 }
