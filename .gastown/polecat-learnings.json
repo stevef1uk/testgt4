@@ -27,13 +27,6 @@
     },
     {
       "stack": "python",
-      "rule": "QA lesson: {\"summary\":\"Stage 1: application-polish.spec.ts asserts dashboard content that does not exist in the rendered page",
-      "source": "qa_rework",
-      "hits": 1,
-      "updated_at": "2026-11-26T09:31:53Z"
-    },
-    {
-      "stack": "python",
       "rule": "QA lesson: Root cause: finally/test/application-polish.spec.ts (active phase application-polish, bead te-dom) is a weak E2E gate — it o...",
       "source": "qa_rework",
       "hits": 1,
@@ -59,6 +52,13 @@
       "source": "qa_rework",
       "hits": 5,
       "updated_at": "2026-11-26T18:01:59Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Test review lesson: Repair implementation beads: te-44z",
+      "source": "qa_rework",
+      "hits": 1,
+      "updated_at": "2026-11-26T18:25:21Z"
     }
   ]
 }
