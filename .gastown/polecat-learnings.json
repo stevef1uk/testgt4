@@ -27,13 +27,6 @@
     },
     {
       "stack": "python",
-      "rule": "QA lesson: {\"summary\":\"Stage 1 (spec compliance): E2E compose harness is internally inconsistent — app container runs uvicorn on port 8...",
-      "source": "qa_rework",
-      "hits": 1,
-      "updated_at": "2026-11-26T10:04:37Z"
-    },
-    {
-      "stack": "python",
       "rule": "QA lesson: {\"summary\":\"Stage 2 (code quality/security) requires add allow-secret markers to start_mac.sh lines 21 and 24",
       "source": "qa_rework",
       "hits": 1,
@@ -59,6 +52,13 @@
       "source": "qa_rework",
       "hits": 4,
       "updated_at": "2026-11-26T18:44:27Z"
+    },
+    {
+      "stack": "python",
+      "rule": "QA lesson: {\"summary\":\"Security validation flagged the closed core-market-infrastructure phase: `finally/scripts/start_mac.sh` contains s...",
+      "source": "qa_rework",
+      "hits": 1,
+      "updated_at": "2026-11-26T19:03:10Z"
     }
   ]
 }
