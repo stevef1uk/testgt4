@@ -234,12 +234,14 @@ def create_app() -> FastAPI:
             engine = PortfolioEngine(conn, DEFAULT_USER_ID)
 
             messages = build_messages(message, portfolio_summary, watchlist_resp.get("tickers", []))
-            key = os.environ.get("OPENROUTER_API_KEY", "")
-            mock_mode = (
-                os.environ.get("LLM_MOCK", "true").lower() in ("true", "1", "yes")
-                or not key
-                or key == "your-openrouter-api-key-here"
-            )
+            key = os.environ.get("OPENROUTER_API_KEY", "").strip()
+            has_real_key = bool(key and key != "your-openrouter-api-key-here")
+            env_mock = os.environ.get("LLM_MOCK")
+            if env_mock is not None and env_mock.strip() != "":
+                mock_mode = env_mock.lower() in ("true", "1", "yes")
+            else:
+                mock_mode = not has_real_key
+
             if mock_mode:
                 await asyncio.sleep(0.3)
             result = generate_chat_response(messages, mock=mock_mode)

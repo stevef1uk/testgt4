@@ -4,11 +4,33 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+# Preserve any existing environment variables exported by the user in their shell
+USER_OPENROUTER_KEY="${OPENROUTER_API_KEY:-}"
+USER_LLM_MOCK="${LLM_MOCK:-}"
+USER_MASSIVE_KEY="${MASSIVE_API_KEY:-}"
+
 if [[ -f .env ]]; then
   set -a
   # shellcheck disable=SC1091
   source .env
   set +a
+fi
+
+# Restore user's exported variables if set
+if [[ -n "$USER_OPENROUTER_KEY" ]]; then
+  export OPENROUTER_API_KEY="$USER_OPENROUTER_KEY"
+fi
+if [[ -n "$USER_MASSIVE_KEY" ]]; then
+  export MASSIVE_API_KEY="$USER_MASSIVE_KEY"
+fi
+
+# If a real OPENROUTER_API_KEY is present and user didn't explicitly force mock mode, default to live LLM
+if [[ -n "${OPENROUTER_API_KEY:-}" && "${OPENROUTER_API_KEY}" != "your-openrouter-api-key-here" ]]; then
+  if [[ -n "$USER_LLM_MOCK" ]]; then
+    export LLM_MOCK="$USER_LLM_MOCK"
+  else
+    export LLM_MOCK=false
+  fi
 fi
 
 # Ensure frontend static export is built if missing
