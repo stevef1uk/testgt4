@@ -1,9 +1,12 @@
-FROM node:20-alpine AS frontend-builder
+# Stage 1: build the Next.js static export
+FROM node:20-slim AS frontend-builder
 WORKDIR /app/frontend
-COPY frontend/package.json frontend/package-lock.json* ./
-RUN npm install
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm install --ignore-scripts
 COPY frontend/ ./
 RUN npm run build
+
+# Stage 2: FastAPI backend serving the static frontend
 FROM python:3.12-slim
 WORKDIR /app
 RUN python3 -m pip install --no-cache-dir fastapi==0.115.0 uvicorn==0.30.6
