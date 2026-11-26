@@ -46,21 +46,25 @@ Assertions:
 - UNIQUE constraint on (user_id, ticker) rejects duplicates
 
 ### core-market-infrastructure
-Requirement: Market data uses one interface; simulator produces valid GBM prices; Massive REST parsing maps to the same format; provider is chosen by MASSIVE_API_KEY; SSE emits named price events and unnamed data lines.
+Requirement: Market data uses one abstract interface; the GBM simulator produces valid positive prices; Massive REST parsing maps to the same PriceTick format; provider is chosen by MASSIVE_API_KEY (empty selects the simulator); the SSE stream emits a named event frame followed by a data line.
 Level: unit
 Test file: finally/backend/tests/test_market.py
-Bead ID: pending
+Bead ID: te-uag
 Phase: core-market-infrastructure
 Scenarios:
-- GBM step yields positive prices and bounded change per tick
-- Massive response parser converts REST payload to the common price record
-- empty MASSIVE_API_KEY selects the simulator
-- PriceCache stores latest, previous and timestamp per ticker
+- GBM simulator yields a positive price for every generated tick
+- Massive REST payload parses into the common PriceTick record
+- empty MASSIVE_API_KEY selects the simulator provider
+- PriceCache update replaces the latest tick per ticker and returns it on get
+- price_events yields a named "event:" frame with a "data:" line
 Assertions:
 - price > 0 for every generated tick
-- change and change percent computed from previous price
-- direction is up, down or flat as specified
-- both implementations satisfy the MarketDataSource interface
+- Massive parse returns ticker and price equal to the REST payload values
+- provider selection returns the simulator when the key is empty
+- both implementations are subclasses of PriceSource and implement its abstract methods
+- SSE frame starts with "event: " and carries a "data: " line with JSON
+
+
 
 ### database-portfolio-engine
 Requirement: Buys and sells update cash and positions; selling more than owned and buying with insufficient cash are rejected; snapshots are recorded after trades.
