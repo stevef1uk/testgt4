@@ -41,13 +41,6 @@
     },
     {
       "stack": "python",
-      "rule": "QA lesson: Root cause: QA rejected finally/scripts/start_mac.sh because the security validator flags secret_assign on lines 21/24 despite...",
-      "source": "qa_rework",
-      "hits": 1,
-      "updated_at": "2026-11-26T20:20:27Z"
-    },
-    {
-      "stack": "python",
       "rule": "QA lesson: {\"summary\":\"Stage 1 spec compliance: Header.tsx omits the connection status indicator (data-testid=\\\"connection-status\\\") and...",
       "source": "qa_rework",
       "hits": 1,
@@ -59,6 +52,13 @@
       "source": "qa_rework",
       "hits": 1,
       "updated_at": "2026-11-26T20:36:48Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Test review lesson: Root cause: the ai-trading-assistant ChatAssistant implementation and its test do not satisfy the SPEC Section 10 / T...",
+      "source": "qa_rework",
+      "hits": 1,
+      "updated_at": "2026-11-26T21:19:29Z"
     }
   ]
 }
