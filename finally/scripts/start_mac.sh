@@ -47,6 +47,7 @@ elif [[ -n "${VIRTUAL_ENV:-}" && -f "${VIRTUAL_ENV}/bin/python3" ]]; then
   PYTHON="${VIRTUAL_ENV}/bin/python3"
 fi
 
-exec "$PYTHON" -m uvicorn backend.app.main:app \
+exec "$PYTHON" -m uvicorn app.main:app \
+  --app-dir "$ROOT/backend" \
   --host "${BACKEND_HOST:-127.0.0.1}" \
   --port "${BACKEND_PORT:-8010}"

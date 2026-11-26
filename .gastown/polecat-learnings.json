@@ -41,13 +41,6 @@
     },
     {
       "stack": "python",
-      "rule": "QA lesson: ...(truncated)",
-      "source": "qa_rework",
-      "hits": 4,
-      "updated_at": "2026-11-26T09:39:33Z"
-    },
-    {
-      "stack": "python",
       "rule": "QA lesson: {\"summary\":\"Stage 1 (spec compliance): E2E compose harness is internally inconsistent — app container runs uvicorn on port 8...",
       "source": "qa_rework",
       "hits": 1,
@@ -59,6 +52,13 @@
       "source": "qa_rework",
       "hits": 1,
       "updated_at": "2026-11-26T17:58:23Z"
+    },
+    {
+      "stack": "python",
+      "rule": "QA lesson: ...(truncated)",
+      "source": "qa_rework",
+      "hits": 5,
+      "updated_at": "2026-11-26T18:01:59Z"
     }
   ]
 }
