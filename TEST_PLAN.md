@@ -10,7 +10,7 @@ Bead ID: te-sj3
 Phase: project-foundation
 Scenarios:
 - GET api/health returns 200 with a healthy status body
-- GET root with export absent returns 503 with a diagnostic body, not a placeholder
+- GET root path with export absent returns 503 with a diagnostic body, not a placeholder
 - create_app wires the health route and static fallback
 Assertions:
 - health JSON status field equals the healthy value
@@ -34,7 +34,7 @@ Assertions:
 Requirement: SQLite schema is created lazily on first start; seed provides ten default tickers and $10,000 cash for user "default"; Next.js export builds to frontend/out.
 Level: unit
 Test file: finally/backend/tests/test_schema.py
-Bead ID: pending
+Bead ID: te-44z
 Phase: project-foundation-support
 Scenarios:
 - empty database file triggers table creation and seeding
@@ -154,14 +154,14 @@ Assertions:
 - badge text matches "Trade Fill: SIDE QTY TICKER"
 
 ### testing-release
-Requirement: Full API contract across routes, GET root real dashboard content, and no placeholder page.
+Requirement: Full API contract across routes, GET root path real dashboard content, and no placeholder page.
 Level: integration
 Test file: finally/backend/tests/test_api.py
 Bead ID: pending
 Phase: testing-release
 Scenarios:
 - every SPEC Section 8 route responds with the specified shape
-- GET root returns FinAlly heading, ten tickers and $10,000
+- GET root path returns FinAlly heading, ten tickers and $10,000
 Assertions:
 - response bodies carry the documented keys and types
 - dashboard HTML contains the real content strings, not placeholder text
