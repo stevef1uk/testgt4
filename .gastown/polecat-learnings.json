@@ -34,13 +34,6 @@
     },
     {
       "stack": "python",
-      "rule": "Test review lesson: Root cause: the ai-trading-assistant ChatAssistant implementation and its test do not satisfy the SPEC Section 10 / T...",
-      "source": "qa_rework",
-      "hits": 1,
-      "updated_at": "2026-11-26T21:19:29Z"
-    },
-    {
-      "stack": "python",
       "rule": "QA lesson: {\"summary\":\"Stage 1: application-polish phase required page.tsx to mount all 8 core components (Header, Watchlist, MarketOverv...",
       "source": "qa_rework",
       "hits": 1,
@@ -59,6 +52,13 @@
       "source": "qa_rework",
       "hits": 6,
       "updated_at": "2026-11-26T21:39:28Z"
+    },
+    {
+      "stack": "python",
+      "rule": "QA lesson: {\"summary\":\"Stage 1 failed: The validator gate rejected finally/frontend/app/page.tsx as 'static' — it contains no directly-...",
+      "source": "qa_rework",
+      "hits": 1,
+      "updated_at": "2026-11-26T21:42:55Z"
     }
   ]
 }

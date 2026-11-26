@@ -101,6 +101,15 @@ export default function Page() {
         cash={cash}
         connected={connected}
       />
+      <div className="flex items-center justify-end gap-2 px-4 pt-4">
+        <button
+          type="button"
+          onClick={() => void loadPortfolio()}
+          className="rounded border border-slate-700 px-3 py-1 text-sm hover:bg-slate-800"
+        >
+          Refresh portfolio
+        </button>
+      </div>
       <main className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-3">
         <div className="flex flex-col gap-4">
           <Watchlist onSelect={setSelectedTicker} />
