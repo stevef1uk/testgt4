@@ -1,90 +1,89 @@
-# Implementation plan — phase watchlist-market-ui (Watchlist & Market UI)
+# Implementation plan — watchlist-market-ui
 
-Scope: the 7 `required_files` for this phase only. Backend portfolio/market/schema work from database-portfolio-engine is already complete and is not re-planned. Later phases (chat, portfolio UI, PnL/heatmap, polish) are out of scope and deferred.
+Phase scope: Watchlist CRUD routes, header with connection status, watchlist with sparklines and price flash, main price chart. Only the seven required_files for this phase are in scope. Later-phase files (portfolio, chat, positions, trading panel) are deferred and get their own beads.
 
-Phase verify (run by QA): `test -f finally/backend/app/api/routes_watchlist.py && test -f finally/frontend/components/Header.tsx && test -f finally/frontend/components/Sidebar.tsx && test -f finally/frontend/components/MarketOverview.tsx && test -f finally/frontend/components/Watchlist.tsx && test -f finally/frontend/components/PriceChart.tsx && (cd finally/backend && uv run pytest tests/test_watchlist_api.py -q) && (cd finally/frontend && npm run build)`
+Completion rule: te-421 (routes_watchlist.py) and te-8sc (test_watchlist_api.py) must both be implemented and closed. Backend tests are the behavioral gate for the API; `npm run build` is the compile gate for the frontend, and the frontend acceptance below adds behavioral assertions on top of it.
 
 ## Bead map
 
 ### te-421: finally/backend/app/api/routes_watchlist.py
-- Scope: FastAPI router for watchlist CRUD, mounted under `/api`.
-- Architecture: watchlist-market-ui phase; SPEC Section 8 watchlist routes.
-- Interfaces: `GET /api/watchlist` returns the current ticker list with latest prices; `POST /api/watchlist` takes body `{ticker}` and adds it; `DELETE /api/watchlist/{ticker}` removes it.
-- Depends on: finally/backend/app/db/schema.sql, finally/backend/app/db/connection.py (watchlist table, existing from earlier phase).
-- Consumed by: finally/backend/app/main.py (router registration), finally/backend/tests/test_watchlist_api.py.
-- Acceptance:
-  - GET returns the seeded default 10 tickers in order.
-  - POST with a new ticker persists it and a subsequent GET includes it.
-  - POST with a duplicate ticker is rejected (no second row created, error response returned).
-  - DELETE removes the ticker and a subsequent GET omits it.
-  - Responses are JSON bodies with the ticker fields, not status codes alone.
-- Verify: `cd finally/backend && uv run pytest tests/test_watchlist_api.py -q`
+- Scope: Watchlist CRUD HTTP routes for the default watchlist.
+- Architecture: GET /api/watchlist, POST /api/watchlist with body `{ticker}`, DELETE /api/watchlist/{ticker}.
+- Interfaces: router exposing the three routes above, using the watchlist repository from the database layer.
+- Depends on: <none> for the route definitions; database seed (ten default tickers AAPL, GOOGL, MSFT, AMZN, TSLA, NVDA, META, JPM, V, NFLX) must already exist.
+- Consumed by: te-8sc (tests) and the frontend Watchlist/Sidebar beads via HTTP.
+- Acceptance: GET returns the ten seeded tickers with shape asserted by tests, not status code alone.
+- Acceptance: POST adds a new ticker and a subsequent GET includes it.
+- Acceptance: POST of an already-present ticker is rejected and the list is unchanged.
+- Acceptance: DELETE removes the ticker and a subsequent GET no longer includes it.
+- Verify: cd finally/backend && uv run pytest tests/test_watchlist_api.py -q
 
 ### te-8sc: finally/backend/tests/test_watchlist_api.py
-- Scope: pytest coverage for the watchlist routes.
-- Architecture: SPEC unit test structure; `test_watchlist_api.py` covers add, duplicate rejection, removal.
-- Interfaces: uses the FastAPI test client against the app from finally/backend/app/main.py.
-- Depends on: te-421 (finally/backend/app/api/routes_watchlist.py).
-- Consumed by: QA phase verify.
-- Acceptance:
-  - Test add: after POST, GET body contains the new ticker.
-  - Test duplicate rejection: second POST of same ticker returns an error and GET list length is unchanged.
-  - Test removal: after DELETE, GET body no longer contains the ticker.
-  - Assertions check response body content and list contents, not only status codes.
-- Verify: `cd finally/backend && uv run pytest tests/test_watchlist_api.py -q`
+- Scope: pytest coverage for watchlist add, duplicate rejection, and removal.
+- Architecture: tests add, duplicate rejection, removal; assertions check returned values and state changes, not status codes alone.
+- Interfaces: pytest test functions exercising the routes in te-421.
+- Depends on: te-421.
+- Consumed by: phase QA command.
+- Acceptance: add test asserts the ticker appears in the GET response after POST.
+- Acceptance: duplicate test asserts the list content is unchanged after a rejected POST.
+- Acceptance: removal test asserts the ticker is absent from the list after DELETE.
+- Verify: cd finally/backend && uv run pytest tests/test_watchlist_api.py -q
 
 ### te-u5d: finally/frontend/components/Header.tsx
-- Scope: top header bar with app title and connection status indicator.
-- Architecture: SPEC Section 2 visual design; connection dot green=connected, yellow=reconnecting, red=disconnected.
-- Interfaces: default export component `Header` taking a `connectionStatus` prop of `'connected' | 'reconnecting' | 'disconnected'`.
-- Depends on: none within this phase (consumed by page composition in app/page.tsx).
-- Consumed by: finally/frontend/app/page.tsx.
-- Acceptance:
-  - Renders a dot whose color matches the connection status prop for all three states.
-  - Dark theme colors from the palette (no pure black backgrounds).
-- Verify: `cd finally/frontend && npm run build`
-
-### te-abf: finally/frontend/components/MarketOverview.tsx
-- Scope: market overview panel showing the streamed ticker prices in a data-dense grid.
-- Architecture: watchlist-market-ui phase; consumes SSE price stream.
-- Interfaces: default export component `MarketOverview` taking the current prices map and returning a grid of ticker, price, change.
-- Depends on: finally/frontend/components/Watchlist.tsx (shared price rows) when present.
-- Consumed by: finally/frontend/app/page.tsx.
-- Acceptance:
-  - Each ticker in the prices map renders a row with its latest price.
-  - Price changes trigger the green/red flash class that fades over about 500ms.
-- Verify: `cd finally/frontend && npm run build`
-
-### te-u08: finally/frontend/components/PriceChart.tsx
-- Scope: main detailed price chart for the selected ticker.
-- Architecture: SPEC Section 2, clicking a ticker shows a larger chart in the main area; sparkline data accumulated on the frontend from the SSE stream since page load.
-- Interfaces: default export component `PriceChart` taking `ticker` and a `points` array of `{time, price}`.
-- Depends on: SSE stream data supplied by page.tsx.
-- Consumed by: finally/frontend/app/page.tsx.
-- Acceptance:
-  - Renders a chart for the selected ticker using the points passed in.
-  - Empty points render an empty state, not a crash.
-- Verify: `cd finally/frontend && npm run build`
+- Scope: app title, connection status indicator, live cash balance.
+- Architecture: title "FinAlly"; connection indicator with data-testid="connection-status"; cash balance with data-testid="cash-balance".
+- Interfaces: default-exported Header component; accepts connection state (connected, reconnecting, disconnected) and cash balance as props or from the shared store.
+- Depends on: <none>.
+- Consumed by: page.tsx (mounted in this phase).
+- Acceptance: renders a heading with accessible name "FinAlly".
+- Acceptance: element with data-testid="connection-status" shows green for connected, yellow for reconnecting, red for disconnected (distinct class or aria-label per state).
+- Acceptance: element with data-testid="cash-balance" renders the cash value formatted as currency.
+- Verify: cd finally/frontend && npm run build
 
 ### te-78a: finally/frontend/components/Sidebar.tsx
-- Scope: left sidebar container that hosts the watchlist and navigation.
-- Architecture: watchlist-market-ui phase layout; desktop-first wide-screen layout.
-- Interfaces: default export component `Sidebar` taking `children`.
-- Depends on: none within this phase.
-- Consumed by: finally/frontend/app/page.tsx.
-- Acceptance:
-  - Renders its children inside a fixed-width dark panel.
-- Verify: `cd finally/frontend && npm run build`
+- Scope: sidebar container hosting the watchlist and market overview regions.
+- Architecture: layout container per architecture frontend section.
+- Interfaces: default-exported Sidebar component wrapping Watchlist and MarketOverview children.
+- Depends on: te-1n1, te-abf.
+- Consumed by: page.tsx.
+- Acceptance: renders both child regions in the DOM.
+- Acceptance: no duplicate watchlist heading is rendered.
+- Verify: cd finally/frontend && npm run build
+
+### te-abf: finally/frontend/components/MarketOverview.tsx
+- Scope: market overview panel listing ticker rows with live prices and percentage change.
+- Architecture: aria-label "Market overview" on the region.
+- Interfaces: default-exported MarketOverview component consuming the price stream state.
+- Depends on: <none>.
+- Consumed by: Sidebar.tsx, page.tsx.
+- Acceptance: region has aria-label "Market overview".
+- Acceptance: each row shows symbol, current price, and daily change percent.
+- Acceptance: a price update from the stream changes the rendered price for that row.
+- Verify: cd finally/frontend && npm run build
 
 ### te-1n1: finally/frontend/components/Watchlist.tsx
-- Scope: watchlist grid with live prices, per-ticker sparkline, price flash, and add/remove controls.
-- Architecture: SPEC Section 2, watchlist with sparklines filling in progressively; add/remove via the watchlist routes.
-- Interfaces: default export component `Watchlist` taking `tickers`, `prices`, `onSelect`, `onAdd`, `onRemove`.
-- Depends on: finally/backend/app/api/routes_watchlist.py (GET/POST/DELETE /api/watchlist).
-- Consumed by: finally/frontend/components/Sidebar.tsx host, finally/frontend/app/page.tsx.
-- Acceptance:
-  - Lists the tickers passed in with their latest price.
-  - Clicking a ticker calls `onSelect` with that ticker symbol.
-  - Sparkline is built from accumulated stream points, not a fetched history.
-  - Add and remove call their handlers with the exact ticker string.
-- Verify: `cd finally/frontend && npm run build`
+- Scope: watchlist grid with ticker rows, price flash, sparklines, and add/remove controls.
+- Architecture: heading "Watchlist"; region aria-label="Watchlist"; EventSource on /api/stream/prices.
+- Interfaces: default-exported Watchlist component; add posts to /api/watchlist with `{ticker}`; remove calls DELETE /api/watchlist/{ticker}.
+- Depends on: te-421 (HTTP contract).
+- Consumed by: Sidebar.tsx, page.tsx.
+- Acceptance: each ticker row exposes symbol, price, change percent, and a sparkline SVG or canvas element.
+- Acceptance: on a price tick that is higher than the previous price, the price element gains a green flash class; lower gives a red flash class; the class is removed after about 500ms.
+- Acceptance: each received tick appends to that ticker's sparkline series, so the series grows with stream updates since page load and starts empty on fresh load.
+- Acceptance: add control submits the ticker and the new row appears; remove control deletes the row by calling the DELETE route.
+- Acceptance: duplicate add shows no second row.
+- Verify: cd finally/frontend && npm run build
+
+### te-u08: finally/frontend/components/PriceChart.tsx
+- Scope: main price chart area for the selected ticker.
+- Architecture: chart labelled "price chart" for accessibility.
+- Interfaces: default-exported PriceChart component taking the selected ticker and its accumulated price series.
+- Depends on: <none>.
+- Consumed by: page.tsx.
+- Acceptance: region has an accessible label matching /price chart/i.
+- Acceptance: with no accumulated data the chart renders an empty state rather than crashing.
+- Acceptance: with accumulated points the chart renders one plotted point per tick received.
+- Verify: cd finally/frontend && npm run build
+
+## Future considerations
+- Portfolio totals, positions, trading panel, and chat belong to later phases and are not in these beads.
