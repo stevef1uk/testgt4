@@ -74,7 +74,7 @@ delivery_phases:
       - finally/scripts/start_mac.sh
       - finally/scripts/stop_mac.sh
       - finally/db/.gitkeep
-    qa_verify_command: 'test -f finally/backend/app/main.py && test -f finally/scripts/start_mac.sh && (cd finally/backend && uv sync && uv run python -c "import app.main") && (cd finally/backend && uv run pytest tests/test_health.py -q)'
+    qa_verify_command: 'test -f finally/backend/app/main.py && test -f finally/backend/app/api/__init__.py && test -f finally/backend/tests/test_health.py && test -f finally/Dockerfile && test -f finally/docker-compose.yml && test -f finally/.env && test -f finally/scripts/start_mac.sh && test -f finally/scripts/stop_mac.sh && test -f finally/db/.gitkeep && (cd finally/backend && uv sync && uv run python -c "import app.main") && (cd finally/backend && uv run pytest tests/test_health.py -q)'
     depends_on: []
   - id: project-foundation-support
     title: Project Foundation Support
@@ -105,7 +105,7 @@ delivery_phases:
       - finally/backend/app/market/poller.py
       - finally/backend/tests/test_market.py
       - finally/backend/uv.lock
-    qa_verify_command: '(cd finally/backend && uv run pytest tests/test_market.py -q)'
+    qa_verify_command: 'test -f finally/backend/app/market/base.py && test -f finally/backend/app/market/simulator.py && test -f finally/backend/app/market/massive_client.py && test -f finally/backend/app/market/cache.py && test -f finally/backend/app/market/stream.py && test -f finally/backend/app/market/poller.py && test -f finally/backend/uv.lock && (cd finally/backend && uv run pytest tests/test_market.py -q)'
     depends_on: [project-foundation-support]
   - id: database-portfolio-engine
     title: Database & Portfolio Engine
@@ -121,7 +121,7 @@ delivery_phases:
       - finally/backend/app/api/routes_portfolio.py
       - finally/backend/tests/test_portfolio.py
       - finally/backend/tests/test_portfolio_api.py
-    qa_verify_command: '(cd finally/backend && uv run pytest tests/test_portfolio.py tests/test_portfolio_api.py -q)'
+    qa_verify_command: 'test -f finally/backend/app/db/connection.py && test -f finally/backend/app/portfolio/repository.py && test -f finally/backend/app/portfolio/engine.py && test -f finally/backend/app/portfolio/snapshots.py && test -f finally/backend/app/api/schemas.py && test -f finally/backend/app/api/routes_portfolio.py && (cd finally/backend && uv run pytest tests/test_portfolio.py tests/test_portfolio_api.py -q)'
     depends_on: [core-market-infrastructure]
   - id: watchlist-market-ui
     title: Watchlist & Market UI
@@ -134,7 +134,7 @@ delivery_phases:
       - finally/frontend/components/MarketOverview.tsx
       - finally/frontend/components/Watchlist.tsx
       - finally/frontend/components/PriceChart.tsx
-    qa_verify_command: '(cd finally/backend && uv run pytest tests/test_watchlist_api.py -q) && (cd finally/frontend && npm run build)'
+    qa_verify_command: 'test -f finally/backend/app/api/routes_watchlist.py && test -f finally/frontend/components/Header.tsx && test -f finally/frontend/components/Sidebar.tsx && test -f finally/frontend/components/MarketOverview.tsx && test -f finally/frontend/components/Watchlist.tsx && test -f finally/frontend/components/PriceChart.tsx && (cd finally/backend && uv run pytest tests/test_watchlist_api.py -q) && (cd finally/frontend && npm run build)'
     depends_on: [database-portfolio-engine]
   - id: portfolio-visualisation-trading
     title: Portfolio Visualisation & Trading
@@ -146,7 +146,7 @@ delivery_phases:
       - finally/frontend/components/PnlChart.tsx
       - finally/frontend/components/PortfolioHeatmap.tsx
       - finally/backend/tests/test_trading_flow.py
-    qa_verify_command: '(cd finally/backend && uv run pytest tests/test_portfolio_api.py tests/test_trading_flow.py -q) && (cd finally/frontend && npm run build)'
+    qa_verify_command: 'test -f finally/frontend/components/PortfolioSummary.tsx && test -f finally/frontend/components/TradingPanel.tsx && test -f finally/frontend/components/PositionsTable.tsx && test -f finally/frontend/components/PnlChart.tsx && test -f finally/frontend/components/PortfolioHeatmap.tsx && test -f finally/backend/tests/test_trading_flow.py && (cd finally/backend && uv run pytest tests/test_portfolio_api.py tests/test_trading_flow.py -q) && (cd finally/frontend && npm run build)'
     depends_on: [database-portfolio-engine, watchlist-market-ui]
   - id: ai-trading-assistant
     title: AI Trading Assistant
@@ -161,7 +161,7 @@ delivery_phases:
       - finally/backend/tests/test_llm.py
       - finally/frontend/components/ChatAssistant.tsx
       - finally/frontend/components/ChatAssistant.test.tsx
-    qa_verify_command: '(cd finally/backend && LLM_MOCK=true uv run pytest tests/test_llm.py -q) && (cd finally/frontend && npm run build)'
+    qa_verify_command: 'test -f finally/backend/app/llm/client.py && test -f finally/backend/app/llm/prompts.py && test -f finally/backend/app/llm/parser.py && test -f finally/backend/app/llm/chat_service.py && test -f finally/backend/app/api/routes_chat.py && test -f finally/frontend/components/ChatAssistant.tsx && test -f finally/frontend/components/ChatAssistant.test.tsx && (cd finally/backend && LLM_MOCK=true uv run pytest tests/test_llm.py -q) && (cd finally/frontend && npm run build)'
     depends_on: [portfolio-visualisation-trading]
   - id: application-polish
     title: Application Polish
