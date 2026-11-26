@@ -83,7 +83,7 @@ Assertions:
 Requirement: Portfolio API routes match SPEC Section 8 for GET api/portfolio, POST api/portfolio/trade, and GET api/portfolio/history.
 Level: integration
 Test file: finally/backend/tests/test_portfolio_api.py
-Bead ID: te-0uz
+Bead ID: closed
 Phase: database-portfolio-engine
 Scenarios:
 - POST trade with valid body returns the executed trade
@@ -114,7 +114,7 @@ Assertions:
 Requirement: Buy and sell through the trade route change cash, positions and valuation.
 Level: integration
 Test file: finally/backend/tests/test_trading_flow.py
-Bead ID: pending
+Bead ID: closed
 Phase: portfolio-visualisation-trading
 Scenarios:
 - buy via route then sell part reflects new quantity and cash
