@@ -1,72 +1,93 @@
 "use client";
 
-import { useMemo } from "react";
+import React from "react";
 
 export interface PnlPoint {
-  time: string;
-  value: number;
+  timestamp: string;
+  totalValue: number;
 }
 
-export interface PnlChartProps {
-  data: PnlPoint[];
-  startingValue?: number;
+interface PnlChartProps {
+  points: PnlPoint[];
+  startingCash?: number;
   width?: number;
   height?: number;
 }
 
-const PADDING = 8;
+const PADDING = 24;
 
-export default function PnlChart({
-  data,
-  startingValue,
+/**
+ * Renders portfolio total value over time as an SVG line chart.
+ * Plots P&L relative to the starting cash when provided.
+ */
+export function PnlChart({
+  points,
+  startingCash,
   width = 480,
-  height = 160,
+  height = 200,
 }: PnlChartProps) {
-  const path = useMemo(() => {
-    if (data.length < 2) return "";
-    const values = data.map((point) => point.value);
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const range = max - min || 1;
-    const innerWidth = width - PADDING * 2;
-    const innerHeight = height - PADDING * 2;
-    return data
-      .map((point, index) => {
-        const x = PADDING + (index / (data.length - 1)) * innerWidth;
-        const y = PADDING + (1 - (point.value - min) / range) * innerHeight;
-        return `${index === 0 ? "M" : "L"}${x.toFixed(2)},${y.toFixed(2)}`;
-      })
-      .join(" ");
-  }, [data, width, height]);
+  if (points.length === 0) {
+    return (
+      <div data-testid="pnl-chart-empty" className="text-sm text-gray-400">
+        No portfolio history yet.
+      </div>
+    );
+  }
 
-  const latest = data.length > 0 ? data[data.length - 1].value : null;
-  const pnl =
-    latest !== null && startingValue !== undefined ? latest - startingValue : null;
-  const pnlClass = pnl !== null && pnl < 0 ? "text-red-400" : "text-green-400";
+  const values = points.map((p) =>
+    startingCash !== undefined ? p.totalValue - startingCash : p.totalValue,
+  );
+  const min = Math.min(...values, 0);
+  const max = Math.max(...values, 0);
+  const span = max - min || 1;
+
+  const innerW = width - PADDING * 2;
+  const innerH = height - PADDING * 2;
+  const xFor = (i: number) =>
+    points.length === 1
+      ? PADDING + innerW / 2
+      : PADDING + (i / (points.length - 1)) * innerW;
+  const yFor = (v: number) => PADDING + (1 - (v - min) / span) * innerH;
+
+  const path = values
+    .map((v, i) => `${i === 0 ? "M" : "L"}${xFor(i).toFixed(1)},${yFor(v).toFixed(1)}`)
+    .join(" ");
+
+  const last = values[values.length - 1];
+  const lineColor = last >= 0 ? "#22c55e" : "#ef4444";
 
   return (
-    <div data-testid="pnl-chart" className="rounded border border-gray-700 p-3">
-      <div className="mb-2 flex items-baseline justify-between">
-        <span className="font-semibold">Portfolio P&amp;L</span>
-        {pnl !== null && (
-          <span className={`font-mono text-sm ${pnlClass}`}>
-            {pnl >= 0 ? "+" : "-"}${Math.abs(pnl).toFixed(2)}
-          </span>
-        )}
-      </div>
-      {path ? (
-        <svg
-          role="img"
-          aria-label="Portfolio P&L chart"
-          viewBox={`0 0 ${width} ${height}`}
-          width="100%"
-          height={height}
-        >
-          <path d={path} fill="none" stroke="currentColor" strokeWidth={2} />
-        </svg>
-      ) : (
-        <p className="text-sm text-gray-400">Not enough data to chart.</p>
-      )}
-    </div>
+    <svg
+      data-testid="pnl-chart"
+      role="img"
+      aria-label="Portfolio P&L chart"
+      viewBox={`0 0 ${width} ${height}`}
+      width={width}
+      height={height}
+    >
+      <line
+        x1={PADDING}
+        x2={width - PADDING}
+        y1={yFor(0)}
+        y2={yFor(0)}
+        stroke="#4b5563"
+        strokeDasharray="4 4"
+      />
+      <path d={path} fill="none" stroke={lineColor} strokeWidth={2} />
+      <text x={PADDING} y={height - 6} fontSize={10} fill="#9ca3af">
+        {points[0].timestamp}
+      </text>
+      <text
+        x={width - PADDING}
+        y={height - 6}
+        fontSize={10}
+        fill="#9ca3af"
+        textAnchor="end"
+      >
+        {points[points.length - 1].timestamp}
+      </text>
+    </svg>
   );
 }
+
+export default PnlChart;
