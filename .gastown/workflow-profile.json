@@ -276,7 +276,10 @@
       }
     ],
     "explicit_delivery_contract": true,
-    "active_phase_id": "database-portfolio-engine",
+    "active_phase_id": "watchlist-market-ui",
+    "completed_phase_ids": [
+      "database-portfolio-engine"
+    ],
     "spec_summary": "",
     "min_architecture_bytes": 3200,
     "min_plan_bytes": 800,
