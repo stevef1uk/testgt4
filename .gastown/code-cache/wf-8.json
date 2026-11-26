@@ -62,5 +62,37 @@
     "validated_at": "2026-11-26T17:59:48Z",
     "created_at": "2026-11-26T17:59:48Z",
     "design_fingerprint": "7be9127a282804b94ac735bb49de3d7d"
+  },
+  "1:finally/Dockerfile": {
+    "content": "FROM node:20-alpine AS frontend-builder\nWORKDIR /app/frontend\nCOPY frontend/package.json frontend/package-lock.json* ./\nRUN npm install\nCOPY frontend/ ./\nRUN npm run build\nFROM python:3.12-slim\nWORKDIR /app\nRUN python3 -m pip install --no-cache-dir fastapi==0.115.0 uvicorn==0.30.6\nCOPY backend/ ./backend/\nCOPY --from=frontend-builder /app/frontend/out ./frontend/out\nEXPOSE 8010\nCMD [\"uvicorn\", \"backend.app.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8010\"]",
+    "md5": "9f904d8d204bc1ce84d9987a028cdb90",
+    "validated": true,
+    "validated_at": "2026-11-26T18:14:11Z",
+    "created_at": "2026-11-26T18:14:11Z",
+    "design_fingerprint": "7be9127a282804b94ac735bb49de3d7d"
+  },
+  "1:finally/frontend/app/globals.css": {
+    "content": ":root {\n  --bg-primary: #0d1117;\n  --bg-panel: #161b22;\n  --border: #30363d;\n  --text-primary: #e6edf3;\n  --text-muted: #8b949e;\n  --accent-yellow: #ecad0a;\n  --accent-blue: #209dd7;\n  --accent-purple: #753991;\n  --up: #22c55e;\n  --down: #ef4444;\n}\n\n* {\n  box-sizing: border-box;\n}\n\nhtml,\nbody {\n  margin: 0;\n  padding: 0;\n  height: 100%;\n  background: var(--bg-primary);\n  color: var(--text-primary);\n  font-family: ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;\n  font-size: 14px;\n}\n\nbody {\n  overflow: hidden;\n}\n\n.price-up {\n  color: var(--up);\n}\n\n.price-down {\n  color: var(--down);\n}\n\n.panel {\n  background: var(--bg-panel);\n  border: 1px solid var(--border);\n  border-radius: 6px;\n}\n\nbutton {\n  font: inherit;\n  cursor: pointer;\n}\n\ninput,\nselect {\n  font: inherit;\n  color: var(--text-primary);\n  background: var(--bg-primary);\n  border: 1px solid var(--border);\n  border-radius: 4px;\n  padding: 4px 8px;\n}",
+    "md5": "0af28518c5525ea1ee7f865773e22eda",
+    "validated": true,
+    "validated_at": "2026-11-26T18:16:37Z",
+    "created_at": "2026-11-26T18:16:37Z",
+    "design_fingerprint": "7be9127a282804b94ac735bb49de3d7d"
+  },
+  "1:finally/frontend/package.json": {
+    "content": "{\n  \"name\": \"finally-frontend\",\n  \"version\": \"0.1.0\",\n  \"private\": true,\n  \"scripts\": {\n    \"dev\": \"next dev\",\n    \"build\": \"next build\",\n    \"start\": \"next start\"\n  },\n  \"dependencies\": {\n    \"next\": \"^14.0.0\",\n    \"react\": \"^18.0.0\",\n    \"react-dom\": \"^18.0.0\"\n  },\n  \"devDependencies\": {\n    \"@testing-library/jest-dom\": \"^8.0.0\",\n    \"@testing-library/react\": \"^16.3.3\",\n    \"@types/node\": \"^20.0.0\",\n    \"@types/react\": \"^18.0.0\",\n    \"@types/react-dom\": \"^18.0.0\",\n    \"autoprefixer\": \"^10.7.0\",\n    \"postcss\": \"^8.5.33\",\n    \"tailwindcss\": \"^3.4.19\",\n    \"typescript\": \"^5.0.0\"\n  }\n}\n",
+    "md5": "e7de2e5b965f142ae946b4690503c73e",
+    "validated": true,
+    "validated_at": "2026-11-26T18:14:11Z",
+    "created_at": "2026-11-26T18:14:11Z",
+    "design_fingerprint": "7be9127a282804b94ac735bb49de3d7d"
+  },
+  "1:finally/frontend/tsconfig.json": {
+    "content": "{\n  \"compilerOptions\": {\n    \"target\": \"es5\",\n    \"lib\": [\"dom\", \"dom.iterable\", \"esnext\"],\n    \"allowJs\": false,\n    \"skipLibCheck\": true,\n    \"strict\": true,\n    \"noEmit\": true,\n    \"esModuleInterop\": true,\n    \"module\": \"esnext\",\n    \"moduleResolution\": \"bundler\",\n    \"resolveJsonModule\": true,\n    \"isolatedModules\": true,\n    \"jsx\": \"preserve\",\n    \"incremental\": true,\n    \"plugins\": [\n      {\n        \"name\": \"next\"\n      }\n    ]\n  },\n  \"include\": [\"next-env.d.ts\", \".next/types/**/*.ts\", \"**/*.ts\", \"**/*.tsx\"],\n  \"exclude\": [\"node_modules\"]\n}\n",
+    "md5": "5c4114667a17758ff248410213bede4b",
+    "validated": true,
+    "validated_at": "2026-11-26T18:14:11Z",
+    "created_at": "2026-11-26T18:14:11Z",
+    "design_fingerprint": "7be9127a282804b94ac735bb49de3d7d"
   }
 }
