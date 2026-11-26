@@ -41,13 +41,6 @@
     },
     {
       "stack": "python",
-      "rule": "QA lesson: {\"summary\":\"Stage 1 and Stage 2 pass for core-market-infrastructure",
-      "source": "qa_rework",
-      "hits": 1,
-      "updated_at": "2026-11-26T19:58:08Z"
-    },
-    {
-      "stack": "python",
       "rule": "QA lesson: Root cause: QA rejected finally/scripts/start_mac.sh because the security validator flags secret_assign on lines 21/24 despite...",
       "source": "qa_rework",
       "hits": 1,
@@ -59,6 +52,13 @@
       "source": "qa_rework",
       "hits": 1,
       "updated_at": "2026-11-26T20:31:02Z"
+    },
+    {
+      "stack": "python",
+      "rule": "QA lesson: {\"summary\":\"Stage 1: watchlist-market-ui components are orphaned — not wired into the application entry point",
+      "source": "qa_rework",
+      "hits": 1,
+      "updated_at": "2026-11-26T20:36:48Z"
     }
   ]
 }
