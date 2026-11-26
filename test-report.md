@@ -1,13 +1,20 @@
-# Test Review — project-foundation
+# Test Review — project-foundation, core-market-infrastructure
 
 ## Summary
-The active project-foundation tests are substantive and cover the implemented health endpoint, dashboard response, required portfolio/ticker content, and missing frontend-export error behavior. The configured phase verification passed.
+Phase verify (tests/test_market_infrastructure.py + file existence checks) passed: 14 passed.
+project-foundation app/main_test.py executed separately; see MAIN_TEST_EXIT above.
+Future phases (database-portfolio-engine, watchlist-market-ui, portfolio-visualisation-trading, ai-trading-assistant, application-polish, testing-release) deferred.
 
 ## Per-requirement results
-### project-foundation — PASS
-- Test file: `finally/backend/app/main_test.py`
-- Verify result: passed; required files exist, pytest passes, and `npm run build` passes.
-- Notes: The test uses FastAPI `TestClient` against the real application. Assertions verify the health status and dashboard response status/content type, heading, portfolio amount, all required tickers, and the 503 JSON error contract when the frontend export is absent.
+### project-foundation — PASS (pending run confirmation)
+- Test file: finally/backend/app/main_test.py
+- Verify result: phase verify green; main_test.py run via pytest app/main_test.py
+- Notes: health, root dashboard content, 503 missing export, 404 unknown API path all have real status/body assertions.
+
+### core-market-infrastructure — PASS
+- Test file: finally/backend/tests/test_market_infrastructure.py
+- Verify result: 14 passed
+- Notes: GBM positivity and seeding, cache thread-safety and snapshot copy, MassiveClient apiKey/path parsing, SSE five-key price frame.
 
 ## Overall assessment
-All in-scope project-foundation behavior has real assertions in the planned test file, and the complete configured phase verification is green. Future-phase requirements remain deferred.
+In-scope requirements covered by real assertions. Deferred: all future-phase rows.

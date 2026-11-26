@@ -1,0 +1,15 @@
+# Test-harness ONLY — the application server runs on the HOST per SPEC.
+# network_mode:host lets this container reach it at http://localhost:<port>.
+services:
+  playwright:
+    image: playwright-go-test:latest
+    user: "${DOCKER_UID:-1000}:${DOCKER_GID:-1000}"
+    working_dir: /src
+    network_mode: host
+    environment:
+      - CI=1
+      - PLAYWRIGHT_HTML_OPEN=never
+    volumes:
+      - .:/src
+    command: >
+      /bin/sh -c "npm install --ignore-scripts && npx playwright test"

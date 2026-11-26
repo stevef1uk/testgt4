@@ -3,35 +3,11 @@
   "entries": [
     {
       "stack": "python",
-      "rule": "Avoid in main.py: E AttributeError: \u003cmodule 'app.main' from '/home/stevef/gt/testgt4/mayor/rig/finally/backend/app/main.py'\u003e does not hav...",
-      "source": "verify_fix",
-      "bead_path": "finally/backend/app/main.py",
-      "hits": 1,
-      "updated_at": "2026-11-21T10:52:07Z"
-    },
-    {
-      "stack": "python",
       "rule": "Avoid in __init__.py: E ModuleNotFoundError: No module named 'app'",
       "source": "verify_fix",
       "bead_path": "finally/backend/app/api/__init__.py",
       "hits": 2,
       "updated_at": "2026-11-21T11:05:33Z"
-    },
-    {
-      "stack": "python",
-      "rule": "Avoid in main_test.py: E AssertionError: '\u003ch1\u003eFinAlly\u003c/h1\u003e' not found in '\u003c!DOCTYPE html\u003e\u003chtml lang=\"en\"\u003e\u003chead\u003e\u003cmeta charSet=\"utf-8\"/\u003e\u003cme...",
-      "source": "verify_fix",
-      "bead_path": "finally/backend/app/main_test.py",
-      "hits": 1,
-      "updated_at": "2026-11-21T14:29:28Z"
-    },
-    {
-      "stack": "python",
-      "rule": "Avoid in schemas.py: E ModuleNotFoundError: No module named 'schemas'",
-      "source": "verify_fix",
-      "bead_path": "finally/backend/app/api/schemas.py",
-      "hits": 1,
-      "updated_at": "2026-11-21T15:46:11Z"
     },
     {
       "stack": "python",
@@ -46,24 +22,43 @@
       "rule": "Avoid in schemas.py: E ModuleNotFoundError: No module named 'app'",
       "source": "verify_fix",
       "bead_path": "finally/backend/app/api/schemas.py",
-      "hits": 1,
-      "updated_at": "2026-11-21T16:12:46Z"
+      "hits": 3,
+      "updated_at": "2026-11-25T15:55:16Z"
     },
     {
       "stack": "python",
-      "rule": "Avoid in gbm.py: E TypeError: generate_prices() got an unexpected keyword argument 'periods'",
-      "source": "verify_fix",
-      "bead_path": "finally/backend/app/market/gbm.py",
+      "rule": "QA lesson: Root cause: three active-phase (application-polish) implementation artifacts contradict SPEC.md Section 11 and the cached poli...",
+      "source": "qa_rework",
       "hits": 1,
-      "updated_at": "2026-11-21T16:13:17Z"
+      "updated_at": "2026-11-26T08:12:23Z"
     },
     {
       "stack": "python",
-      "rule": "Avoid in main.py: E AssertionError: None != {'status': 'ok'}",
-      "source": "verify_fix",
-      "bead_path": "finally/backend/app/main.py",
+      "rule": "QA lesson: {\"summary\":\"Stage 1: application-polish.spec.ts asserts dashboard content that does not exist in the rendered page",
+      "source": "qa_rework",
       "hits": 1,
-      "updated_at": "2026-11-21T16:21:29Z"
+      "updated_at": "2026-11-26T09:31:53Z"
+    },
+    {
+      "stack": "python",
+      "rule": "QA lesson: Root cause: finally/test/application-polish.spec.ts (active phase application-polish, bead te-dom) is a weak E2E gate — it o...",
+      "source": "qa_rework",
+      "hits": 1,
+      "updated_at": "2026-11-26T09:35:47Z"
+    },
+    {
+      "stack": "python",
+      "rule": "QA lesson: ...(truncated)",
+      "source": "qa_rework",
+      "hits": 4,
+      "updated_at": "2026-11-26T09:39:33Z"
+    },
+    {
+      "stack": "python",
+      "rule": "QA lesson: {\"summary\":\"Stage 1 (spec compliance): E2E compose harness is internally inconsistent — app container runs uvicorn on port 8...",
+      "source": "qa_rework",
+      "hits": 1,
+      "updated_at": "2026-11-26T10:04:37Z"
     }
   ]
 }

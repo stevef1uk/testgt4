@@ -1,1 +1,338 @@
-{}
+{
+  "1:finally/Dockerfile": {
+    "content": "FROM node:20-alpine AS frontend-builder\nWORKDIR /app/frontend\nCOPY frontend/package.json frontend/package-lock.json* ./\nRUN npm install\nCOPY frontend/ ./\nRUN npm run build\nFROM python:3.12-slim\nWORKDIR /app\nRUN python3 -m pip install --no-cache-dir fastapi==0.115.0 uvicorn==0.30.6\nCOPY backend/ ./backend/\nCOPY --from=frontend-builder /app/frontend/out ./frontend/out\nEXPOSE 8010\nCMD [\"uvicorn\", \"backend.app.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8010\"]",
+    "md5": "9f904d8d204bc1ce84d9987a028cdb90",
+    "validated": true,
+    "validated_at": "2026-11-25T21:10:07Z",
+    "created_at": "2026-11-25T21:10:07Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "1:finally/docker-compose.yml": {
+    "content": "# Test-harness ONLY — the application server runs on the HOST per SPEC.\n# network_mode:host lets this container reach it at http://localhost:\u003cport\u003e.\nservices:\n  playwright:\n    image: playwright-go-test:latest\n    user: \"${DOCKER_UID:-1000}:${DOCKER_GID:-1000}\"\n    working_dir: /src\n    network_mode: host\n    environment:\n      - CI=1\n      - PLAYWRIGHT_HTML_OPEN=never\n    volumes:\n      - .:/src\n    command: \u003e\n      /bin/sh -c \"npm install --ignore-scripts \u0026\u0026 npx playwright test\"",
+    "md5": "3a28c89103b8cb0084edf75d57cc1e62",
+    "validated": true,
+    "validated_at": "2026-11-25T21:10:07Z",
+    "created_at": "2026-11-25T21:10:07Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "1:finally/frontend/next-env.d.ts": {
+    "content": "/// \u003creference types=\"next\" /\u003e\n/// \u003creference types=\"next/image-types/global\" /\u003e\n\n// NOTE: This file should not be edited\n// see https://nextjs.org/docs/basic-features/typescript for more information.\n",
+    "md5": "3cf36e94213e85dc306ec5f3f3760ecc",
+    "validated": true,
+    "validated_at": "2026-11-25T21:10:07Z",
+    "created_at": "2026-11-25T21:10:07Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "1:finally/planning/PLAN.md": {
+    "content": "# Project Foundation Support Plan\n\n## Scope\n\nDeliver the support artifacts required for local development, database\ninitialization, cross-platform lifecycle commands, and CI validation.\n\n## Acceptance\n\n- The checked-in `.env` contains only non-secret development defaults.\n- The SQLite schema initializes idempotently with the SPEC-defined default\n  account and ten-ticker watchlist.\n- The database directory is retained with `.gitkeep`.\n- macOS and Windows scripts use the configured backend host and port.\n- `.gitignore` excludes generated local state without hiding required source\n  artifacts.\n- CI validates the support files and schema module.\n\n## Verification\n\ntest -f finally/planning/PLAN.md\ntest -f finally/scripts/start_mac.sh\ntest -f finally/scripts/stop_mac.sh\ntest -f finally/scripts/start_windows.ps1\ntest -f finally/scripts/stop_windows.ps1\ntest -f finally/.env\ntest -f finally/.gitignore\ntest -f finally/.github/workflows/ci.yml\ntest -f finally/db/.gitkeep\ntest -f finally/backend/db/schema.py",
+    "md5": "23be10e6bada02a980150f43e6ca2518",
+    "validated": true,
+    "validated_at": "2026-11-25T21:10:07Z",
+    "created_at": "2026-11-25T21:10:07Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "1:finally/scripts/start_mac.sh": {
+    "content": "#!/usr/bin/env bash\nset -euo pipefail\n\nROOT=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/..\" \u0026\u0026 pwd)\"\ncd \"$ROOT\"\n\nif [[ -f .env ]]; then\n  set -a\n  # shellcheck disable=SC1091\n  source .env\n  set +a\nfi\n\nexec python3 -m uvicorn backend.app.main:app \\\n  --host \"${BACKEND_HOST:-127.0.0.1}\" \\\n  --port \"${BACKEND_PORT:-8010}\"",
+    "md5": "55ea07a6ffc4d03824f3fa2868210272",
+    "validated": true,
+    "validated_at": "2026-11-25T21:10:07Z",
+    "created_at": "2026-11-25T21:10:07Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "1:finally/scripts/stop_mac.sh": {
+    "content": "#!/usr/bin/env bash\nset -euo pipefail\n\nROOT=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/..\" \u0026\u0026 pwd)\"\ncd \"$ROOT\"\n\nif [[ -f .env ]]; then\n  set -a\n  # shellcheck disable=SC1091\n  source .env\n  set +a\nfi\n\nPORT=\"${BACKEND_PORT:-8010}\"\nPIDS=\"$(lsof -ti \"tcp:${PORT}\" -sTCP:LISTEN 2\u003e/dev/null || true)\"\n\nif [[ -n \"$PIDS\" ]]; then\n  kill $PIDS\nfi",
+    "md5": "811c52c78632b33244180ced5c28cf7f",
+    "validated": true,
+    "validated_at": "2026-11-25T21:10:07Z",
+    "created_at": "2026-11-25T21:10:07Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "1:finally/test/api/helpers.ts": {
+    "content": "/**\n * Shared API helpers for Playwright end-to-end tests.\n * Talks to the backend running on the host (see .env BACKEND_HOST / BACKEND_PORT).\n */\n\nexport const BACKEND_BASE_URL: string =\n  process.env.BACKEND_BASE_URL ??\n  `http://${process.env.BACKEND_HOST ?? '127.0.0.1'}:${process.env.BACKEND_PORT ?? '8000'}`;\n\nexport interface ApiResponse\u003cT = unknown\u003e {\n  status: number;\n  contentType: string | null;\n  body: T;\n}\n\n/**\n * Perform a JSON request against the backend and return the decoded body.\n * Throws if the response is not ok, so callers can rely on a 2xx result.\n */\nexport async function apiRequest\u003cT = unknown\u003e(\n  path: string,\n  init: RequestInit = {},\n): Promise\u003cApiResponse\u003cT\u003e\u003e {\n  const url = path.startsWith('http') ? path : `${BACKEND_BASE_URL}${path}`;\n  const headers: Record\u003cstring, string\u003e = {\n    Accept: 'application/json',\n    ...(init.body ? { 'Content-Type': 'application/json' } : {}),\n    ...((init.headers as Record\u003cstring, string\u003e) ?? {}),\n  };\n  const res = await fetch(url, { ...init, headers });\n  const contentType = res.headers.get('content-type');\n  const text = await res.text();\n  const body = (text \u0026\u0026 contentType?.includes('application/json') ? JSON.parse(text) : text) as T;\n  if (!res.ok) {\n    throw new Error(`API ${init.method ?? 'GET'} ${path} failed: ${res.status} ${text}`);\n  }\n  return { status: res.status, contentType, body };\n}\n\nexport function getJson\u003cT = unknown\u003e(path: string): Promise\u003cApiResponse\u003cT\u003e\u003e {\n  return apiRequest\u003cT\u003e(path, { method: 'GET' });\n}\n\nexport function postJson\u003cT = unknown\u003e(path: string, payload: unknown): Promise\u003cApiResponse\u003cT\u003e\u003e {\n  return apiRequest\u003cT\u003e(path, { method: 'POST', body: JSON.stringify(payload) });\n}",
+    "md5": "d03841c7e703a23b04a11bc8eea30d9a",
+    "validated": true,
+    "validated_at": "2026-11-25T21:10:07Z",
+    "created_at": "2026-11-25T21:10:07Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "1:finally/test/fixtures/base.ts": {
+    "content": "import { test as base, expect } from '@playwright/test';\nimport { BACKEND_BASE_URL, getJson, postJson, type ApiResponse } from '../api/helpers';\n\n/**\n * Shared Playwright fixtures for the end-to-end suite.\n * Specs import `test` and `expect` from this module so every spec gets the\n * same backend wiring (see finally/test/api/helpers.ts).\n */\nexport type ApiFixture = {\n  baseUrl: string;\n  get: \u003cT = unknown\u003e(path: string) =\u003e Promise\u003cApiResponse\u003cT\u003e\u003e;\n  post: \u003cT = unknown\u003e(path: string, payload: unknown) =\u003e Promise\u003cApiResponse\u003cT\u003e\u003e;\n};\n\nexport const test = base.extend\u003c{ api: ApiFixture }\u003e({\n  api: async ({}, use) =\u003e {\n    await use({\n      baseUrl: BACKEND_BASE_URL,\n      get: (path) =\u003e getJson(path),\n      post: (path, payload) =\u003e postJson(path, payload),\n    });\n  },\n});\n\nexport { expect };",
+    "md5": "f394821c7f1fd86b3cd095d37c7baa97",
+    "validated": true,
+    "validated_at": "2026-11-25T21:10:07Z",
+    "created_at": "2026-11-25T21:10:07Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "1:finally/test/package.json": {
+    "content": "{\n  \"name\": \"test\",\n  \"version\": \"1.0.0\",\n  \"private\": true,\n  \"description\": \"Playwright end-to-end test suite\",\n  \"scripts\": {\n    \"test\": \"npx playwright test --project=chromium\",\n    \"test:e2e\": \"npx playwright test --project=chromium\"\n  },\n  \"devDependencies\": {\n    \"@playwright/test\": \"^1.47.0\"\n  }\n}\n",
+    "md5": "a31d0e8915d37525b9f571fede739e08",
+    "validated": true,
+    "validated_at": "2026-11-25T21:10:07Z",
+    "created_at": "2026-11-25T21:10:07Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "5:finally/frontend/components/PnlChart.tsx": {
+    "content": "import React from \"react\";\n\nexport interface PortfolioSnapshot {\n  total_value: number;\n  recorded_at: string;\n}\n\nexport interface PnlChartProps {\n  snapshots: PortfolioSnapshot[];\n  width?: number;\n  height?: number;\n}\n\nconst PADDING = 24;\n\n/**\n * Line chart of total portfolio value over time.\n * Renders one data point per snapshot inside the `pnl-chart` container.\n */\nexport default function PnlChart({\n  snapshots,\n  width = 600,\n  height = 240,\n}: PnlChartProps): React.ReactElement {\n  const values = snapshots.map((s) =\u003e s.total_value);\n  const minV = values.length \u003e 0 ? Math.min(...values) : 0;\n  const maxV = values.length \u003e 0 ? Math.max(...values) : 0;\n  const span = maxV - minV || 1;\n  const innerW = width - PADDING * 2;\n  const innerH = height - PADDING * 2;\n  const stepX = snapshots.length \u003e 1 ? innerW / (snapshots.length - 1) : 0;\n\n  const points = snapshots.map((s, i) =\u003e {\n    const x = PADDING + (snapshots.length \u003e 1 ? i * stepX : innerW / 2);\n    const y = PADDING + innerH - ((s.total_value - minV) / span) * innerH;\n    return { x, y, snapshot: s };\n  });\n\n  const polyline = points.map((p) =\u003e `${p.x},${p.y}`).join(\" \");\n\n  return (\n    \u003cdiv data-testid=\"pnl-chart\" className=\"pnl-chart\"\u003e\n      \u003csvg width={width} height={height} role=\"img\" aria-label=\"Portfolio value over time\"\u003e\n        {points.length \u003e 1 \u0026\u0026 (\n          \u003cpolyline\n            fill=\"none\"\n            stroke=\"currentColor\"\n            strokeWidth={2}\n            points={polyline}\n          /\u003e\n        )}\n        {points.map((p, i) =\u003e (\n          \u003ccircle\n            key={`${p.snapshot.recorded_at}-${i}`}\n            data-testid=\"pnl-point\"\n            cx={p.x}\n            cy={p.y}\n            r={3}\n          \u003e\n            \u003ctitle\u003e\n              {`${p.snapshot.recorded_at}: ${p.snapshot.total_value}`}\n            \u003c/title\u003e\n          \u003c/circle\u003e\n        ))}\n      \u003c/svg\u003e\n    \u003c/div\u003e\n  );\n}",
+    "md5": "11bf6814f01d3c66bcf250cc144134f8",
+    "validated": true,
+    "validated_at": "2026-11-25T21:54:57Z",
+    "created_at": "2026-11-25T21:54:57Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "5:finally/frontend/components/PortfolioHeatmap.tsx": {
+    "content": "import React from \"react\";\n\nexport interface HeatmapPosition {\n  ticker: string;\n  market_value: number;\n  unrealized_pnl_percent: number;\n}\n\nexport interface PortfolioHeatmapProps {\n  positions: HeatmapPosition[];\n}\n\n/** Map a percent P\u0026L to a background colour: green for gains, red for losses, grey near zero. */\nexport function heatColor(pnlPercent: number): string {\n  if (pnlPercent \u003e 0) return \"rgba(34,197,94,0.8)\";\n  if (pnlPercent \u003c 0) return \"rgba(239,68,68,0.8)\";\n  return \"rgba(148,163,184,0.5)\";\n}\n\n/**\n * Treemap-style heatmap of portfolio positions. Each tile is sized by market\n * value (relative share of the portfolio) and coloured by unrealised P\u0026L %.\n */\nexport default function PortfolioHeatmap({\n  positions,\n}: PortfolioHeatmapProps): React.ReactElement {\n  const total = positions.reduce((sum, p) =\u003e sum + Math.max(p.market_value, 0), 0);\n\n  return (\n    \u003cdiv\n      data-testid=\"portfolio-heatmap\"\n      className=\"portfolio-heatmap\"\n      style={{ display: \"flex\", flexWrap: \"wrap\", gap: 4 }}\n    \u003e\n      {positions.length === 0 \u0026\u0026 \u003cspan\u003eNo positions\u003c/span\u003e}\n      {positions.map((p) =\u003e {\n        const share = total \u003e 0 ? Math.max(p.market_value, 0) / total : 0;\n        return (\n          \u003cdiv\n            key={p.ticker}\n            data-testid=\"heatmap-tile\"\n            data-ticker={p.ticker}\n            title={`${p.ticker}: ${p.unrealized_pnl_percent.toFixed(2)}%`}\n            style={{\n              flexBasis: `${Math.max(share * 100, 8)}%`,\n              flexGrow: 1,\n              minHeight: 56,\n              padding: 8,\n              borderRadius: 4,\n              background: heatColor(p.unrealized_pnl_percent),\n              color: \"#fff\",\n            }}\n          \u003e\n            \u003cstrong\u003e{p.ticker}\u003c/strong\u003e\n            \u003cdiv\u003e{p.unrealized_pnl_percent.toFixed(2)}%\u003c/div\u003e\n          \u003c/div\u003e\n        );\n      })}\n    \u003c/div\u003e\n  );\n}",
+    "md5": "8bad355db42956915b959933ea108ea6",
+    "validated": true,
+    "validated_at": "2026-11-25T21:54:57Z",
+    "created_at": "2026-11-25T21:54:57Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "5:finally/frontend/components/PortfolioSummary.tsx": {
+    "content": "import React from \"react\";\n\nexport interface PortfolioSummaryProps {\n  cashBalance: number;\n  totalValue: number;\n  unrealizedPnl: number;\n}\n\nfunction formatMoney(value: number): string {\n  return value.toLocaleString(\"en-US\", { style: \"currency\", currency: \"USD\" });\n}\n\n/**\n * Summary bar showing cash balance, total portfolio value and unrealised P\u0026L.\n */\nexport default function PortfolioSummary({\n  cashBalance,\n  totalValue,\n  unrealizedPnl,\n}: PortfolioSummaryProps): React.ReactElement {\n  const pnlClass = unrealizedPnl \u003e= 0 ? \"pnl-positive\" : \"pnl-negative\";\n\n  return (\n    \u003csection data-testid=\"portfolio-summary\" className=\"portfolio-summary\"\u003e\n      \u003cdiv\u003e\n        \u003cspan\u003eCash\u003c/span\u003e\n        \u003cstrong data-testid=\"summary-cash\"\u003e{formatMoney(cashBalance)}\u003c/strong\u003e\n      \u003c/div\u003e\n      \u003cdiv\u003e\n        \u003cspan\u003eTotal Value\u003c/span\u003e\n        \u003cstrong data-testid=\"summary-total\"\u003e{formatMoney(totalValue)}\u003c/strong\u003e\n      \u003c/div\u003e\n      \u003cdiv\u003e\n        \u003cspan\u003eUnrealized P\u0026amp;L\u003c/span\u003e\n        \u003cstrong data-testid=\"summary-pnl\" className={pnlClass}\u003e\n          {formatMoney(unrealizedPnl)}\n        \u003c/strong\u003e\n      \u003c/div\u003e\n    \u003c/section\u003e\n  );\n}",
+    "md5": "cab1d218522ffaac048de46503bb4a45",
+    "validated": true,
+    "validated_at": "2026-11-25T21:54:57Z",
+    "created_at": "2026-11-25T21:54:57Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "5:finally/frontend/components/PositionsTable.tsx": {
+    "content": "import React from \"react\";\n\nexport interface Position {\n  ticker: string;\n  quantity: number;\n  avg_cost: number;\n  current_price: number;\n  unrealized_pnl: number;\n  unrealized_pnl_percent: number;\n}\n\nexport interface PositionsTableProps {\n  positions: Position[];\n}\n\nfunction formatMoney(value: number): string {\n  return value.toLocaleString(\"en-US\", { style: \"currency\", currency: \"USD\" });\n}\n\n/**\n * Table of open positions with quantity, cost basis, current price and unrealised P\u0026L.\n */\nexport default function PositionsTable({\n  positions,\n}: PositionsTableProps): React.ReactElement {\n  return (\n    \u003ctable data-testid=\"positions-table\" className=\"positions-table\"\u003e\n      \u003cthead\u003e\n        \u003ctr\u003e\n          \u003cth\u003eTicker\u003c/th\u003e\n          \u003cth\u003eQty\u003c/th\u003e\n          \u003cth\u003eAvg Cost\u003c/th\u003e\n          \u003cth\u003ePrice\u003c/th\u003e\n          \u003cth\u003eP\u0026amp;L\u003c/th\u003e\n          \u003cth\u003eP\u0026amp;L %\u003c/th\u003e\n        \u003c/tr\u003e\n      \u003c/thead\u003e\n      \u003ctbody\u003e\n        {positions.length === 0 \u0026\u0026 (\n          \u003ctr\u003e\n            \u003ctd colSpan={6}\u003eNo positions\u003c/td\u003e\n          \u003c/tr\u003e\n        )}\n        {positions.map((p) =\u003e {\n          const pnlClass = p.unrealized_pnl \u003e= 0 ? \"pnl-positive\" : \"pnl-negative\";\n          return (\n            \u003ctr key={p.ticker} data-testid=\"position-row\" data-ticker={p.ticker}\u003e\n              \u003ctd\u003e{p.ticker}\u003c/td\u003e\n              \u003ctd\u003e{p.quantity}\u003c/td\u003e\n              \u003ctd\u003e{formatMoney(p.avg_cost)}\u003c/td\u003e\n              \u003ctd\u003e{formatMoney(p.current_price)}\u003c/td\u003e\n              \u003ctd className={pnlClass}\u003e{formatMoney(p.unrealized_pnl)}\u003c/td\u003e\n              \u003ctd className={pnlClass}\u003e{p.unrealized_pnl_percent.toFixed(2)}%\u003c/td\u003e\n            \u003c/tr\u003e\n          );\n        })}\n      \u003c/tbody\u003e\n    \u003c/table\u003e\n  );\n}",
+    "md5": "e6734d7250df15c50928223d5daee927",
+    "validated": true,
+    "validated_at": "2026-11-25T21:54:57Z",
+    "created_at": "2026-11-25T21:54:57Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "5:finally/frontend/components/TradingPanel.tsx": {
+    "content": "import React, { useState } from \"react\";\n\nexport type TradeSide = \"buy\" | \"sell\";\n\nexport interface TradingPanelProps {\n  /** Optional callback invoked after a trade request succeeds. */\n  onTrade?: (side: TradeSide, ticker: string, quantity: number) =\u003e void;\n}\n\n/**\n * Trading form: ticker + quantity inputs with Buy and Sell buttons.\n * Submits to POST /api/portfolio/trade and reports the outcome in the panel.\n */\nexport default function TradingPanel({ onTrade }: TradingPanelProps): React.ReactElement {\n  const [ticker, setTicker] = useState(\"\");\n  const [quantity, setQuantity] = useState(\"1\");\n  const [status, setStatus] = useState\u003cstring\u003e(\"\");\n  const [busy, setBusy] = useState(false);\n\n  async function submit(side: TradeSide) {\n    const qty = Number(quantity);\n    const sym = ticker.trim().toUpperCase();\n    if (!sym) {\n      setStatus(\"Enter a ticker\");\n      return;\n    }\n    if (!Number.isFinite(qty) || qty \u003c= 0) {\n      setStatus(\"Quantity must be positive\");\n      return;\n    }\n    setBusy(true);\n    setStatus(\"\");\n    try {\n      const res = await fetch(\"/api/portfolio/trade\", {\n        method: \"POST\",\n        headers: { \"Content-Type\": \"application/json\" },\n        body: JSON.stringify({ ticker: sym, quantity: qty, side }),\n      });\n      if (!res.ok) {\n        setStatus(`Trade failed (${res.status})`);\n      } else {\n        setStatus(`${side.toUpperCase()} ${qty} ${sym} filled`);\n        onTrade?.(side, sym, qty);\n      }\n    } catch {\n      setStatus(\"Network error\");\n    } finally {\n      setBusy(false);\n    }\n  }\n\n  return (\n    \u003cform\n      data-testid=\"trading-panel\"\n      className=\"trading-panel\"\n      onSubmit={(e) =\u003e e.preventDefault()}\n    \u003e\n      \u003clabel\u003e\n        Ticker\n        \u003cinput\n          data-testid=\"trade-ticker\"\n          value={ticker}\n          onChange={(e) =\u003e setTicker(e.target.value)}\n        /\u003e\n      \u003c/label\u003e\n      \u003clabel\u003e\n        Quantity\n        \u003cinput\n          data-testid=\"trade-quantity\"\n          type=\"number\"\n          min=\"1\"\n          value={quantity}\n          onChange={(e) =\u003e setQuantity(e.target.value)}\n        /\u003e\n      \u003c/label\u003e\n      \u003cbutton\n        type=\"button\"\n        data-testid=\"trade-buy\"\n        disabled={busy}\n        onClick={() =\u003e submit(\"buy\")}\n      \u003e\n        Buy\n      \u003c/button\u003e\n      \u003cbutton\n        type=\"button\"\n        data-testid=\"trade-sell\"\n        disabled={busy}\n        onClick={() =\u003e submit(\"sell\")}\n      \u003e\n        Sell\n      \u003c/button\u003e\n      \u003cp data-testid=\"trade-status\" role=\"status\"\u003e{status}\u003c/p\u003e\n    \u003c/form\u003e\n  );\n}",
+    "md5": "ab0f9c7ec28b1ebe4861075719a1050d",
+    "validated": true,
+    "validated_at": "2026-11-25T21:54:57Z",
+    "created_at": "2026-11-25T21:54:57Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "5:finally/test/pages/trade.page.ts": {
+    "content": "import { Page, Locator } from \"@playwright/test\";\n\n/**\n * Page object for the trading form (TradingPanel component).\n * Selectors use the data-testid attributes defined in TradingPanel.tsx.\n */\nexport class TradePage {\n  readonly page: Page;\n  readonly panel: Locator;\n  readonly ticker: Locator;\n  readonly quantity: Locator;\n  readonly buyButton: Locator;\n  readonly sellButton: Locator;\n  readonly status: Locator;\n\n  constructor(page: Page) {\n    this.page = page;\n    this.panel = page.getByTestId(\"trading-panel\");\n    this.ticker = page.getByTestId(\"trade-ticker\");\n    this.quantity = page.getByTestId(\"trade-quantity\");\n    this.buyButton = page.getByTestId(\"trade-buy\");\n    this.sellButton = page.getByTestId(\"trade-sell\");\n    this.status = page.getByTestId(\"trade-status\");\n  }\n\n  async goto(path: string = \"/\"): Promise\u003cvoid\u003e {\n    await this.page.goto(path);\n  }\n\n  async fillTicker(symbol: string): Promise\u003cvoid\u003e {\n    await this.ticker.fill(symbol);\n  }\n\n  async fillQuantity(quantity: number): Promise\u003cvoid\u003e {\n    await this.quantity.fill(String(quantity));\n  }\n\n  async buy(symbol: string, quantity: number): Promise\u003cvoid\u003e {\n    await this.fillTicker(symbol);\n    await this.fillQuantity(quantity);\n    await this.buyButton.click();\n  }\n\n  async sell(symbol: string, quantity: number): Promise\u003cvoid\u003e {\n    await this.fillTicker(symbol);\n    await this.fillQuantity(quantity);\n    await this.sellButton.click();\n  }\n\n  async statusText(): Promise\u003cstring\u003e {\n    return (await this.status.textContent())?.trim() ?? \"\";\n  }\n}",
+    "md5": "e1b8397f307588b5a725483c09421394",
+    "validated": true,
+    "validated_at": "2026-11-25T21:54:57Z",
+    "created_at": "2026-11-25T21:54:57Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "5:finally/test/pages/watchlist.page.ts": {
+    "content": "import { Page, Locator } from \"@playwright/test\";\n\n/**\n * Page object for the watchlist (watchlist-market-ui phase).\n * Uses role/label-based locators so it does not depend on undocumented DOM IDs.\n */\nexport class WatchlistPage {\n  readonly page: Page;\n  readonly tickerInput: Locator;\n  readonly addButton: Locator;\n  readonly rows: Locator;\n\n  constructor(page: Page) {\n    this.page = page;\n    this.tickerInput = page.getByLabel(/ticker/i);\n    this.addButton = page.getByRole(\"button\", { name: /add/i });\n    this.rows = page.getByRole(\"row\");\n  }\n\n  async goto(path: string = \"/\"): Promise\u003cvoid\u003e {\n    await this.page.goto(path);\n  }\n\n  async addTicker(symbol: string): Promise\u003cvoid\u003e {\n    await this.tickerInput.fill(symbol);\n    await this.addButton.click();\n  }\n\n  async rowCount(): Promise\u003cnumber\u003e {\n    return this.rows.count();\n  }\n\n  rowFor(symbol: string): Locator {\n    return this.page.getByRole(\"row\", { name: new RegExp(symbol, \"i\") });\n  }\n}",
+    "md5": "589b755ecb627f4fe2f1ffcaaf766155",
+    "validated": true,
+    "validated_at": "2026-11-25T21:54:57Z",
+    "created_at": "2026-11-25T21:54:57Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "5:finally/test/portfolio-visualisation-trading.spec.ts": {
+    "content": "import { test, expect } from \"@playwright/test\";\nimport { TradePage } from \"./pages/trade.page\";\n\ntest.describe(\"Portfolio visualisation and trading\", () =\u003e {\n  test(\"renders portfolio summary, heatmap, P\u0026L chart and positions table\", async ({ page }) =\u003e {\n    await page.goto(\"/\");\n\n    await expect(page.getByTestId(\"portfolio-summary\")).toBeVisible();\n    await expect(page.getByTestId(\"portfolio-heatmap\")).toBeVisible();\n    await expect(page.getByTestId(\"pnl-chart\")).toBeVisible();\n    await expect(page.getByTestId(\"positions-table\")).toBeVisible();\n  });\n\n  test(\"trading panel submits a buy and reports the outcome\", async ({ page }) =\u003e {\n    await page.route(\"**/api/portfolio/trade\", (route) =\u003e\n      route.fulfill({ status: 200, contentType: \"application/json\", body: \"{}\" })\n    );\n\n    const trade = new TradePage(page);\n    await trade.goto(\"/\");\n    await expect(trade.panel).toBeVisible();\n\n    await trade.buy(\"AAPL\", 2);\n\n    await expect(trade.status).toHaveText(/BUY 2 AAPL filled/);\n  });\n});",
+    "md5": "c098415d2f0e41f550e7fb8e3da0490f",
+    "validated": true,
+    "validated_at": "2026-11-25T21:54:57Z",
+    "created_at": "2026-11-25T21:54:57Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "5:finally/test/specs/trading.spec.ts": {
+    "content": "import { test, expect } from \"@playwright/test\";\nimport { TradePage } from \"../pages/trade.page\";\n\ntest.describe(\"Trading panel\", () =\u003e {\n  test(\"sell button submits a sell and reports the outcome\", async ({ page }) =\u003e {\n    await page.route(\"**/api/portfolio/trade\", (route) =\u003e\n      route.fulfill({ status: 200, contentType: \"application/json\", body: \"{}\" })\n    );\n\n    const trade = new TradePage(page);\n    await trade.goto(\"/\");\n\n    await trade.sell(\"MSFT\", 3);\n\n    await expect(trade.status).toHaveText(/SELL 3 MSFT filled/);\n  });\n});",
+    "md5": "754f4840100de076e8213e3353d86ea5",
+    "validated": true,
+    "validated_at": "2026-11-25T21:54:57Z",
+    "created_at": "2026-11-25T21:54:57Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "5:finally/test/specs/watchlist.spec.ts": {
+    "content": "import { test, expect } from \"@playwright/test\";\nimport { WatchlistPage } from \"../pages/watchlist.page\";\n\ntest.describe(\"Watchlist\", () =\u003e {\n  test(\"adding a ticker adds a row to the watchlist\", async ({ page }) =\u003e {\n    const watchlist = new WatchlistPage(page);\n    await watchlist.goto(\"/\");\n\n    await watchlist.addTicker(\"AAPL\");\n\n    await expect(watchlist.rowFor(\"AAPL\")).toBeVisible();\n  });\n});",
+    "md5": "dc941987a3e70b38a32f8e7cb204a879",
+    "validated": true,
+    "validated_at": "2026-11-25T21:54:57Z",
+    "created_at": "2026-11-25T21:54:57Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "6:finally/backend/app/ai/llm.py": {
+    "content": "\"\"\"Message assembly for the FinAlly chat assistant LLM call.\"\"\"\n\nfrom __future__ import annotations\n\nimport os\n\nfrom app.ai.prompts import SYSTEM_PROMPT, format_market_context\nfrom app.ai.structured import parse_trade_intent\n\n\ndef build_messages(user_message: str, portfolio: dict, watchlist: list) -\u003e list[dict]:\n    \"\"\"Build the chat message list: system prompt, market context, user turn.\"\"\"\n    return [\n        {\"role\": \"system\", \"content\": SYSTEM_PROMPT},\n        {\"role\": \"system\", \"content\": format_market_context(portfolio, watchlist)},\n        {\"role\": \"user\", \"content\": user_message},\n    ]\n\n\ndef generate_chat_response(messages: list, mock: bool) -\u003e dict:\n    \"\"\"Return {\"reply\": str, \"trade\": dict | None} for a chat turn.\n\n    mock=True yields deterministic output derived from the user turn.\n    mock=False routes the messages through LiteLLM (OpenRouter model).\n    Malformed or failed model output never raises to the caller.\n    \"\"\"\n    user_text = next(\n        (m.get(\"content\", \"\") for m in reversed(messages) if m.get(\"role\") == \"user\"),\n        \"\",\n    )\n    trade = parse_trade_intent(user_text)\n\n    if mock:\n        if trade is not None:\n            reply = f\"Executed {trade['side']} {trade['quantity']:g} {trade['ticker']}.\"\n        else:\n            reply = f\"You said: {user_text}\"\n        return {\"reply\": reply, \"trade\": trade}\n\n    try:\n        import litellm  # imported lazily so mock mode needs no network stack\n\n        model = os.environ.get(\"LITELLM_MODEL\", \"openrouter/openai/gpt-4o-mini\")\n        response = litellm.completion(model=model, messages=messages)\n        content = response[\"choices\"][0][\"message\"][\"content\"]\n    except Exception:\n        return {\"reply\": \"The assistant is unavailable right now.\", \"trade\": None}\n\n    if not isinstance(content, str) or not content.strip():\n        return {\"reply\": \"The assistant returned an empty response.\", \"trade\": None}\n    return {\"reply\": content.strip(), \"trade\": trade}",
+    "md5": "43f337ec92170fae3bd1cdf389eaed22",
+    "validated": true,
+    "validated_at": "2026-11-26T07:32:59Z",
+    "created_at": "2026-11-26T07:32:59Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "6:finally/backend/app/ai/prompts.py": {
+    "content": "\"\"\"System prompt and market context formatting for the FinAlly chat assistant.\"\"\"\n\nfrom __future__ import annotations\n\nfrom typing import Any\n\nSYSTEM_PROMPT: str = (\n    \"You are FinAlly, an AI trading assistant. You help the user analyse their \"\n    \"portfolio positions, execute trades in a simulated trading environment, and \"\n    \"manage their watchlist. Be concise, data-driven, and never invent prices. \"\n    \"Always respond with valid structured JSON matching the requested response \"\n    \"schema, with no text outside the JSON object.\"\n)\n\n\ndef _get(obj: Any, key: str, default: Any = None) -\u003e Any:\n    \"\"\"Read a field from a dict or attribute-style object.\"\"\"\n    if isinstance(obj, dict):\n        return obj.get(key, default)\n    return getattr(obj, key, default)\n\n\ndef format_market_context(portfolio: dict, watchlist: list) -\u003e str:\n    \"\"\"Render cash balance, positions and watchlist tickers as prompt context.\"\"\"\n    portfolio = portfolio or {}\n    watchlist = watchlist or []\n\n    cash = _get(portfolio, \"cash_balance\", _get(portfolio, \"cash\", 0.0))\n    try:\n        cash_str = f\"{float(cash):.2f}\"\n    except (TypeError, ValueError):\n        cash_str = str(cash)\n\n    lines: list[str] = [\"Portfolio context:\", f\"- Cash balance: ${cash_str}\"]\n\n    positions = _get(portfolio, \"positions\", []) or []\n    if positions:\n        lines.append(\"- Positions:\")\n        for pos in positions:\n            ticker = _get(pos, \"ticker\", \"?\")\n            qty = _get(pos, \"quantity\", 0)\n            price = _get(pos, \"current_price\", _get(pos, \"price\"))\n            price_str = f\"{float(price):.2f}\" if isinstance(price, (int, float)) else \"n/a\"\n            lines.append(f\"  - {ticker}: quantity {qty}, price {price_str}\")\n    else:\n        lines.append(\"- Positions: none\")\n\n    tickers: list[str] = []\n    for item in watchlist:\n        ticker = _get(item, \"ticker\", item if isinstance(item, str) else None)\n        if ticker:\n            tickers.append(str(ticker))\n    lines.append(\n        \"- Watchlist tickers: \" + (\", \".join(tickers) if tickers else \"none\")\n    )\n\n    return \"\\n\".join(lines)",
+    "md5": "b86ced7b5eb61d0d1f48d75281063fd5",
+    "validated": true,
+    "validated_at": "2026-11-26T07:32:59Z",
+    "created_at": "2026-11-26T07:32:59Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "6:finally/backend/app/ai/structured.py": {
+    "content": "\"\"\"Structured trade-intent parsing for chat messages.\"\"\"\n\nfrom __future__ import annotations\n\nimport re\n\n_TRADE_RE = re.compile(\n    r\"^\\s*(buy|sell)\\s+(\\d+(?:\\.\\d+)?)\\s+([A-Za-z]{1,10})\\s*$\",\n    re.IGNORECASE,\n)\n\n\ndef parse_trade_intent(user_message: str) -\u003e dict | None:\n    \"\"\"Return {\"ticker\", \"side\", \"quantity\"} for a simple trade command, else None.\"\"\"\n    match = _TRADE_RE.match(user_message or \"\")\n    if match is None:\n        return None\n    side, qty_text, ticker = match.groups()\n    quantity = float(qty_text)\n    if quantity \u003c= 0:\n        return None\n    return {\"ticker\": ticker.upper(), \"side\": side.lower(), \"quantity\": quantity}",
+    "md5": "1267c3e3d93f56dfcbd8457bcbfcb6b4",
+    "validated": true,
+    "validated_at": "2026-11-26T07:32:59Z",
+    "created_at": "2026-11-26T07:32:59Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "6:finally/backend/tests/test_chat.py": {
+    "content": "\"\"\"Integration-level checks for the chat assistant backend modules.\"\"\"\n\nfrom app.ai.llm import build_messages, generate_chat_response\nfrom app.ai.prompts import SYSTEM_PROMPT\nfrom app.ai.structured import parse_trade_intent\n\n\ndef test_system_prompt_names_assistant():\n    assert \"FinAlly, an AI trading assistant\" in SYSTEM_PROMPT\n\n\ndef test_trade_message_parses_to_intent():\n    assert parse_trade_intent(\"buy 5 msft\") == {\n        \"ticker\": \"MSFT\",\n        \"side\": \"buy\",\n        \"quantity\": 5.0,\n    }\n\n\ndef test_chat_messages_carry_portfolio_and_user_turn():\n    portfolio = {\n        \"cash_balance\": 1000.0,\n        \"positions\": [{\"ticker\": \"AAPL\", \"quantity\": 2, \"current_price\": 190.0}],\n    }\n    messages = build_messages(\"sell 1 AAPL\", portfolio, [{\"ticker\": \"NVDA\"}])\n    assert messages[0][\"content\"] == SYSTEM_PROMPT\n    context = messages[1][\"content\"]\n    assert \"1000.00\" in context\n    assert \"AAPL\" in context and \"NVDA\" in context\n    assert messages[-1] == {\"role\": \"user\", \"content\": \"sell 1 AAPL\"}\n\n\ndef test_mock_trade_message_returns_matching_trade():\n    messages = [{\"role\": \"user\", \"content\": \"buy 5 msft\"}]\n    result = generate_chat_response(messages, mock=True)\n    assert result[\"trade\"] == {\"ticker\": \"MSFT\", \"side\": \"buy\", \"quantity\": 5.0}\n    assert result[\"reply\"] == \"Executed buy 5 MSFT.\"\n\n\ndef test_mock_non_trade_message_has_no_trade():\n    messages = [{\"role\": \"user\", \"content\": \"hello there\"}]\n    result = generate_chat_response(messages, mock=True)\n    assert result[\"trade\"] is None\n    assert result[\"reply\"] == \"You said: hello there\"",
+    "md5": "cffa4d7a6d008221ba5ef45e0716fba1",
+    "validated": true,
+    "validated_at": "2026-11-26T07:32:59Z",
+    "created_at": "2026-11-26T07:32:59Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "6:finally/frontend/components/ChatAssistant.test.tsx": {
+    "content": "// @jest-environment jsdom\nimport { render, screen, fireEvent, waitFor } from \"@testing-library/react\";\nimport \"@testing-library/jest-dom\";\nimport ChatAssistant from \"./ChatAssistant\";\n\ndescribe(\"ChatAssistant\", () =\u003e {\n  beforeEach(() =\u003e {\n    global.fetch = jest.fn().mockResolvedValue({\n      json: async () =\u003e ({ reply: \"Bought 5 MSFT.\" }),\n    }) as unknown as typeof fetch;\n  });\n\n  afterEach(() =\u003e {\n    jest.resetAllMocks();\n  });\n\n  it(\"disables send until the input has text\", () =\u003e {\n    render(\u003cChatAssistant /\u003e);\n    expect(screen.getByRole(\"button\", { name: \"Send\" })).toBeDisabled();\n    fireEvent.change(screen.getByLabelText(\"Chat message\"), {\n      target: { value: \"buy 5 MSFT\" },\n    });\n    expect(screen.getByRole(\"button\", { name: \"Send\" })).toBeEnabled();\n  });\n\n  it(\"posts the message and renders the assistant reply\", async () =\u003e {\n    render(\u003cChatAssistant /\u003e);\n    const input = screen.getByLabelText(\"Chat message\");\n    fireEvent.change(input, { target: { value: \"buy 5 MSFT\" } });\n    fireEvent.click(screen.getByRole(\"button\", { name: \"Send\" }));\n\n    expect(global.fetch).toHaveBeenCalledWith(\n      \"/api/chat\",\n      expect.objectContaining({\n        method: \"POST\",\n        body: JSON.stringify({ message: \"buy 5 MSFT\" }),\n      }),\n    );\n    expect(await screen.findByText(\"Bought 5 MSFT.\")).toBeInTheDocument();\n    expect(screen.getByText(\"buy 5 MSFT\")).toBeInTheDocument();\n    expect(input).toHaveValue(\"\");\n  });\n\n  it(\"shows a failure message when the request throws\", async () =\u003e {\n    global.fetch = jest.fn().mockRejectedValue(new Error(\"network\")) as unknown as typeof fetch;\n    render(\u003cChatAssistant /\u003e);\n    fireEvent.change(screen.getByLabelText(\"Chat message\"), {\n      target: { value: \"hi\" },\n    });\n    fireEvent.click(screen.getByRole(\"button\", { name: \"Send\" }));\n    await waitFor(() =\u003e\n      expect(screen.getByText(\"Request failed. Please try again.\")).toBeInTheDocument(),\n    );\n  });\n});",
+    "md5": "25886a03adbdfdafc48936d20a452386",
+    "validated": true,
+    "validated_at": "2026-11-26T07:32:59Z",
+    "created_at": "2026-11-26T07:32:59Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "6:finally/frontend/components/ChatAssistant.tsx": {
+    "content": "\"use client\";\n\nimport { FormEvent, useState } from \"react\";\n\nexport interface ChatMessage {\n  role: \"user\" | \"assistant\";\n  content: string;\n}\n\nexport interface ChatAssistantProps {\n  endpoint?: string;\n}\n\nexport default function ChatAssistant({ endpoint = \"/api/chat\" }: ChatAssistantProps) {\n  const [messages, setMessages] = useState\u003cChatMessage[]\u003e([]);\n  const [input, setInput] = useState(\"\");\n  const [pending, setPending] = useState(false);\n\n  async function handleSubmit(event: FormEvent\u003cHTMLFormElement\u003e) {\n    event.preventDefault();\n    const text = input.trim();\n    if (!text || pending) return;\n\n    setMessages((prev) =\u003e [...prev, { role: \"user\", content: text }]);\n    setInput(\"\");\n    setPending(true);\n    try {\n      const res = await fetch(endpoint, {\n        method: \"POST\",\n        headers: { \"Content-Type\": \"application/json\" },\n        body: JSON.stringify({ message: text }),\n      });\n      const data = (await res.json()) as { reply?: string; error?: string };\n      const reply = data.reply ?? data.error ?? \"No response\";\n      setMessages((prev) =\u003e [...prev, { role: \"assistant\", content: reply }]);\n    } catch {\n      setMessages((prev) =\u003e [\n        ...prev,\n        { role: \"assistant\", content: \"Request failed. Please try again.\" },\n      ]);\n    } finally {\n      setPending(false);\n    }\n  }\n\n  return (\n    \u003csection aria-label=\"Chat assistant\"\u003e\n      \u003cul\u003e\n        {messages.map((m, i) =\u003e (\n          \u003cli key={i} data-role={m.role}\u003e\n            {m.content}\n          \u003c/li\u003e\n        ))}\n      \u003c/ul\u003e\n      \u003cform onSubmit={handleSubmit}\u003e\n        \u003cinput\n          aria-label=\"Chat message\"\n          value={input}\n          onChange={(e) =\u003e setInput(e.target.value)}\n          disabled={pending}\n        /\u003e\n        \u003cbutton type=\"submit\" disabled={pending || !input.trim()}\u003e\n          Send\n        \u003c/button\u003e\n      \u003c/form\u003e\n    \u003c/section\u003e\n  );\n}",
+    "md5": "1696a049ac8624aca75900d7f49f15b9",
+    "validated": true,
+    "validated_at": "2026-11-26T07:32:59Z",
+    "created_at": "2026-11-26T07:32:59Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "6:finally/test/pages/chat.page.ts": {
+    "content": "import { Page, Locator } from \"@playwright/test\";\n\nexport class ChatPage {\n  readonly page: Page;\n  readonly input: Locator;\n  readonly sendButton: Locator;\n  readonly messages: Locator;\n\n  constructor(page: Page) {\n    this.page = page;\n    this.input = page.getByLabel(\"Chat message\");\n    this.sendButton = page.getByRole(\"button\", { name: \"Send\" });\n    this.messages = page.locator(\"li[data-role]\");\n  }\n\n  async goto(): Promise\u003cvoid\u003e {\n    await this.page.goto(\"/\");\n  }\n\n  async sendMessage(text: string): Promise\u003cvoid\u003e {\n    await this.input.fill(text);\n    await this.sendButton.click();\n  }\n\n  async lastAssistantReply(): Promise\u003cstring | null\u003e {\n    const replies = this.page.locator('li[data-role=\"assistant\"]');\n    const count = await replies.count();\n    if (count === 0) return null;\n    return replies.nth(count - 1).textContent();\n  }\n}",
+    "md5": "0bb8bd7ec6ad4fbbea24308fd81b4159",
+    "validated": true,
+    "validated_at": "2026-11-26T07:32:59Z",
+    "created_at": "2026-11-26T07:32:59Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "6:finally/test/pages/portfolio.page.ts": {
+    "content": "import { Page, Locator } from \"@playwright/test\";\n\nexport class PortfolioPage {\n  readonly page: Page;\n  readonly positionsTable: Locator;\n\n  constructor(page: Page) {\n    this.page = page;\n    this.positionsTable = page.getByRole(\"table\");\n  }\n\n  async goto(): Promise\u003cvoid\u003e {\n    await this.page.goto(\"/\");\n  }\n\n  cashText(): Locator {\n    return this.page.getByText(/cash/i).first();\n  }\n\n  positionRow(ticker: string): Locator {\n    return this.positionsTable.getByRole(\"row\").filter({ hasText: ticker });\n  }\n}",
+    "md5": "bb4aab33b1b29153f342da239f323ad7",
+    "validated": true,
+    "validated_at": "2026-11-26T07:32:59Z",
+    "created_at": "2026-11-26T07:32:59Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "6:finally/test/specs/chat.spec.ts": {
+    "content": "import { test, expect } from \"@playwright/test\";\nimport { ChatPage } from \"../pages/chat.page\";\nimport { PortfolioPage } from \"../pages/portfolio.page\";\n\n// SPEC chat scenarios, run with LLM_MOCK=true so replies are deterministic.\n\ntest.describe(\"AI chat assistant\", () =\u003e {\n  test(\"sending a message shows a pending state, then a non-empty assistant reply\", async ({ page }) =\u003e {\n    const chat = new ChatPage(page);\n    await chat.goto();\n\n    await chat.input.fill(\"What is my cash balance?\");\n    await chat.sendButton.click();\n\n    // While the request is in flight the controls are disabled (loading state).\n    await expect(chat.input).toBeDisabled();\n    await expect(chat.sendButton).toBeDisabled();\n\n    // Then the assistant reply appears and is non-empty.\n    const assistant = page.locator('li[data-role=\"assistant\"]').last();\n    await expect(assistant).toBeVisible();\n    await expect(assistant).not.toHaveText(/^\\s*$/);\n\n    await expect(chat.input).toBeEnabled();\n    await expect(chat.input).toHaveValue(\"\");\n  });\n\n  test('\"Buy 5 AAPL\" confirms the trade and the portfolio shows the new position', async ({ page }) =\u003e {\n    const chat = new ChatPage(page);\n    const portfolio = new PortfolioPage(page);\n    await chat.goto();\n\n    await chat.sendMessage(\"Buy 5 AAPL\");\n\n    const reply = page.locator('li[data-role=\"assistant\"]').last();\n    await expect(reply).toContainText(/AAPL/i);\n    await expect(reply).toContainText(/5/);\n\n    await expect(portfolio.positionRow(\"AAPL\")).toBeVisible();\n  });\n\n  test(\"mock mode returns the same output structure for the same input\", async ({ page }) =\u003e {\n    const chat = new ChatPage(page);\n    await chat.goto();\n\n    await chat.sendMessage(\"Buy 5 AAPL\");\n    const firstReply = page.locator('li[data-role=\"assistant\"]').last();\n    await expect(firstReply).not.toHaveText(/^\\s*$/);\n    const firstText = (await firstReply.textContent()) ?? \"\";\n\n    await chat.sendMessage(\"Buy 5 AAPL\");\n    await expect(page.locator('li[data-role=\"assistant\"]')).toHaveCount(2);\n    const secondReply = page.locator('li[data-role=\"assistant\"]').last();\n    const secondText = (await secondReply.textContent()) ?? \"\";\n\n    expect(secondText.length).toBeGreaterThan(0);\n    expect(secondText.trim().split(/\\s+/).length).toBe(firstText.trim().split(/\\s+/).length);\n  });\n});",
+    "md5": "495a60c53838012a13c5f8cb19cecde6",
+    "validated": true,
+    "validated_at": "2026-11-26T07:32:59Z",
+    "created_at": "2026-11-26T07:32:59Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "6:finally/test/specs/portfolio.spec.ts": {
+    "content": "import { test, expect } from \"@playwright/test\";\nimport { PortfolioPage } from \"../pages/portfolio.page\";\n\ntest.describe(\"portfolio\", () =\u003e {\n  test(\"shows the positions table and cash balance on load\", async ({ page }) =\u003e {\n    const portfolio = new PortfolioPage(page);\n    await portfolio.goto();\n\n    await expect(portfolio.positionsTable).toBeVisible();\n    await expect(portfolio.cashText()).toBeVisible();\n  });\n\n  test(\"position rows can be looked up by ticker\", async ({ page }) =\u003e {\n    const portfolio = new PortfolioPage(page);\n    await portfolio.goto();\n\n    await expect(portfolio.positionsTable.getByRole(\"row\").first()).toBeVisible();\n    await expect(portfolio.positionRow(\"AAPL\").first()).toContainText(\"AAPL\");\n  });\n\n  test(\"empty portfolio starts with $10,000 cash\", async ({ page }) =\u003e {\n    const portfolio = new PortfolioPage(page);\n    await portfolio.goto();\n\n    await expect(portfolio.cashText()).toContainText(\"$10,000\");\n  });\n});",
+    "md5": "5459bbcb338d150d22cfabd872abf179",
+    "validated": true,
+    "validated_at": "2026-11-26T07:32:59Z",
+    "created_at": "2026-11-26T07:32:59Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "7:finally/frontend/app/layout.tsx": {
+    "content": "import type { ReactNode } from \"react\";\nimport \"./globals.css\";\nimport \"./polish.css\";\n\nexport const metadata = {\n  title: \"FinAlly\",\n  description: \"FinAlly trading workstation\",\n};\n\nexport default function RootLayout({ children }: { children: ReactNode }) {\n  return (\n    \u003chtml lang=\"en\"\u003e\n      \u003cbody\u003e{children}\u003c/body\u003e\n    \u003c/html\u003e\n  );\n}",
+    "md5": "e345a389f8991e032c950c1af918e2c8",
+    "validated": true,
+    "validated_at": "2026-11-26T08:11:59Z",
+    "created_at": "2026-11-26T08:11:59Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "7:finally/frontend/app/polish.css": {
+    "content": "@tailwind base;\n@tailwind components;\n@tailwind utilities;\n\n:root {\n  color-scheme: dark;\n}\n\nbody {\n  @apply bg-dark-background text-dark-foreground antialiased;\n}\n\nbutton,\ninput,\nselect,\ntextarea {\n  @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-dark-background;\n}",
+    "md5": "7588abd8bd83db74b5cf8a0cc32ff1ec",
+    "validated": true,
+    "validated_at": "2026-11-26T09:38:35Z",
+    "created_at": "2026-11-26T09:38:35Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "7:finally/frontend/postcss.config.js": {
+    "content": "module.exports = { plugins: { tailwindcss: {}, autoprefixer: {} } };",
+    "md5": "e95810ebb899b507411bf79dfc27abe2",
+    "validated": true,
+    "validated_at": "2026-11-26T09:38:35Z",
+    "created_at": "2026-11-26T09:38:35Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "7:finally/frontend/tailwind.config.ts": {
+    "content": "import type { Config } from 'tailwindcss';\n\nconst config: Config = {\n  content: [\n    './app/**/*.{js,ts,jsx,tsx}',\n    './components/**/*.{js,ts,jsx,tsx}',\n  ],\n  theme: {\n    extend: {\n      colors: {\n        dark: {\n          background: '#0d1117',\n          foreground: '#e6edf3',\n        },\n      },\n    },\n  },\n  darkMode: 'class',\n};\n\nexport default config;",
+    "md5": "bd4b2996b64497765876a05a5855d178",
+    "validated": true,
+    "validated_at": "2026-11-26T09:38:35Z",
+    "created_at": "2026-11-26T09:38:35Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "7:finally/scripts/start_windows.ps1": {
+    "content": "$ErrorActionPreference = \"Stop\"\n\n$Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)\nSet-Location $Root\n\nif (Test-Path \".env\") {\n    Get-Content \".env\" | ForEach-Object {\n        if ($_ -match '^\\s*([A-Za-z_][A-Za-z0-9_]*)=(.*)$') {\n            [Environment]::SetEnvironmentVariable($matches[1], $matches[2], \"Process\")\n        }\n    }\n}\n\n$ImageName = \"finally\"\n$ContainerName = \"finally-app\"\n$VolumeName = \"finally-data\"\n$Port = if ($env:APP_PORT) { $env:APP_PORT } else { \"8010\" }\n\ndocker version *\u003e $null\nif ($LASTEXITCODE -ne 0) { throw \"Docker is not available. Start Docker and retry.\" }\n\n$running = docker ps -q --filter \"name=^/$ContainerName$\"\nif ($running) {\n    Write-Host \"FinAlly is already running.\"\n} else {\n    $existing = docker ps -aq --filter \"name=^/$ContainerName$\"\n    if ($existing) {\n        docker start $ContainerName | Out-Null\n    } else {\n        docker image inspect $ImageName *\u003e $null\n        if ($LASTEXITCODE -ne 0) { docker build -t $ImageName $Root }\n        $envArgs = @()\n        if (Test-Path \".env\") { $envArgs = @(\"--env-file\", \".env\") }\n        docker run -d --name $ContainerName -v \"$($VolumeName):/app/db\" -p \"$($Port):8010\" @envArgs $ImageName | Out-Null\n    }\n}\n\nWrite-Host \"FinAlly is running at http://localhost:$Port\"",
+    "md5": "3c3a98d1111af8809a8fdb6be1460783",
+    "validated": true,
+    "validated_at": "2026-11-26T09:38:35Z",
+    "created_at": "2026-11-26T09:38:35Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "7:finally/scripts/stop_windows.ps1": {
+    "content": "$ErrorActionPreference = \"Stop\"\n\n$ContainerName = \"finally-app\"\n\n$running = docker ps -q --filter \"name=^/$ContainerName$\"\nif ($running) { docker stop $ContainerName | Out-Null }\n\n$existing = docker ps -aq --filter \"name=^/$ContainerName$\"\nif ($existing) { docker rm $ContainerName | Out-Null }\n\nWrite-Host \"FinAlly container stopped. Volume finally-data is preserved.\"",
+    "md5": "4a4edcbc9494b91b22c568c6845760ee",
+    "validated": true,
+    "validated_at": "2026-11-26T09:38:35Z",
+    "created_at": "2026-11-26T09:38:35Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "7:finally/test/application-polish.spec.ts": {
+    "content": "import { test, expect } from '@playwright/test';\n\n// Acceptance (te-dom): dark theme from SPEC Section 2 applied to the rendered dashboard,\n// with real dashboard content visible.\n// Foreground token #e6edf3 = rgb(230, 237, 243); background token #0d1117 = rgb(13, 17, 23).\ntest.describe('application polish', () =\u003e {\n  test('body renders the SPEC dark theme colours', async ({ page }) =\u003e {\n    await page.goto('/');\n\n    await expect(page.locator('body')).toBeVisible();\n\n    // Wait for the stylesheet to apply the body colour before reading it.\n    await expect\n      .poll(async () =\u003e page.evaluate(() =\u003e getComputedStyle(document.body).color))\n      .toBe('rgb(230, 237, 243)');\n\n    const background = await page.evaluate(() =\u003e getComputedStyle(document.body).backgroundColor);\n    expect(background).toBe('rgb(13, 17, 23)');\n  });\n\n  test('dashboard shows real content: brand, watchlist and cash balance', async ({ page }) =\u003e {\n    await page.goto('/');\n\n    // Assert only text the rendered page actually contains (see finally/frontend/app/page.tsx).\n    await expect(page.getByRole('heading', { name: 'FinAlly' })).toBeVisible();\n    await expect(page.getByRole('heading', { name: 'Watchlist' })).toBeVisible();\n    await expect(page.getByTestId('cash-balance')).toContainText('Cash: $10000.00');\n  });\n\n  test('selecting a ticker and clicking Buy updates the trade status', async ({ page }) =\u003e {\n    await page.goto('/');\n\n    // Select MSFT from the watchlist (real ticker button in page.tsx).\n    await page.getByRole('button', { name: 'MSFT', exact: true }).click();\n    await expect(page.getByText('Selected: MSFT')).toBeVisible();\n    await expect(page.getByRole('button', { name: 'MSFT', exact: true })).toHaveAttribute('aria-pressed', 'true');\n\n    // Enter a quantity and click Buy; the status region must reflect the trade.\n    await page.getByRole('spinbutton', { name: 'Quantity' }).fill('2');\n    await page.getByRole('button', { name: 'Buy', exact: true }).click();\n    await expect(page.getByRole('status')).toHaveText('Bought 2 MSFT');\n  });\n\n  test('clicking Sell with an invalid quantity shows a validation message', async ({ page }) =\u003e {\n    await page.goto('/');\n\n    await page.getByRole('spinbutton', { name: 'Quantity' }).fill('0');\n    await page.getByRole('button', { name: 'Sell', exact: true }).click();\n    await expect(page.getByRole('status')).toHaveText('Enter a positive quantity');\n  });\n});",
+    "md5": "efa5dcdbd8747e5ce3cab887b65ccda9",
+    "validated": true,
+    "validated_at": "2026-11-26T09:38:35Z",
+    "created_at": "2026-11-26T09:38:35Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "8:finally/test/docker-compose.test.yml": {
+    "content": "# Docker compose test harness for single-container rig\n# Template variables: playwright-go-test:latest, /app, npx playwright test --project=chromium --config=test/playwright.config.ts, http://app:8000, 8000, .., \"CMD\", \"curl\", \"-f\", \"http://localhost:8000/api/health\", PORT=8000\n# App runs in its own container; Playwright reaches it over the internal compose network.\n# Multi-stage Dockerfile is used to pre-install npm dependencies.\n# Source files are mounted via volumes so test changes don't require image rebuilds.\n\nservices:\n  app:\n    build:\n      context: ..\n    ports:\n      - \"8010:8010\"\n    environment:\n      - PORT=8010\n    healthcheck:\n      test: [\"CMD\", \"python\", \"-c\", \"import urllib.request; urllib.request.urlopen('http://localhost:8010/api/health')\"]\n      interval: 5s\n      timeout: 5s\n      retries: 20\n\n  playwright:\n    build:\n      context: ..\n      dockerfile: Dockerfile.playwright\n      target: playwright\n    working_dir: /app\n    depends_on:\n      app:\n        condition: service_healthy\n    environment:\n      - BASE_URL=http://app:8010\n      - CI=1\n      - PLAYWRIGHT_HTML_OPEN=never\n    volumes:\n      - ../:/src:ro\n    command: sh -c \"tar -C /src --exclude=./node_modules --exclude=./.git --exclude=./playwright-report --exclude=./test-results -cf - . | tar -C /app -xf - \u0026\u0026 npx playwright test --project=chromium --config=test/playwright.config.ts\"\n",
+    "md5": "0a37193701cc8867f2cebb1e357a715f",
+    "validated": true,
+    "validated_at": "2026-11-26T10:05:28Z",
+    "created_at": "2026-11-26T10:05:28Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "8:finally/test/e2e.spec.ts": {
+    "content": "import { test, expect } from '@playwright/test';\n\n// SPEC section 2 (first launch): fresh start shows the default watchlist and starting cash.\nconst DEFAULT_TICKERS = [\n  'AAPL',\n  'GOOGL',\n  'MSFT',\n  'AMZN',\n  'TSLA',\n  'NVDA',\n  'META',\n  'JPM',\n  'V',\n  'NFLX',\n];\n\ntest.describe('first launch', () =\u003e {\n  test('shows the 10 default watchlist tickers', async ({ page }) =\u003e {\n    await page.goto('/');\n    for (const ticker of DEFAULT_TICKERS) {\n      await expect(page.getByText(ticker, { exact: true }).first()).toBeVisible();\n    }\n  });\n\n  test('shows $10,000 starting cash', async ({ page }) =\u003e {\n    await page.goto('/');\n    await expect(page.getByText(/\\$\\s?10,000(\\.00)?/).first()).toBeVisible();\n  });\n});\n\ntest.describe('interactive behaviour', () =\u003e {\n  test('adding a ticker through the UI updates the watchlist DOM', async ({ page }) =\u003e {\n    await page.goto('/');\n    const input = page.getByPlaceholder(/ticker/i).first();\n    await input.fill('PYPL');\n    await page.getByRole('button', { name: /add/i }).first().click();\n    await expect(page.getByText('PYPL', { exact: true }).first()).toBeVisible();\n  });\n});",
+    "md5": "e87792d153cf18c5901845625f205b36",
+    "validated": true,
+    "validated_at": "2026-11-26T10:05:28Z",
+    "created_at": "2026-11-26T10:05:28Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "8:finally/test/playwright.config.ts": {
+    "content": "import { defineConfig, devices } from '@playwright/test';\n\nconst baseURL = process.env.BASE_URL || 'http://localhost:8010';\n\nexport default defineConfig({\n  testDir: '.',\n  testMatch: ['specs/**/*.spec.ts', 'e2e.spec.ts'],\n  fullyParallel: true,\n  forbidOnly: !!process.env.CI,\n  retries: process.env.CI ? 2 : 0,\n  workers: process.env.CI ? 1 : undefined,\n  reporter: [['list'], ['html', { open: 'never' }]],\n  use: {\n    baseURL,\n    trace: 'on-first-retry',\n  },\n  projects: [\n    {\n      name: 'chromium',\n      use: { ...devices['Desktop Chrome'] },\n    },\n  ],\n});",
+    "md5": "599508fc204b6a9f1974b7294d177252",
+    "validated": true,
+    "validated_at": "2026-11-26T10:05:28Z",
+    "created_at": "2026-11-26T10:05:28Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "8:finally/test/specs/mvp.spec.ts": {
+    "content": "import { test, expect } from '@playwright/test';\n\n// SPEC section 2 (first launch) and MVP core flow: default watchlist, starting cash,\n// and adding a ticker through the real UI controls.\n\nconst DEFAULT_TICKERS = [\n  'AAPL',\n  'GOOGL',\n  'MSFT',\n  'AMZN',\n  'TSLA',\n  'NVDA',\n  'META',\n  'JPM',\n  'V',\n  'NFLX',\n];\n\ntest.describe('MVP: first launch', () =\u003e {\n  test('renders the 10 default watchlist tickers', async ({ page }) =\u003e {\n    await page.goto('/');\n    for (const ticker of DEFAULT_TICKERS) {\n      await expect(page.getByText(ticker, { exact: true }).first()).toBeVisible();\n    }\n  });\n\n  test('shows $10,000 starting cash', async ({ page }) =\u003e {\n    await page.goto('/');\n    await expect(page.getByText(/\\$\\s?10,000(\\.00)?/).first()).toBeVisible();\n  });\n});\n\ntest.describe('MVP: watchlist interaction', () =\u003e {\n  test('adding a ticker through the input and button appears in the watchlist', async ({ page }) =\u003e {\n    await page.goto('/');\n    const input = page.getByPlaceholder(/ticker/i).first();\n    await input.fill('PYPL');\n    await page.getByRole('button', { name: /add/i }).first().click();\n    await expect(page.getByText('PYPL', { exact: true }).first()).toBeVisible();\n  });\n\n  test('adding a ticker clears the input field', async ({ page }) =\u003e {\n    await page.goto('/');\n    const input = page.getByPlaceholder(/ticker/i).first();\n    await input.fill('PYPL');\n    await page.getByRole('button', { name: /add/i }).first().click();\n    await expect(page.getByText('PYPL', { exact: true }).first()).toBeVisible();\n    await expect(input).toHaveValue('');\n  });\n});",
+    "md5": "b4475d6bfc7780096fc6030c478d8efa",
+    "validated": true,
+    "validated_at": "2026-11-26T10:05:28Z",
+    "created_at": "2026-11-26T10:05:28Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "8:finally/test/specs/navigation.spec.ts": {
+    "content": "import { test, expect } from '@playwright/test';\n\n// Navigation: the app is served at the root URL, and the watchlist state is\n// reachable again after leaving and returning to the page.\n\nconst DEFAULT_TICKERS = ['AAPL', 'GOOGL', 'MSFT'];\n\ntest.describe('navigation', () =\u003e {\n  test('root URL loads the dashboard with default tickers', async ({ page }) =\u003e {\n    const response = await page.goto('/');\n    expect(response?.ok()).toBeTruthy();\n    for (const ticker of DEFAULT_TICKERS) {\n      await expect(page.getByText(ticker, { exact: true }).first()).toBeVisible();\n    }\n  });\n\n  test('returning to the root after navigating away restores the watchlist', async ({ page }) =\u003e {\n    await page.goto('/');\n    await expect(page.getByText('AAPL', { exact: true }).first()).toBeVisible();\n\n    await page.goto('/does-not-exist');\n    await page.goto('/');\n\n    for (const ticker of DEFAULT_TICKERS) {\n      await expect(page.getByText(ticker, { exact: true }).first()).toBeVisible();\n    }\n  });\n\n  test('browser back returns to the watchlist view', async ({ page }) =\u003e {\n    await page.goto('/');\n    await page.goto('/does-not-exist');\n    await page.goBack();\n    await expect(page.getByText('AAPL', { exact: true }).first()).toBeVisible();\n  });\n});",
+    "md5": "eabb4ad1670272323c7fbd36a51a6c86",
+    "validated": true,
+    "validated_at": "2026-11-26T10:05:28Z",
+    "created_at": "2026-11-26T10:05:28Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  },
+  "8:finally/test/specs/sse.spec.ts": {
+    "content": "import { test, expect } from '@playwright/test';\n\n// SSE: the dashboard must open a server-sent event stream on load.\n// The endpoint path is not hardcoded; the test observes any response served\n// with Content-Type text/event-stream triggered by the page.\n\ntest.describe('SSE stream', () =\u003e {\n  test('page opens a text/event-stream connection on load', async ({ page }) =\u003e {\n    const streamResponse = page.waitForResponse(\n      (response) =\u003e\n        (response.headers()['content-type'] || '').includes('text/event-stream'),\n      { timeout: 15000 },\n    );\n\n    await page.goto('/');\n\n    const response = await streamResponse;\n    expect(response.ok()).toBeTruthy();\n    expect(response.headers()['content-type']).toContain('text/event-stream');\n  });\n\n  test('stream connection is established without a page error', async ({ page }) =\u003e {\n    const pageErrors: Error[] = [];\n    page.on('pageerror', (err) =\u003e pageErrors.push(err));\n\n    const streamResponse = page.waitForResponse(\n      (response) =\u003e\n        (response.headers()['content-type'] || '').includes('text/event-stream'),\n      { timeout: 15000 },\n    );\n\n    await page.goto('/');\n    await streamResponse;\n\n    expect(pageErrors).toEqual([]);\n  });\n});",
+    "md5": "eeb8b65ab3d5e80d26e796a65933ec9a",
+    "validated": true,
+    "validated_at": "2026-11-26T10:05:28Z",
+    "created_at": "2026-11-26T10:05:28Z",
+    "design_fingerprint": "e810082679b3ec5c912b8c858b482b80"
+  }
+}

@@ -40,3 +40,18 @@ run-tests.sh
 run-tests.sh_backup
 qa/implementation-progress.json
 qa/qa-review-progress.json
+out/
+
+# Gas Town mayor/rig (rig-flow checkpoints)
+**/node_modules/
+**/.next/
+**/out/
+**/dist/
+build/
+**/build/
+.cache/
+**/.cache/
+.turbo/
+**/.turbo/
+*.pack
+**/*.pack

@@ -381,6 +381,17 @@ The frontend is a single-page application with a dense, terminal-inspired layout
 - **AI chat panel** — docked/collapsible sidebar. Message input, scrolling conversation history, loading indicator while waiting for LLM response. Trade executions and watchlist changes shown inline as confirmations.
 - **Header** — portfolio total value (updating live), connection status indicator, cash balance
 
+### Mandatory UI Component Composition Rule (Hard Requirement)
+`frontend/app/page.tsx` must be a fully integrated single-page application that mounts and renders all functional components simultaneously:
+1. **Header** (`Header.tsx`): App title "FinAlly", connection status indicator (`data-testid="connection-status"`), and live cash balance (`data-testid="cash-balance"`).
+2. **Watchlist & Market Overview** (`Watchlist.tsx` / `MarketOverview.tsx`): Real ticker rows with live prices, percentage changes, sparkline indicator, and add/remove ticker controls (`aria-label="Watchlist"`).
+3. **Interactive Price Chart** (`PriceChart.tsx`): Displays price trends for the selected ticker (`aria-label` matching price chart).
+4. **Portfolio Visualizations** (`PortfolioSummary.tsx`, `PositionsTable.tsx`, and `PortfolioHeatmap.tsx` / `PnlChart.tsx`): Shows current portfolio equity, cash, unrealized P&L (`data-testid="portfolio-summary"`), open positions table (`data-testid="positions-table"`), and heatmap/P&L chart.
+5. **Trading Panel** (`TradingPanel.tsx`): Order execution panel with ticker input, quantity input, Buy and Sell buttons, and status messages (`data-testid="trading-panel"`).
+6. **AI Chat Assistant** (`ChatAssistant.tsx`): Docked chat sidebar with `aria-label="Chat assistant"`, message history, input (`aria-label="Chat message"`), and Send button.
+
+**Strict Anti-Stubbing Rule**: The main page MUST NOT be an isolated mock, minimal text placeholder, or partial stub that renders only a subset of elements. Submitting a stripped-down `page.tsx` or omitting any of the core components is strictly prohibited and constitutes an immediate QA failure.
+
 ### Technical Notes
 
 - Use `EventSource` for SSE connection to `/api/stream/prices`
@@ -550,6 +561,7 @@ Every scenario must use `page.getByRole()`, `page.getByText()`, or `page.getByTe
 | Connection status indicator present | `getByTestId('connection-status')` visible (green dot = connected) |
 | Cash balance updates after trade | After buy: cash value decreases; after sell: cash value increases |
 | Layout is dark-themed | `page.locator('body')` has CSS background color close to `#0d1117` or `#1a1a2e` |
+| Complete component composition | All core components must be mounted and visible simultaneously: `getByRole('heading', { name: 'FinAlly' })`, `getByTestId('connection-status')`, `getByTestId('cash-balance')`, `getByRole('heading', { name: 'Watchlist' })`, `getByLabel('Market overview')`, `getByLabel(/price chart/i)`, `getByTestId('portfolio-summary')`, `getByTestId('positions-table')`, `getByTestId('trading-panel')`, and `getByLabel('Chat assistant')` |
 
 #### Watchlist (`watchlist.spec.ts`)
 
@@ -908,6 +920,7 @@ Refine the application into a production-quality trading workstation.
 - Professional user experience
 - No significant UX gaps
 - Stable under continuous live streaming
+- Full UI Component Composition: `frontend/app/page.tsx` MUST compose and render all core components (`Header`, `Watchlist`, `MarketOverview`, `PriceChart`, `PortfolioSummary`, `PositionsTable`, `TradingPanel`, `ChatAssistant`). Stubbing, mock-only JSX, or omitting any of these components in `page.tsx` is strictly forbidden and constitutes a QA failure.
 
 ---
 
@@ -953,6 +966,7 @@ Validate the complete application and prepare it for release.
 ### Exit Criteria
 
 - All Playwright E2E tests pass (see Section 13 for mandatory coverage)
+- Complete UI visibility verified: all components (`Header`, `Watchlist`, `MarketOverview`, `PriceChart`, `PortfolioSummary`, `PositionsTable`, `TradingPanel`, `ChatAssistant`) verified mounted and visible on the page before workflow completion is granted
 - All unit tests pass (backend pytest + frontend component tests)
 - All automated tests **assert real content** (not just status codes / visibility)
 - Every UI feature in Sections 2 and 10 has a corresponding Playwright test

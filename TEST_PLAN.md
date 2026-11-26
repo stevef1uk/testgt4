@@ -1,160 +1,162 @@
-# Test Plan — FinAlly (testgt4)
+# Test Plan — FinAlly
 
 ## Requirements → tests
 
 ### project-foundation
-Requirement: The FastAPI app in backend/app/main.py serves the Next.js static export at GET / and returns HTTP 200 with {"status": "ok"} from GET /api/health.
+Requirement: Root route serves the real dashboard HTML (heading, ten default tickers, $10,000 cash) and never a placeholder; health route returns HTTP 200 with status ok.
 Level: integration
 Test file: finally/backend/app/main_test.py
-Bead ID: te-ol5
+Bead ID: closed
 Phase: project-foundation
 Scenarios:
-- GET / returns the exported index.html when finally/frontend/out exists
-- GET / returns HTTP 503 with {"error":"Frontend export unavailable"} when the export is missing
-- GET /api/health returns HTTP 200 with status "ok"
+- Root route with finally/frontend/out/index.html present returns the exported dashboard
+- Root route with the export missing returns HTTP 503 with a diagnostic body
+- Health route returns HTTP 200 with status ok
 Assertions:
-- Body of GET / is the exported dashboard page, not a placeholder string
-- 503 body decodes to {"error": "Frontend export unavailable"}
-- Health JSON decodes to status "ok" with HTTP 200
-
-### project-foundation-support
-Requirement: GET / serves the real Next.js static export (dashboard heading, ten default tickers, $10,000 cash) and GET /api/health returns HTTP 200 with {"status": "ok"}; Docker, Compose, start/stop scripts, and the Playwright test infrastructure manifest and helpers exist and load without error.
-Level: integration
-Test file: finally/backend/app/main_test.py
-Bead ID: te-ol5
-Phase: project-foundation-support
-Scenarios:
-- Export present: GET / returns the real index.html from finally/frontend/out
-- Export missing: GET / returns HTTP 503 with {"error":"Frontend export unavailable"}, never a placeholder page
-- GET /api/health returns HTTP 200 with status "ok"
-- Application served by the same app factory used in the Dockerfile CMD (uvicorn app.main:app on port 8010)
-Assertions:
-- Body of GET / contains the dashboard heading text, not "Coming soon" or any placeholder string
-- 503 body decodes to {"error": "Frontend export unavailable"}
-- Health JSON decodes to status "ok" with HTTP 200
-- Static root returns the export, not a fallback page
+- Body contains the dashboard heading and the ten default ticker symbols
+- Body contains the $10,000 cash figure
+- 503 body contains "Frontend export unavailable" and no placeholder text
 
 ### core-market-infrastructure
-Requirement: GBM simulator, MarketCache, and MassiveClient implement one interface; the SSE generator emits ticker, price, previous price, timestamp, and direction for each update.
+Requirement: GBM simulator, shared price cache, and MassiveClient REST parsing behave per SPEC Section 6.
 Level: unit
 Test file: finally/backend/tests/test_market_infrastructure.py
-Bead ID: pending (future phase; no bead in bd list yet)
+Bead ID: closed
 Phase: core-market-infrastructure
 Scenarios:
-- GBM next price is positive and follows the drift/volatility formula
-- MarketCache update then get_latest returns the newest price and previous price
-- Concurrent cache updates from multiple threads do not lose the latest value
-- MassiveClient parses a canned REST response into a float price
-- SSE generator emits frames with ticker, price, previous price, timestamp, and direction
+- GBM step produces a positive price matching the formula
+- MarketCache update then get_latest returns the new price and retains the previous price
+- MassiveClient parses a canned REST response into a price
+- Concurrent cache updates do not lose writes
 Assertions:
-- GBM output equals the closed-form value for fixed inputs
-- Cache get_latest returns the last written price for each ticker
-- Parsed Massive price equals the fixture value
-- SSE frames are text/event-stream data lines whose decoded JSON contains the required keys
+- GBM price equals expected value within tolerance
+- Cache returns exact stored price and previous price
+- Parsed Massive price equals fixture price field
 
 ### database-portfolio-engine
-Requirement: Lazy SQLite initialization seeds $10,000 cash and the ten default tickers; trades execute at market price and update cash and positions; snapshots are recorded after each trade.
+Requirement: Trades update cash, positions, and snapshots correctly; seed gives $10,000 cash and ten default tickers.
 Level: unit
 Test file: finally/backend/tests/test_portfolio.py
-Bead ID: pending (future phase; no bead in bd list yet)
+Bead ID: closed
 Phase: database-portfolio-engine
 Scenarios:
-- Fresh init seeds user "default" with cash 10000.0 and ten watchlist tickers
 - Buy reduces cash and creates a position with average cost
-- Selling more than owned is rejected and leaves the position unchanged
-- Buying with insufficient cash is rejected and leaves cash unchanged
-- Snapshot recorded after trade execution
+- Sell more than owned is rejected and leaves state unchanged
+- Buy with insufficient cash is rejected
+- Snapshot is recorded after a trade
 Assertions:
-- Cash equals 10000.0 minus quantity times price after a buy
-- Position quantity and avg_cost match expected values
-- Rejected trades raise a validation error and state is unchanged
-- Snapshot total_value equals cash plus position market value
+- cash_balance equals prior cash minus quantity times price
+- Position quantity and avg_cost equal expected values
+- Rejected trades return an error and change no cash or positions
 
 ### watchlist-market-ui
-Requirement: Watchlist add/remove works in the UI; the ten default tickers render with $ prices; each row has a sparkline; the connection status indicator is visible.
+Requirement: Fresh load shows the ten default tickers with dollar-prefixed prices; adding PYPL adds a row; removing AAPL removes its row.
 Level: ui
 Test file: finally/test/watchlist-market-ui.spec.ts
-Bead ID: pending (future phase; no bead in bd list yet)
+Bead ID: closed
 Phase: watchlist-market-ui
 Scenarios:
-- Default ten tickers render with prices matching \$[\d,.]+
-- Type PYPL in the add-ticker input, click add, and PYPL appears in the list
-- Click remove on AAPL, AAPL disappears, and nine rows remain
-- Adding duplicate AAPL does not create a second row
-- Each ticker row contains an SVG or canvas sparkline
+- Dashboard renders the watchlist panel with ten default tickers and dollar-prefixed price cells
+- Type PYPL into the add input and click add; row count goes 10 to 11
+- Click remove on AAPL; row count goes 11 to 10
 Assertions:
-- getByText for each default ticker is visible on load
-- After add, getByText('PYPL') is visible; after remove, getByText('AAPL') is not visible
-- Element with test id connection-status is visible
+- Each default ticker symbol is visible on load
+- Price cells match the pattern $[\d,.]+
+- Watchlist row count is 10, then 11, then 10
 
 ### portfolio-visualisation-trading
-Requirement: Market buy and sell update cash, the positions table, and portfolio value; the heatmap and P&L chart render from current positions; insufficient cash and overselling show visible errors.
+Requirement: Buy and sell from the trade bar update cash and positions in the DOM; a rejected trade leaves cash unchanged and shows an error; heatmap and P&L chart render live portfolio data after a trade.
 Level: ui
 Test file: finally/test/portfolio-visualisation-trading.spec.ts
-Bead ID: pending (future phase; no bead in bd list yet)
+Bead ID: closed
 Phase: portfolio-visualisation-trading
 Scenarios:
-- Enter AAPL, quantity 10, click Buy: cash decreases by 10 times the current price and a row with quantity 10 appears
-- With an AAPL position, enter quantity 5, click Sell: cash increases and quantity drops to 5
-- Quantity 999999 Buy shows an error and cash is unchanged
-- Quantity 999999 Sell shows an error and position is unchanged
-- Heatmap test id portfolio-heatmap contains colored rectangles; test id pnl-chart has data points
+- Buy 2 AAPL via the trade bar: cash decreases and the positions table lists AAPL with quantity 2
+- Heatmap and P&L chart contain rendered content for a non-empty portfolio
 Assertions:
-- Cash text changes by the expected amount after each trade
-- Positions table row shows ticker AAPL and quantity 10
-- Error message text is visible after each rejected trade
+- Cash after buy equals prior cash minus 2 times displayed AAPL price
+- Positions row contains ticker AAPL and quantity 2
+- Heatmap and P&L chart contain rendered elements or data points
 
 ### ai-trading-assistant
-Requirement: Chat returns structured JSON (message, trades, watchlist_changes); valid trades auto-execute with the same validation as manual trades; malformed LLM output is handled safely; LLM_MOCK=true gives deterministic responses; the chat panel renders user messages and a loading spinner while pending.
+Requirement: Mock chat returns deterministic replies and trade intents; prompt and portfolio context are formatted; invalid input and LLM failure degrade safely.
 Level: unit
 Test file: finally/backend/tests/test_chat.py
-Bead ID: pending (future phase; no bead in bd list yet)
+Bead ID: te-62z
 Phase: ai-trading-assistant
 Scenarios:
-- LLM_MOCK=true returns identical responses for identical inputs
-- System prompt includes cash, positions, and watchlist context
-- Valid structured JSON yields message plus trade and watchlist actions
-- Malformed JSON falls back to a safe error message without crashing
-- Trade intent with insufficient cash is reported back in the response
-- Companion component test finally/frontend/components/ChatAssistant.test.tsx: user message renders after send; spinner shown only while pending
+- System prompt names "FinAlly, an AI trading assistant"
+- "buy 5 msft" parses to MSFT, buy, 5.0
+- Non-trade text yields no trade; empty input returns None without raising
+- Non-positive quantity returns None
+- A failing LiteLLM call returns the fallback reply with trade None
 Assertions:
-- Decoded response keys include message, trades, watchlist_changes
-- Mock outputs are equal across two calls
-- Prompt string contains the formatted cash balance and tickers
-- getByText returns the user message; loading indicator present only while pending
+- Trade dict values match exactly
+- Context string contains "1000.00", "AAPL", and "NVDA"
+- Fallback reply equals "The assistant is unavailable right now." with trade None
+
+Requirement: ChatAssistant disables send while input is empty or pending, posts to the chat endpoint, renders replies, and shows a failure message on network error.
+Level: unit
+Test file: finally/frontend/components/ChatAssistant.test.tsx
+Bead ID: closed
+Phase: ai-trading-assistant
+Scenarios:
+- Send is disabled until input has text
+- Submit posts {"message": "buy 5 MSFT"} and renders the reply
+- A rejected fetch renders the failure message
+Assertions:
+- fetch is called with method POST and the exact JSON body
+- Reply and user message are rendered
+- Failure text "Request failed. Please try again." is rendered exactly
+
+Requirement: User sends a trade command in the chat panel and sees the assistant reply in the DOM.
+Level: ui
+Test file: finally/test/specs/chat.spec.ts
+Bead ID: te-id0
+Phase: ai-trading-assistant
+Scenarios:
+- Type "buy 5 msft", click Send, and the assistant reply appears
+- User message appears before the assistant reply; input is cleared after send
+Assertions:
+- Reply "Executed buy 5 MSFT." is visible in the conversation list
+- User message index is less than reply index
+- Input value is empty after send
+
+Requirement: After a buy through the trade bar, the positions table shows the bought quantity and cash is below $10,000.
+Level: ui
+Test file: finally/test/specs/portfolio.spec.ts
+Bead ID: te-6ba
+Phase: ai-trading-assistant
+Scenarios:
+- Fresh load, buy 10 AAPL via the trade bar, then read the positions table
+Assertions:
+- AAPL row contains "10" in the quantity column
+- Cash figure is less than 10000
+- Positions row count increases by one
 
 ### application-polish
-Requirement: Dark terminal theme (background near #0d1117 or #1a1a2e), price-flash fade of about 500ms, professional empty states, and stable behavior under live streaming.
+Requirement: Dark terminal theme from SPEC Section 2 (background #0d1117, foreground #e6edf3) applies to the rendered dashboard, with real dashboard content visible.
 Level: ui
 Test file: finally/test/application-polish.spec.ts
-Bead ID: pending (future phase; no bead in bd list yet)
+Bead ID: te-dom
 Phase: application-polish
 Scenarios:
-- Body background color is close to #0d1117 or #1a1a2e
-- A price change applies a flash class that is removed after the transition
-- Empty portfolio shows a visible empty state with total value $10,000
+- Load the dashboard at the root route and read computed body background and text colour
+- Dashboard shows brand, heading, watchlist and cash balance
 Assertions:
-- Computed body background-color matches the dark theme palette
-- Flash class present right after a price update and absent after about 600ms
+- Computed body background equals rgb(13, 17, 23)
+- Computed body colour equals rgb(230, 237, 243)
+- Brand text, heading text, and "$10,000" are visible
 
 ### testing-release
-Requirement: SSE reconnects after a disconnect; selecting a ticker updates the main chart; the MVP happy path covers load, buy, sell, watchlist add/remove, chat, and heatmap.
+Requirement: SSE stream endpoint is opened by the dashboard on load and delivers text/event-stream responses without page errors (SPEC Section 6 SSE Streaming; SPEC Section 13 SSE Streaming).
 Level: ui
 Test file: finally/test/specs/sse.spec.ts
-Bead ID: pending (future phase; no bead in bd list yet)
+Bead ID: te-os5
 Phase: testing-release
 Scenarios:
-- At least three tickers change price within 10 seconds of load
-- Connection status returns to green after the SSE stream is restarted
-- Clicking AAPL sets the main chart heading to AAPL; clicking MSFT switches it
-- Full happy path: buy 5 AAPL, sell 3 AAPL, add PYPL, remove NFLX, chat, verify heatmap (finally/test/specs/mvp.spec.ts)
+- Loading the root route triggers a response with Content-Type text/event-stream
+- Loading the root route opens the stream without any uncaught page error
 Assertions:
-- Price text differs between two samples for at least three tickers
-- Connection status reports the connected state
-- Chart heading equals the selected ticker
-- Cash and position figures change as expected after each trade
-
-## Coverage summary
-- 9 test-carrying phases covered: project-foundation (te-ol5, main_test.py dashboard and 503 assertions), project-foundation-support, core-market-infrastructure, database-portfolio-engine, watchlist-market-ui, portfolio-visualisation-trading, ai-trading-assistant, application-polish, testing-release. project-foundation has its own section because it delivers GET / and the static export. project-foundation-support owns finally/backend/app/main_test.py (bead te-ol5, the source bead for main.py, which the companion test covers), covering GET / and /api/health.
-- Levels: 2 integration (project-foundation, project-foundation-support), 3 unit (core-market-infrastructure, database-portfolio-engine, ai-trading-assistant), 4 ui (watchlist-market-ui, portfolio-visualisation-trading, application-polish, testing-release); the chat component test is a companion unit test under ai-trading-assistant.
-- Future-phase bead IDs are pending until planning creates them; active-phase bead te-ol5 is the source owner for main_test.py.
+- The stream response is ok and its Content-Type contains text/event-stream
+- The collected pageerror list is empty
