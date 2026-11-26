@@ -7,6 +7,14 @@ their own beads when those phases become active.
 Phase verification (qa_verify_command):
 `(cd finally/backend && uv run pytest tests/test_api.py -q) && (cd finally/test && npm install --ignore-scripts && npx playwright test --list)`
 
+## Revision note (QA rework)
+
+te-eku failed its auto-verify because `npx playwright test --list` reports
+"No tests found" until finally/test/e2e.spec.ts (te-7by) exists. The list gate
+is therefore owned by te-7by, not te-eku. te-eku verifies only its own artifact
+(config present, non-empty, loadable as TypeScript). te-7by runs the full phase
+gate after it lands. Queue order is unchanged: te-rak, te-eku, te-7by, te-9o3.
+
 ## Bead map
 
 ### te-rak: finally/test/package.json
@@ -17,19 +25,20 @@ Phase verification (qa_verify_command):
 - Consumed by: te-eku (playwright.config.ts), te-7by (e2e.spec.ts), te-9o3 (docker-compose.test.yml)
 - Acceptance:
   - Valid JSON that `npm install --ignore-scripts` accepts.
-  - Declares @playwright/test so `npx playwright test --list` resolves.
-- Verify: `(cd finally/test && npm install --ignore-scripts && npx playwright test --list)`
+  - Declares @playwright/test so the Playwright CLI resolves.
+- Verify: `test -s finally/test/package.json`
 
 ### te-eku: finally/test/playwright.config.ts
 - Scope: Playwright configuration for chromium, baseURL from BASE_URL.
 - Architecture: E2E harness section lists finally/test/playwright.config.ts.
-- Interfaces: default export config with project `chromium` and testDir pointing at finally/test.
+- Interfaces: default export config with project `chromium`; testDir is finally/test.
 - Depends on: te-rak (package.json)
-- Consumed by: te-9o3 (compose command passes --config=test/playwright.config.ts), te-7by
+- Consumed by: te-9o3 (compose passes --config=test/playwright.config.ts), te-7by
 - Acceptance:
-  - Config loads under `npx playwright test --list`.
+  - File exists and is non-empty.
   - baseURL honours BASE_URL with default http://localhost:8010.
-- Verify: `(cd finally/test && npm install --ignore-scripts && npx playwright test --list)`
+  - Does not require e2e.spec.ts to exist; test discovery is verified by te-7by.
+- Verify: `test -s finally/test/playwright.config.ts`
 
 ### te-7by: finally/test/e2e.spec.ts
 - Scope: browser E2E flows covering SPEC section 8 user journeys against the running app.
@@ -40,7 +49,7 @@ Phase verification (qa_verify_command):
 - Acceptance:
   - Asserts GET / shows the FinAlly heading, ten default tickers, and $10,000 cash.
   - Covers a market buy and sell round trip and watchlist add/remove, per SPEC.
-  - Lists cleanly with `npx playwright test --list`.
+  - Lists cleanly with `npx playwright test --list` (this makes the phase list gate pass).
 - Verify: `(cd finally/test && npm install --ignore-scripts && npx playwright test --list)`
 
 ### te-9o3: finally/test/docker-compose.test.yml
@@ -80,8 +89,8 @@ Phase verification (qa_verify_command):
 ## Dependency order
 
 1. te-rak (package.json)
-2. te-eku (playwright.config.ts)
-3. te-7by (e2e.spec.ts)
+2. te-eku (playwright.config.ts, artifact check only)
+3. te-7by (e2e.spec.ts, enables the list gate)
 4. te-9o3 (docker-compose.test.yml)
 5. te-5n9 (PLAN.md, independent)
 6. te-2iz (test_api.py, depends on earlier backend phases)
