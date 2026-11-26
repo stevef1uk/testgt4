@@ -1,78 +1,63 @@
-# Implementation plan: testing-release phase
+# Implementation plan
 
-## Scope
-
-This plan covers only the testing-release phase. Its six required files are the backend API test module, the Playwright harness (package manifest, config, compose file, E2E spec), and the planning document. Files owned by earlier phases (app wiring, Dockerfile, routers) are not implemented here. Missing earlier-phase pieces are deferred to those phases, not blocked on in this plan.
+Delivery phase: testing-release (Phase 8 — Testing & Release).
+Scope: six implement beads for the `required_files` of this phase only. Later phases are not planned here.
 
 ## Bead map
 
 ### te-2iz: finally/backend/tests/test_api.py
-- Scope: pytest API tests for the REST surface under /api/* (portfolio, watchlist, trades) and the GET / dashboard response.
-- Architecture: backend tests section of architecture.md; single origin on port 8010, no CORS.
-- Interfaces: pytest test functions using a TestClient against the FastAPI app.
-- Depends on: <none> in this phase (router registration is owned by the project-foundation phase).
-- Consumed by: finally/test/e2e.spec.ts (behavioural parity only, no import).
-- Acceptance: GET / returns the dashboard HTML with the FinAlly heading and the ten default tickers.
-- Acceptance: GET /api/watchlist returns the ten default tickers for user "default".
-- Acceptance: POST /api/watchlist returns 201 for a new ticker and 409 for a duplicate.
-- Acceptance: DELETE of a missing watchlist ticker returns 404.
-- Acceptance: GET /api/portfolio starts with $10,000 cash.
-- Acceptance: a market buy fills at the cached price and debits cash (201).
-- Acceptance: selling without a position returns 400; buying beyond cash returns 400.
-- Acceptance: when the export is missing, the dashboard route returns 503 with a diagnostic body.
-- Verify: cd finally/backend && uv run pytest tests/test_api.py -q
+- Scope: full API contract pytest module across all canonical routes, plus GET / real-dashboard assertions.
+- Architecture: Unit tests section (test_api.py) and HTTP + entrypoint integration section (SPEC Section 8 routes verbatim).
+- Interfaces: consumes `create_app(...) -> FastAPI` from finally/backend/app/main.py; exercises GET /api/health, GET /api/watchlist, GET /api/portfolio, POST /api/portfolio/trade, GET /api/portfolio/history, POST /api/chat, GET / (static export).
+- Depends on: finally/backend/app/main.py, finally/backend/app/api/__init__.py (earlier phases).
+- Consumed by: finally/test/e2e.spec.ts (same route contract, asserted through the browser).
+- Acceptance: GET / returns HTML containing the FinAlly heading, all ten default tickers (AAPL, GOOGL, MSFT, AMZN, TSLA, NVDA, META, JPM, V, NFLX) and the $10,000 cash figure; no placeholder text such as "Coming soon"; /api/health returns success; watchlist and portfolio routes return the documented shapes with real values, not status codes alone.
+- Verify: (cd finally/backend && uv run pytest tests/test_api.py -q)
 
 ### te-rak: finally/test/package.json
-- Scope: Node package manifest for the Playwright E2E harness.
-- Architecture: test harness section of architecture.md.
-- Interfaces: npm scripts "test" and "test:e2e" running playwright test on chromium.
-- Depends on: <none>
-- Consumed by: finally/test/playwright.config.ts, finally/test/e2e.spec.ts
-- Acceptance: declares @playwright/test as a dev dependency.
-- Acceptance: installs with npm install --ignore-scripts and lists the suite without errors.
-- Verify: cd finally/test && npm install --ignore-scripts && npx playwright test --list
+- Scope: Playwright test project manifest with @playwright/test and the chromium run script.
+- Architecture: E2E harness layout (finally/test/) and Section 13 test infrastructure.
+- Interfaces: npm scripts `test` and `test:e2e` running `npx playwright test --project=chromium`.
+- Depends on: none within this phase.
+- Consumed by: finally/test/playwright.config.ts, finally/test/docker-compose.test.yml (playwright service install step).
+- Acceptance: manifest parses as JSON; devDependencies pin @playwright/test; install uses `npm install --ignore-scripts`.
+- Verify: (cd finally/test && npm install --ignore-scripts && npx playwright test --list)
 
 ### te-eku: finally/test/playwright.config.ts
-- Scope: Playwright configuration targeting the single-origin app on port 8010.
-- Architecture: test harness section of architecture.md.
-- Interfaces: default export of the Playwright config object.
-- Depends on: finally/test/package.json
-- Consumed by: finally/test/e2e.spec.ts
-- Acceptance: baseURL points at http://localhost:8010; the chromium project is defined.
-- Acceptance: the test directory resolves to finally/test.
-- Verify: cd finally/test && npx playwright test --list
+- Scope: Playwright configuration for the chromium project.
+- Architecture: Section 13 Playwright configuration (baseURL from BASE_URL, 30s test timeout, retries 1, html reporter with open never, webServer disabled).
+- Interfaces: default export of a Playwright config with projects `[{ name: 'chromium' }]`.
+- Depends on: finally/test/package.json.
+- Consumed by: finally/test/e2e.spec.ts, finally/test/docker-compose.test.yml.
+- Acceptance: baseURL falls back to http://localhost:8010; the chromium project uses Desktop Chrome; `npx playwright test --list` discovers tests.
+- Verify: (cd finally/test && npx playwright test --list)
 
 ### te-9o3: finally/test/docker-compose.test.yml
-- Scope: Compose file that brings up the containerised app and the Playwright runner for E2E runs.
-- Architecture: deployment section of architecture.md.
-- Interfaces: app service exposing port 8010 with a health check.
-- Depends on: <none> in this phase (Dockerfile build is owned by a later phase).
-- Consumed by: finally/test/e2e.spec.ts
-- Acceptance: one app container, one port, one origin; no CORS configuration.
-- Acceptance: the playwright service waits for app health before running tests.
-- Verify: cd finally/test && docker compose -f docker-compose.test.yml config
+- Scope: compose harness with the app container (build context `..`) and a playwright container.
+- Architecture: Section 12 harness contract. The app healthcheck hits `curl -f http://localhost:8010/api/health`; LLM_MOCK=true; BASE_URL=http://app:8010; playwright mounts the project root and runs `npm install` (not `npm ci`).
+- Interfaces: service `app` on port 8010; service `playwright` depending on `app` being healthy.
+- Depends on: finally/Dockerfile (project-foundation-support), finally/test/package.json, finally/test/playwright.config.ts.
+- Consumed by: CI runs of finally/test/e2e.spec.ts.
+- Acceptance: `docker compose -f finally/test/docker-compose.test.yml config` validates; app healthcheck path and BASE_URL match the SPEC.
+- Verify: (cd finally/test && docker compose -f docker-compose.test.yml config)
 
 ### te-7by: finally/test/e2e.spec.ts
-- Scope: End-to-end browser tests for dashboard load, trading, watchlist, and chat.
-- Architecture: test harness section of architecture.md.
-- Interfaces: Playwright test specs using the config from playwright.config.ts.
-- Depends on: finally/test/playwright.config.ts, finally/test/docker-compose.test.yml
-- Consumed by: <none>
-- Acceptance: the dashboard shows the FinAlly heading, ten tickers with prices, and $10,000 cash.
-- Acceptance: a market buy updates cash and positions.
-- Acceptance: chat output contains no raw JSON.
-- Verify: cd finally/test && npx playwright test
+- Scope: end-to-end scenarios driven through the browser with real content assertions.
+- Architecture: SPEC Section 13 mandatory scenarios, reduced to one file for this phase.
+- Interfaces: Playwright tests using getByRole, getByText and getByTestId only.
+- Depends on: finally/test/playwright.config.ts, finally/test/package.json; the running app from finally/test/docker-compose.test.yml.
+- Consumed by: testing-release gate (`npx playwright test --list`).
+- Acceptance: fresh load shows FinAlly heading, ten tickers and $10,000; one real interaction (Buy 5 AAPL or Add ticker) followed by a DOM state-change assertion; chat Send shows a non-empty assistant reply with no raw JSON braces.
+- Verify: (cd finally/test && npm install --ignore-scripts && npx playwright test --list)
 
 ### te-5n9: finally/planning/PLAN.md
-- Scope: Planning document for the layout under finally/planning/.
-- Architecture: planned file layout section of architecture.md.
+- Scope: project planning document for agents covering this plan's contract and delivery phases.
+- Architecture: Planned file layout (`finally/planning/PLAN.md`) and Section 14 design contract.
 - Interfaces: none (documentation).
-- Depends on: <none>
-- Consumed by: <none>
-- Acceptance: file exists and lists the planned layout paths under the finally/ prefix.
-- Verify: test -s finally/planning/PLAN.md
+- Depends on: none.
+- Consumed by: agents reading the shared contract.
+- Acceptance: file exists with a Scope, Acceptance and Verification section; verification commands match the phase gate.
+- Verify: test -f finally/planning/PLAN.md
 
 ## Future considerations
-
-- Router registration in finally/backend/app/api/__init__.py belongs to the project-foundation phase; the te-2iz failures are deferred there.
-- Compose build of the app image depends on the Dockerfile in a later phase; compose validation here checks only the file itself.
+- Remaining SPEC Section 13 scenarios beyond the mandatory happy path are deferred to later test passes.
