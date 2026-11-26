@@ -41,13 +41,6 @@
     },
     {
       "stack": "python",
-      "rule": "QA lesson: {\"summary\":\"Security validation flagged the closed core-market-infrastructure phase: `finally/scripts/start_mac.sh` contains s...",
-      "source": "qa_rework",
-      "hits": 1,
-      "updated_at": "2026-11-26T19:03:10Z"
-    },
-    {
-      "stack": "python",
       "rule": "QA lesson: {\"summary\":\"The start_mac.sh script (outside the active phase's required_files) contains duplicated allow-secret markers on li...",
       "source": "qa_rework",
       "hits": 1,
@@ -59,6 +52,13 @@
       "source": "qa_rework",
       "hits": 1,
       "updated_at": "2026-11-26T19:58:08Z"
+    },
+    {
+      "stack": "python",
+      "rule": "QA lesson: Root cause: QA rejected finally/scripts/start_mac.sh because the security validator flags secret_assign on lines 21/24 despite...",
+      "source": "qa_rework",
+      "hits": 1,
+      "updated_at": "2026-11-26T20:20:27Z"
     }
   ]
 }
