@@ -67,32 +67,80 @@
     "content": "FROM node:20-alpine AS frontend-builder\nWORKDIR /app/frontend\nCOPY frontend/package.json frontend/package-lock.json* ./\nRUN npm install\nCOPY frontend/ ./\nRUN npm run build\nFROM python:3.12-slim\nWORKDIR /app\nRUN python3 -m pip install --no-cache-dir fastapi==0.115.0 uvicorn==0.30.6\nCOPY backend/ ./backend/\nCOPY --from=frontend-builder /app/frontend/out ./frontend/out\nEXPOSE 8010\nCMD [\"uvicorn\", \"backend.app.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8010\"]",
     "md5": "9f904d8d204bc1ce84d9987a028cdb90",
     "validated": true,
-    "validated_at": "2026-11-26T18:14:11Z",
-    "created_at": "2026-11-26T18:14:11Z",
+    "validated_at": "2026-11-26T18:19:51Z",
+    "created_at": "2026-11-26T18:19:51Z",
+    "design_fingerprint": "7be9127a282804b94ac735bb49de3d7d"
+  },
+  "1:finally/backend/app/db/schema.sql": {
+    "content": "-- FinAlly SQLite schema. Idempotent: safe to execute on every startup.\n\nCREATE TABLE IF NOT EXISTS users_profile (\n    id TEXT PRIMARY KEY NOT NULL DEFAULT 'default',\n    cash_balance REAL NOT NULL DEFAULT 10000.0,\n    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),\n    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))\n);\n\nCREATE TABLE IF NOT EXISTS watchlist (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    user_id TEXT NOT NULL DEFAULT 'default',\n    ticker TEXT NOT NULL,\n    added_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),\n    UNIQUE (user_id, ticker),\n    FOREIGN KEY (user_id) REFERENCES users_profile (id) ON DELETE CASCADE\n);\n\nCREATE INDEX IF NOT EXISTS idx_watchlist_user ON watchlist (user_id);\n\nCREATE TABLE IF NOT EXISTS positions (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    user_id TEXT NOT NULL DEFAULT 'default',\n    ticker TEXT NOT NULL,\n    quantity REAL NOT NULL DEFAULT 0.0,\n    avg_cost REAL NOT NULL DEFAULT 0.0,\n    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),\n    UNIQUE (user_id, ticker),\n    FOREIGN KEY (user_id) REFERENCES users_profile (id) ON DELETE CASCADE\n);\n\nCREATE INDEX IF NOT EXISTS idx_positions_user ON positions (user_id);\n\nCREATE TABLE IF NOT EXISTS trades (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    user_id TEXT NOT NULL DEFAULT 'default',\n    ticker TEXT NOT NULL,\n    side TEXT NOT NULL CHECK (side IN ('buy', 'sell')),\n    quantity REAL NOT NULL CHECK (quantity \u003e 0),\n    price REAL NOT NULL CHECK (price \u003e 0),\n    executed_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),\n    FOREIGN KEY (user_id) REFERENCES users_profile (id) ON DELETE CASCADE\n);\n\nCREATE INDEX IF NOT EXISTS idx_trades_user_executed ON trades (user_id, executed_at);\n\nCREATE TABLE IF NOT EXISTS portfolio_snapshots (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    user_id TEXT NOT NULL DEFAULT 'default',\n    total_value REAL NOT NULL,\n    recorded_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),\n    FOREIGN KEY (user_id) REFERENCES users_profile (id) ON DELETE CASCADE\n);\n\nCREATE INDEX IF NOT EXISTS idx_snapshots_user_recorded ON portfolio_snapshots (user_id, recorded_at);\n\nCREATE TABLE IF NOT EXISTS chat_messages (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    user_id TEXT NOT NULL DEFAULT 'default',\n    role TEXT NOT NULL CHECK (role IN ('user', 'assistant', 'system')),\n    content TEXT NOT NULL,\n    actions TEXT,\n    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),\n    FOREIGN KEY (user_id) REFERENCES users_profile (id) ON DELETE CASCADE\n);\n\nCREATE INDEX IF NOT EXISTS idx_chat_user_created ON chat_messages (user_id, created_at);",
+    "md5": "5cce94a8ea7695a73a5e84fb1a770920",
+    "validated": true,
+    "validated_at": "2026-11-26T18:19:51Z",
+    "created_at": "2026-11-26T18:19:51Z",
+    "design_fingerprint": "7be9127a282804b94ac735bb49de3d7d"
+  },
+  "1:finally/backend/app/db/seed.py": {
+    "content": "\"\"\"Idempotent seed for the FinAlly SQLite database.\n\nCreates the default user profile and default watchlist. Safe to run on every\nstartup: existing rows are left untouched.\n\"\"\"\n\nimport sqlite3\nfrom pathlib import Path\n\nSCHEMA_PATH = Path(__file__).with_name(\"schema.sql\")\n\nDEFAULT_USER_ID = \"default\"\nDEFAULT_CASH_BALANCE = 10000.0\nDEFAULT_WATCHLIST = [\n    \"AAPL\",\n    \"GOOGL\",\n    \"MSFT\",\n    \"AMZN\",\n    \"TSLA\",\n    \"NVDA\",\n    \"META\",\n    \"JPM\",\n    \"V\",\n    \"NFLX\",\n]\n\n\ndef apply_schema(conn: sqlite3.Connection) -\u003e None:\n    \"\"\"Run schema.sql (idempotent DDL).\"\"\"\n    conn.executescript(SCHEMA_PATH.read_text(encoding=\"utf-8\"))\n\n\ndef seed_default_data(conn: sqlite3.Connection) -\u003e None:\n    \"\"\"Insert the default profile and watchlist if they are missing.\"\"\"\n    conn.execute(\n        \"INSERT OR IGNORE INTO users_profile (id, cash_balance) VALUES (?, ?)\",\n        (DEFAULT_USER_ID, DEFAULT_CASH_BALANCE),\n    )\n    conn.executemany(\n        \"INSERT OR IGNORE INTO watchlist (user_id, ticker) VALUES (?, ?)\",\n        [(DEFAULT_USER_ID, ticker) for ticker in DEFAULT_WATCHLIST],\n    )\n    conn.commit()\n\n\ndef initialize_database(db_path: str) -\u003e None:\n    \"\"\"Create schema and seed default data at db_path.\"\"\"\n    conn = sqlite3.connect(db_path)\n    try:\n        apply_schema(conn)\n        seed_default_data(conn)\n    finally:\n        conn.close()\n\n\nif __name__ == \"__main__\":\n    import os\n\n    initialize_database(os.environ.get(\"DB_PATH\", \"finally.db\"))",
+    "md5": "3605f25faafd6bc30cb92c1bb166c01f",
+    "validated": true,
+    "validated_at": "2026-11-26T18:19:51Z",
+    "created_at": "2026-11-26T18:19:51Z",
+    "design_fingerprint": "7be9127a282804b94ac735bb49de3d7d"
+  },
+  "1:finally/backend/tests/test_schema.py": {
+    "content": "\"\"\"Schema and seed tests for the FinAlly SQLite database.\"\"\"\n\nimport sqlite3\nimport sys\nfrom pathlib import Path\n\nimport pytest\n\nBACKEND_DIR = Path(__file__).resolve().parents[1]\nsys.path.insert(0, str(BACKEND_DIR))\n\nfrom app.db import seed  # noqa: E402\n\nSCHEMA_PATH = BACKEND_DIR / \"app\" / \"db\" / \"schema.sql\"\n\nEXPECTED_TABLES = {\n    \"users_profile\",\n    \"watchlist\",\n    \"positions\",\n    \"trades\",\n    \"portfolio_snapshots\",\n    \"chat_messages\",\n}\n\n\n@pytest.fixture\ndef conn():\n    connection = sqlite3.connect(\":memory:\")\n    connection.row_factory = sqlite3.Row\n    yield connection\n    connection.close()\n\n\ndef _table_names(conn):\n    rows = conn.execute(\n        \"SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'\"\n    ).fetchall()\n    return {row[\"name\"] for row in rows}\n\n\ndef test_schema_file_exists():\n    assert SCHEMA_PATH.is_file()\n\n\ndef test_schema_creates_all_tables(conn):\n    conn.executescript(SCHEMA_PATH.read_text(encoding=\"utf-8\"))\n    assert EXPECTED_TABLES \u003c= _table_names(conn)\n\n\ndef test_schema_is_idempotent(conn):\n    sql = SCHEMA_PATH.read_text(encoding=\"utf-8\")\n    conn.executescript(sql)\n    conn.executescript(sql)  # second run must not raise\n    assert EXPECTED_TABLES \u003c= _table_names(conn)\n\n\ndef test_trades_side_constraint_rejects_invalid_value(conn):\n    conn.executescript(SCHEMA_PATH.read_text(encoding=\"utf-8\"))\n    conn.execute(\"INSERT INTO users_profile (id) VALUES ('default')\")\n    with pytest.raises(sqlite3.IntegrityError):\n        conn.execute(\n            \"INSERT INTO trades (user_id, ticker, side, quantity, price) \"\n            \"VALUES ('default', 'AAPL', 'hold', 1, 10)\"\n        )\n\n\ndef test_seed_creates_default_profile_and_watchlist(conn):\n    seed.apply_schema(conn)\n    seed.seed_default_data(conn)\n\n    profile = conn.execute(\n        \"SELECT cash_balance FROM users_profile WHERE id = ?\", (seed.DEFAULT_USER_ID,)\n    ).fetchone()\n    assert profile is not None\n    assert profile[\"cash_balance\"] == pytest.approx(10000.0)\n\n    tickers = {\n        row[\"ticker\"]\n        for row in conn.execute(\n            \"SELECT ticker FROM watchlist WHERE user_id = ?\", (seed.DEFAULT_USER_ID,)\n        )\n    }\n    assert tickers == set(seed.DEFAULT_WATCHLIST)\n\n\ndef test_seed_is_idempotent(conn):\n    seed.apply_schema(conn)\n    seed.seed_default_data(conn)\n    seed.seed_default_data(conn)\n\n    count = conn.execute(\"SELECT COUNT(*) AS n FROM watchlist\").fetchone()[\"n\"]\n    assert count == len(seed.DEFAULT_WATCHLIST)",
+    "md5": "931263b561b83404c816bf30bce31807",
+    "validated": true,
+    "validated_at": "2026-11-26T18:19:51Z",
+    "created_at": "2026-11-26T18:19:51Z",
     "design_fingerprint": "7be9127a282804b94ac735bb49de3d7d"
   },
   "1:finally/frontend/app/globals.css": {
     "content": ":root {\n  --bg-primary: #0d1117;\n  --bg-panel: #161b22;\n  --border: #30363d;\n  --text-primary: #e6edf3;\n  --text-muted: #8b949e;\n  --accent-yellow: #ecad0a;\n  --accent-blue: #209dd7;\n  --accent-purple: #753991;\n  --up: #22c55e;\n  --down: #ef4444;\n}\n\n* {\n  box-sizing: border-box;\n}\n\nhtml,\nbody {\n  margin: 0;\n  padding: 0;\n  height: 100%;\n  background: var(--bg-primary);\n  color: var(--text-primary);\n  font-family: ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;\n  font-size: 14px;\n}\n\nbody {\n  overflow: hidden;\n}\n\n.price-up {\n  color: var(--up);\n}\n\n.price-down {\n  color: var(--down);\n}\n\n.panel {\n  background: var(--bg-panel);\n  border: 1px solid var(--border);\n  border-radius: 6px;\n}\n\nbutton {\n  font: inherit;\n  cursor: pointer;\n}\n\ninput,\nselect {\n  font: inherit;\n  color: var(--text-primary);\n  background: var(--bg-primary);\n  border: 1px solid var(--border);\n  border-radius: 4px;\n  padding: 4px 8px;\n}",
     "md5": "0af28518c5525ea1ee7f865773e22eda",
     "validated": true,
-    "validated_at": "2026-11-26T18:16:37Z",
-    "created_at": "2026-11-26T18:16:37Z",
+    "validated_at": "2026-11-26T18:19:51Z",
+    "created_at": "2026-11-26T18:19:51Z",
+    "design_fingerprint": "7be9127a282804b94ac735bb49de3d7d"
+  },
+  "1:finally/frontend/app/layout.tsx": {
+    "content": "import type { ReactNode } from \"react\";\nimport \"./globals.css\";\n\nexport const metadata = {\n  title: \"FinAlly\",\n  description: \"AI trading workstation\",\n};\n\nexport default function RootLayout({ children }: { children: ReactNode }) {\n  return (\n    \u003chtml lang=\"en\"\u003e\n      \u003cbody\u003e{children}\u003c/body\u003e\n    \u003c/html\u003e\n  );\n}",
+    "md5": "6769834cb92f35553587e52842296174",
+    "validated": true,
+    "validated_at": "2026-11-26T18:20:51Z",
+    "created_at": "2026-11-26T18:20:51Z",
+    "design_fingerprint": "7be9127a282804b94ac735bb49de3d7d"
+  },
+  "1:finally/frontend/app/page.tsx": {
+    "content": "export default function Page() {\n  return (\n    \u003cmain\u003e\n      \u003ch1\u003eFinAlly\u003c/h1\u003e\n      \u003cp\u003eAI trading workstation\u003c/p\u003e\n    \u003c/main\u003e\n  );\n}",
+    "md5": "00788e9bacfe65438dda4b7d95c739f0",
+    "validated": true,
+    "validated_at": "2026-11-26T18:22:11Z",
+    "created_at": "2026-11-26T18:22:11Z",
+    "design_fingerprint": "7be9127a282804b94ac735bb49de3d7d"
+  },
+  "1:finally/frontend/next.config.js": {
+    "content": "/** @type {import('next').NextConfig} */\nconst nextConfig = {\n  output: \"export\",\n  trailingSlash: false,\n};\n\nmodule.exports = nextConfig;",
+    "md5": "af3b7a87c04963cbe0ab97f16279cf15",
+    "validated": true,
+    "validated_at": "2026-11-26T18:21:40Z",
+    "created_at": "2026-11-26T18:21:40Z",
     "design_fingerprint": "7be9127a282804b94ac735bb49de3d7d"
   },
   "1:finally/frontend/package.json": {
     "content": "{\n  \"name\": \"finally-frontend\",\n  \"version\": \"0.1.0\",\n  \"private\": true,\n  \"scripts\": {\n    \"dev\": \"next dev\",\n    \"build\": \"next build\",\n    \"start\": \"next start\"\n  },\n  \"dependencies\": {\n    \"next\": \"^14.0.0\",\n    \"react\": \"^18.0.0\",\n    \"react-dom\": \"^18.0.0\"\n  },\n  \"devDependencies\": {\n    \"@testing-library/jest-dom\": \"^8.0.0\",\n    \"@testing-library/react\": \"^16.3.3\",\n    \"@types/node\": \"^20.0.0\",\n    \"@types/react\": \"^18.0.0\",\n    \"@types/react-dom\": \"^18.0.0\",\n    \"autoprefixer\": \"^10.7.0\",\n    \"postcss\": \"^8.5.33\",\n    \"tailwindcss\": \"^3.4.19\",\n    \"typescript\": \"^5.0.0\"\n  }\n}\n",
     "md5": "e7de2e5b965f142ae946b4690503c73e",
     "validated": true,
-    "validated_at": "2026-11-26T18:14:11Z",
-    "created_at": "2026-11-26T18:14:11Z",
+    "validated_at": "2026-11-26T18:19:51Z",
+    "created_at": "2026-11-26T18:19:51Z",
     "design_fingerprint": "7be9127a282804b94ac735bb49de3d7d"
   },
   "1:finally/frontend/tsconfig.json": {
     "content": "{\n  \"compilerOptions\": {\n    \"target\": \"es5\",\n    \"lib\": [\"dom\", \"dom.iterable\", \"esnext\"],\n    \"allowJs\": false,\n    \"skipLibCheck\": true,\n    \"strict\": true,\n    \"noEmit\": true,\n    \"esModuleInterop\": true,\n    \"module\": \"esnext\",\n    \"moduleResolution\": \"bundler\",\n    \"resolveJsonModule\": true,\n    \"isolatedModules\": true,\n    \"jsx\": \"preserve\",\n    \"incremental\": true,\n    \"plugins\": [\n      {\n        \"name\": \"next\"\n      }\n    ]\n  },\n  \"include\": [\"next-env.d.ts\", \".next/types/**/*.ts\", \"**/*.ts\", \"**/*.tsx\"],\n  \"exclude\": [\"node_modules\"]\n}\n",
     "md5": "5c4114667a17758ff248410213bede4b",
     "validated": true,
-    "validated_at": "2026-11-26T18:14:11Z",
-    "created_at": "2026-11-26T18:14:11Z",
+    "validated_at": "2026-11-26T18:19:51Z",
+    "created_at": "2026-11-26T18:19:51Z",
     "design_fingerprint": "7be9127a282804b94ac735bb49de3d7d"
   }
 }
