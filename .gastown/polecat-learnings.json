@@ -48,17 +48,17 @@
     },
     {
       "stack": "python",
-      "rule": "Test review lesson: Repair implementation beads: te-44z",
-      "source": "qa_rework",
-      "hits": 2,
-      "updated_at": "2026-11-26T18:27:35Z"
-    },
-    {
-      "stack": "python",
       "rule": "Test review lesson: Root cause: phase verify fails at `docker build -f Dockerfile` in finally/ before pytest ever runs — 'failed to rea...",
       "source": "qa_rework",
       "hits": 1,
       "updated_at": "2026-11-26T18:38:37Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Test review lesson: Repair implementation beads: te-44z",
+      "source": "qa_rework",
+      "hits": 3,
+      "updated_at": "2026-11-26T18:41:28Z"
     }
   ]
 }
