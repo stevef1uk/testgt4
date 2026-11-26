@@ -76,7 +76,6 @@
       "finally/frontend/components/ChatAssistant.tsx",
       "finally/frontend/components/ChatAssistant.test.tsx",
       "finally/backend/uv.lock",
-      "finally/frontend/package-lock.json",
       "finally/backend/app/market/__init__.py",
       "finally/backend/app/db/__init__.py",
       "finally/backend/app/portfolio/__init__.py",
@@ -92,14 +91,13 @@
           "finally/backend/app/main.py",
           "finally/backend/app/api/__init__.py",
           "finally/backend/tests/test_health.py",
-          "finally/Dockerfile",
           "finally/docker-compose.yml",
           "finally/.env",
           "finally/scripts/start_mac.sh",
           "finally/scripts/stop_mac.sh",
           "finally/db/.gitkeep"
         ],
-        "qa_verify_command": "test -f finally/backend/app/main.py && test -f finally/backend/app/api/__init__.py && test -f finally/backend/tests/test_health.py && test -f finally/Dockerfile && test -f finally/docker-compose.yml && test -f finally/.env && test -f finally/scripts/start_mac.sh && test -f finally/scripts/stop_mac.sh && test -f finally/db/.gitkeep && (cd finally/backend && uv sync && uv run python -c \"import app.main\") && (cd finally/backend && uv run pytest tests/test_health.py -q)",
+        "qa_verify_command": "test -f finally/backend/app/main.py && test -f finally/backend/app/api/__init__.py && test -f finally/backend/tests/test_health.py && test -f finally/docker-compose.yml && test -f finally/.env && test -f finally/scripts/start_mac.sh && test -f finally/scripts/stop_mac.sh && test -f finally/db/.gitkeep && (cd finally/backend && uv sync && uv run python -c \"import app.main\") && (cd finally/backend && uv run pytest tests/test_health.py -q)",
         "spec_focus": "Project Foundation"
       },
       {
@@ -110,18 +108,28 @@
           "finally/backend/app/db/seed.py",
           "finally/backend/tests/test_schema.py",
           "finally/frontend/package.json",
-          "finally/frontend/package-lock.json",
           "finally/frontend/tsconfig.json",
           "finally/frontend/next.config.js",
           "finally/frontend/app/layout.tsx",
           "finally/frontend/app/page.tsx",
-          "finally/frontend/app/globals.css"
+          "finally/frontend/app/globals.css",
+          "finally/Dockerfile"
         ],
-        "qa_verify_command": "test -f finally/backend/app/db/schema.sql && test -f finally/backend/app/db/seed.py && (cd finally/frontend && npm install --ignore-scripts) && test -f finally/frontend/package-lock.json && (cd finally/frontend && npm run build) && test -f finally/frontend/out/index.html && (cd finally/backend && uv run pytest tests/test_schema.py -q)",
+        "qa_verify_command": "test -f finally/backend/app/db/schema.sql && test -f finally/Dockerfile && (cd finally && docker build -f Dockerfile -t finally-foundation-check .) && test -f finally/backend/app/db/seed.py && (cd finally/frontend && npm install --ignore-scripts) && test -f finally/frontend/package-lock.json && (cd finally/frontend && npm run build) && test -f finally/frontend/out/index.html && (cd finally/backend && uv run pytest tests/test_schema.py -q)",
         "depends_on": [
           "project-foundation"
         ],
-        "spec_focus": "Project Foundation"
+        "spec_focus": "Project Foundation",
+        "file_dependencies": {
+          "finally/Dockerfile": [
+            "finally/frontend/package.json",
+            "finally/frontend/tsconfig.json",
+            "finally/frontend/next.config.js",
+            "finally/frontend/app/layout.tsx",
+            "finally/frontend/app/page.tsx",
+            "finally/frontend/app/globals.css"
+          ]
+        }
       },
       {
         "id": "core-market-infrastructure",

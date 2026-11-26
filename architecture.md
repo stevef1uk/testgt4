@@ -25,7 +25,7 @@ Frontend (Next.js static export to `finally/frontend/out/`): `finally/frontend/p
 
 E2E harness: `finally/test/package.json`, `finally/test/playwright.config.ts`, `finally/test/docker-compose.test.yml`, `finally/test/e2e.spec.ts`.
 
-Generated tool outputs, not hand-written (`finally/backend/uv.lock` is written by `uv sync` and is owned by core-market-infrastructure per the delivery contract; `finally/frontend/package-lock.json` is written by `npm install --ignore-scripts`): `finally/backend/uv.lock`, `finally/frontend/package-lock.json`, `finally/frontend/next-env.d.ts`, `finally/frontend/out/`.
+Generated tool outputs, not hand-written (`finally/backend/uv.lock` is written by `uv sync` and is owned by core-market-infrastructure per the delivery contract; the npm lockfile is an install side effect of the `npm install --ignore-scripts` step in project-foundation-support's gate; it is verified there, is not a declared deliverable, and has no separate phase owner): `finally/backend/uv.lock`, `finally/frontend/next-env.d.ts`, `finally/frontend/out/`.
 
 ## Module / bead ownership
 
@@ -70,13 +70,12 @@ delivery_phases:
       - finally/backend/app/main.py
       - finally/backend/app/api/__init__.py
       - finally/backend/tests/test_health.py
-      - finally/Dockerfile
       - finally/docker-compose.yml
       - finally/.env
       - finally/scripts/start_mac.sh
       - finally/scripts/stop_mac.sh
       - finally/db/.gitkeep
-    qa_verify_command: 'test -f finally/backend/app/main.py && test -f finally/backend/app/api/__init__.py && test -f finally/backend/tests/test_health.py && test -f finally/Dockerfile && test -f finally/docker-compose.yml && test -f finally/.env && test -f finally/scripts/start_mac.sh && test -f finally/scripts/stop_mac.sh && test -f finally/db/.gitkeep && (cd finally/backend && uv sync && uv run python -c "import app.main") && (cd finally/backend && uv run pytest tests/test_health.py -q)'
+    qa_verify_command: 'test -f finally/backend/app/main.py && test -f finally/backend/app/api/__init__.py && test -f finally/backend/tests/test_health.py && test -f finally/docker-compose.yml && test -f finally/.env && test -f finally/scripts/start_mac.sh && test -f finally/scripts/stop_mac.sh && test -f finally/db/.gitkeep && (cd finally/backend && uv sync && uv run python -c "import app.main") && (cd finally/backend && uv run pytest tests/test_health.py -q)'
     depends_on: []
   - id: project-foundation-support
     title: Project Foundation Support
@@ -86,14 +85,16 @@ delivery_phases:
       - finally/backend/app/db/seed.py
       - finally/backend/tests/test_schema.py
       - finally/frontend/package.json
-      - finally/frontend/package-lock.json
       - finally/frontend/tsconfig.json
       - finally/frontend/next.config.js
       - finally/frontend/app/layout.tsx
       - finally/frontend/app/page.tsx
       - finally/frontend/app/globals.css
-    qa_verify_command: 'test -f finally/backend/app/db/schema.sql && test -f finally/backend/app/db/seed.py && (cd finally/frontend && npm install --ignore-scripts) && test -f finally/frontend/package-lock.json && (cd finally/frontend && npm run build) && test -f finally/frontend/out/index.html && (cd finally/backend && uv run pytest tests/test_schema.py -q)'
+      - finally/Dockerfile
+    qa_verify_command: 'test -f finally/backend/app/db/schema.sql && test -f finally/Dockerfile && (cd finally && docker build -f Dockerfile -t finally-foundation-check .) && test -f finally/backend/app/db/seed.py && (cd finally/frontend && npm install --ignore-scripts) && test -f finally/frontend/package-lock.json && (cd finally/frontend && npm run build) && test -f finally/frontend/out/index.html && (cd finally/backend && uv run pytest tests/test_schema.py -q)'
     depends_on: [project-foundation]
+    file_dependencies:
+      finally/Dockerfile: [finally/frontend/package.json, finally/frontend/tsconfig.json, finally/frontend/next.config.js, finally/frontend/app/layout.tsx, finally/frontend/app/page.tsx, finally/frontend/app/globals.css]
   - id: core-market-infrastructure
     title: Core Market Infrastructure
     spec_focus: Core Market Infrastructure
@@ -197,11 +198,11 @@ delivery_phases:
 
 ### project-foundation
 Test ownership: `finally/backend/tests/test_health.py` covers the health endpoint and the 503 diagnostic when the export is absent. Real dashboard content is asserted in `finally/backend/tests/test_api.py`.
-Runnable skeleton: uv project, SQLite data directory marker `finally/db/.gitkeep`, `create_app`, static serving of the Next.js export, GET /api/health, Dockerfile, compose file, start/stop scripts, `.env` loading. GET / returns real dashboard HTML once the export exists.
+Runnable skeleton: uv project, SQLite data directory marker `finally/db/.gitkeep`, `create_app`, static serving of the Next.js export, GET /api/health, compose file, start/stop scripts, `.env` loading. The Dockerfile is owned by project-foundation-support, after the frontend skeleton it copies exists. GET / returns real dashboard HTML once the export exists.
 
 ### project-foundation-support
 Test ownership: `finally/backend/tests/test_schema.py` covers schema creation, lazy initialisation, and the ten seeded tickers with $10,000 cash for user "default".
-SQLite schema, lazy initialization on first start, seed of ten default tickers and $10,000 cash for user "default". Next.js project setup (package.json, tsconfig, next config, layout, page, globals.css) and frontend skeleton builds to `finally/frontend/out/`.
+SQLite schema, lazy initialization on first start, seed of ten default tickers and $10,000 cash for user "default". Next.js project setup (package.json, tsconfig, next config, layout, page, globals.css) and frontend skeleton builds to `finally/frontend/out/`. Also owns `finally/Dockerfile`, which must come after the frontend files it COPYs (the package manifest and the npm lockfile produced by install); verified by `docker build -f Dockerfile .` run from `finally/`.
 
 ### core-market-infrastructure
 Generated uv lockfile `finally/backend/uv.lock`. Market interface, GBM simulator, Massive client, provider selection, shared price cache, background task, and GET /api/stream/prices emitting named `price` events and unnamed data lines.
@@ -256,7 +257,7 @@ Full-suite gate: the backend suite, then the frontend build, then the Playwright
 
 ## Docker & Deployment
 
-Stage 1 uses `node:20-slim`. It copies `finally/frontend/`, runs `npm install --ignore-scripts && npm run build`, and produces the static export at `finally/frontend/out/`.
+The Dockerfile is delivered by project-foundation-support, so every path it COPYs exists by that phase. Stage 1 uses `node:20-slim`. It copies `finally/frontend/`, runs `npm install --ignore-scripts && npm run build`, and produces the static export at `finally/frontend/out/`.
 
 Stage 2 uses `python:3.12-slim`. It installs uv, copies `finally/backend/`, runs `uv sync` from the lockfile, and copies the Stage 1 export with `COPY --from=frontend /frontend/out /app/frontend/out`. This `finally/frontend/out/` handoff is the only link between the stages. It exposes port 8010 with `EXPOSE 8010` and starts with `CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8010"]`.
 
