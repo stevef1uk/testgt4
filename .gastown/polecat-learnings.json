@@ -41,13 +41,6 @@
     },
     {
       "stack": "python",
-      "rule": "QA lesson: {\"summary\":\"The start_mac.sh script (outside the active phase's required_files) contains duplicated allow-secret markers on li...",
-      "source": "qa_rework",
-      "hits": 1,
-      "updated_at": "2026-11-26T19:48:58Z"
-    },
-    {
-      "stack": "python",
       "rule": "QA lesson: {\"summary\":\"Stage 1 and Stage 2 pass for core-market-infrastructure",
       "source": "qa_rework",
       "hits": 1,
@@ -59,6 +52,13 @@
       "source": "qa_rework",
       "hits": 1,
       "updated_at": "2026-11-26T20:20:27Z"
+    },
+    {
+      "stack": "python",
+      "rule": "QA lesson: {\"summary\":\"Stage 1 spec compliance: Header.tsx omits the connection status indicator (data-testid=\\\"connection-status\\\") and...",
+      "source": "qa_rework",
+      "hits": 1,
+      "updated_at": "2026-11-26T20:31:02Z"
     }
   ]
 }
