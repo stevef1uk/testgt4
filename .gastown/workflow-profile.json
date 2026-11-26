@@ -288,6 +288,5 @@
     "python_venv_dir": "",
     "dev_server_port": 8010
   },
-  "test_plan_reviewed": true,
-  "test_plan_frozen": true
+  "test_plan_reviewed": false
 }
