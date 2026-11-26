@@ -64,6 +64,32 @@ def test_trades_side_constraint_rejects_invalid_value(conn):
         )
 
 
+def test_watchlist_rejects_duplicate_user_ticker(conn):
+    conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+    conn.execute("INSERT INTO users_profile (id) VALUES ('default')")
+    conn.execute(
+        "INSERT INTO watchlist (user_id, ticker) VALUES ('default', 'AAPL')"
+    )
+    with pytest.raises(sqlite3.IntegrityError):
+        conn.execute(
+            "INSERT INTO watchlist (user_id, ticker) VALUES ('default', 'AAPL')"
+        )
+
+
+def test_positions_rejects_duplicate_user_ticker(conn):
+    conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+    conn.execute("INSERT INTO users_profile (id) VALUES ('default')")
+    conn.execute(
+        "INSERT INTO positions (user_id, ticker, quantity, avg_cost) "
+        "VALUES ('default', 'AAPL', 1, 10)"
+    )
+    with pytest.raises(sqlite3.IntegrityError):
+        conn.execute(
+            "INSERT INTO positions (user_id, ticker, quantity, avg_cost) "
+            "VALUES ('default', 'AAPL', 2, 11)"
+        )
+
+
 def test_seed_creates_default_profile_and_watchlist(conn):
     seed.apply_schema(conn)
     seed.seed_default_data(conn)
