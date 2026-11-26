@@ -438,5 +438,53 @@
     "validated_at": "2026-11-26T21:18:14Z",
     "created_at": "2026-11-26T21:18:14Z",
     "design_fingerprint": "7be9127a282804b94ac735bb49de3d7d"
+  },
+  "7:finally/.gitignore": {
+    "content": "__pycache__/\n*.py[cod]\n.pytest_cache/\n.venv/\nvenv/\nnode_modules/\n.next/\ndist/\n.env.local\n.DS_Store\nout/\n.env\nplaywright-report/\ntest-results/\n",
+    "md5": "a8e9ed4d0700bb13439d4f8fe0db4b6f",
+    "validated": true,
+    "validated_at": "2026-11-26T21:26:02Z",
+    "created_at": "2026-11-26T21:26:02Z",
+    "design_fingerprint": "7be9127a282804b94ac735bb49de3d7d"
+  },
+  "7:finally/frontend/app/page.tsx": {
+    "content": "export default function Page() {\n  return (\n    \u003cmain\u003e\n      \u003ch1\u003eFinAlly\u003c/h1\u003e\n      \u003cp\u003eAI trading workstation\u003c/p\u003e\n    \u003c/main\u003e\n  );\n}",
+    "md5": "00788e9bacfe65438dda4b7d95c739f0",
+    "validated": true,
+    "validated_at": "2026-11-26T21:26:32Z",
+    "created_at": "2026-11-26T21:26:32Z",
+    "design_fingerprint": "7be9127a282804b94ac735bb49de3d7d"
+  },
+  "7:finally/frontend/app/polish.css": {
+    "content": "/* Application polish: base typography and layout defaults */\n\n:root {\n  color-scheme: dark;\n  --bg: #0b0f14;\n  --fg: #e6edf3;\n  --muted: #8b98a5;\n  --accent: #2f81f7;\n}\n\nhtml,\nbody {\n  margin: 0;\n  padding: 0;\n  background: var(--bg);\n  color: var(--fg);\n  font-family: system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;\n  font-size: 14px;\n  line-height: 1.5;\n  -webkit-font-smoothing: antialiased;\n}\n\nmain {\n  padding: 24px;\n  box-sizing: border-box;\n}\n\nh1 {\n  margin: 0 0 8px;\n  font-size: 1.5rem;\n  font-weight: 600;\n}\n\np {\n  margin: 0;\n  color: var(--muted);\n}\n\nbutton,\ninput,\nselect {\n  font: inherit;\n  color: inherit;\n}\n\nbutton:focus-visible,\ninput:focus-visible,\nselect:focus-visible {\n  outline: 2px solid var(--accent);\n  outline-offset: 2px;\n}",
+    "md5": "7a0b00fcaa67c9771bc8ee828c07daa8",
+    "validated": true,
+    "validated_at": "2026-11-26T21:27:11Z",
+    "created_at": "2026-11-26T21:27:11Z",
+    "design_fingerprint": "7be9127a282804b94ac735bb49de3d7d"
+  },
+  "7:finally/frontend/next-env.d.ts": {
+    "content": "/// \u003creference types=\"next\" /\u003e\n/// \u003creference types=\"next/image-types/global\" /\u003e\n\n// NOTE: This file should not be edited\n// see https://nextjs.org/docs/basic-features/typescript for more information.\n",
+    "md5": "3cf36e94213e85dc306ec5f3f3760ecc",
+    "validated": true,
+    "validated_at": "2026-11-26T21:26:53Z",
+    "created_at": "2026-11-26T21:26:53Z",
+    "design_fingerprint": "7be9127a282804b94ac735bb49de3d7d"
+  },
+  "7:finally/scripts/start_windows.ps1": {
+    "content": "$ErrorActionPreference = \"Stop\"\n\n$Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)\nSet-Location $Root\n\nif (Test-Path \".env\") {\n    Get-Content \".env\" | ForEach-Object {\n        if ($_ -match '^\\s*([A-Za-z_][A-Za-z0-9_]*)=(.*)$') {\n            [Environment]::SetEnvironmentVariable($matches[1], $matches[2], \"Process\")\n        }\n    }\n}\n\n$ImageName = \"finally\"\n$ContainerName = \"finally-app\"\n$VolumeName = \"finally-data\"\n$Port = if ($env:APP_PORT) { $env:APP_PORT } else { \"8010\" }\n\ndocker version *\u003e $null\nif ($LASTEXITCODE -ne 0) { throw \"Docker is not available. Start Docker and retry.\" }\n\n$running = docker ps -q --filter \"name=^/$ContainerName$\"\nif ($running) {\n    Write-Host \"FinAlly is already running.\"\n} else {\n    $existing = docker ps -aq --filter \"name=^/$ContainerName$\"\n    if ($existing) {\n        docker start $ContainerName | Out-Null\n    } else {\n        docker image inspect $ImageName *\u003e $null\n        if ($LASTEXITCODE -ne 0) { docker build -t $ImageName $Root }\n        $envArgs = @()\n        if (Test-Path \".env\") { $envArgs = @(\"--env-file\", \".env\") }\n        docker run -d --name $ContainerName -v \"$($VolumeName):/app/db\" -p \"$($Port):8010\" @envArgs $ImageName | Out-Null\n    }\n}\n\nWrite-Host \"FinAlly is running at http://localhost:$Port\"",
+    "md5": "3c3a98d1111af8809a8fdb6be1460783",
+    "validated": true,
+    "validated_at": "2026-11-26T21:26:02Z",
+    "created_at": "2026-11-26T21:26:02Z",
+    "design_fingerprint": "7be9127a282804b94ac735bb49de3d7d"
+  },
+  "7:finally/scripts/stop_windows.ps1": {
+    "content": "$ErrorActionPreference = \"Stop\"\n\n$ContainerName = \"finally-app\"\n\n$running = docker ps -q --filter \"name=^/$ContainerName$\"\nif ($running) { docker stop $ContainerName | Out-Null }\n\n$existing = docker ps -aq --filter \"name=^/$ContainerName$\"\nif ($existing) { docker rm $ContainerName | Out-Null }\n\nWrite-Host \"FinAlly container stopped. Volume finally-data is preserved.\"",
+    "md5": "4a4edcbc9494b91b22c568c6845760ee",
+    "validated": true,
+    "validated_at": "2026-11-26T21:26:02Z",
+    "created_at": "2026-11-26T21:26:02Z",
+    "design_fingerprint": "7be9127a282804b94ac735bb49de3d7d"
   }
 }
