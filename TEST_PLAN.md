@@ -17,19 +17,6 @@ Assertions:
 - 503 body names the missing frontend/out/index.html
 - response body never contains placeholder text such as "Coming soon"
 
-### project-foundation
-Requirement: The backend app factory and entrypoint import cleanly under uv, and the backend API package exposes the FastAPI factory.
-Level: integration
-Test file: finally/backend/tests/test_health.py
-Bead ID: te-sj3
-Phase: project-foundation
-Scenarios:
-- import app.main succeeds and exposes create_app returning FastAPI
-- app.api package is importable as the routing package
-Assertions:
-- create_app() returns a FastAPI instance
-- health route is registered on the app
-
 ### project-foundation-support
 Requirement: SQLite schema is created lazily on first start; seed provides ten default tickers and $10,000 cash for user "default"; Next.js export builds to frontend/out.
 Level: unit
@@ -74,25 +61,11 @@ Scenarios:
 - buy reduces cash and creates position with average cost
 - sell reduces quantity and realises P&L against average cost
 - oversell and insufficient cash raise validation errors
+- portfolio routes match SPEC Section 8 (GET api/portfolio, POST api/portfolio/trade, GET api/portfolio/history); route-level checks live in finally/backend/tests/test_portfolio_api.py
 Assertions:
 - cash_balance after buy equals prior cash minus quantity times price
 - average cost recalculated correctly after second buy
 - rejected trades leave cash and positions unchanged
-
-### database-portfolio-engine
-Requirement: Portfolio API routes match SPEC Section 8 for GET api/portfolio, POST api/portfolio/trade, and GET api/portfolio/history.
-Level: integration
-Test file: finally/backend/tests/test_portfolio_api.py
-Bead ID: closed
-Phase: database-portfolio-engine
-Scenarios:
-- POST trade with valid body returns the executed trade
-- POST trade with insufficient cash returns an error status with message
-- GET history returns snapshots after trades
-Assertions:
-- response JSON keys cash, positions, total_value, unrealized_pnl present
-- history contains at least one snapshot after a trade
-- invalid side or quantity returns 4xx
 
 ### watchlist-market-ui
 Requirement: Watchlist CRUD routes add, reject duplicates, and remove tickers; GET lists the ten seeded tickers with shape asserted.
@@ -136,38 +109,13 @@ Scenarios:
 - malformed or empty model output yields a graceful fallback
 - prompt context includes watchlist prices in the AAPL ($190.50) format
 - mock mode returns identical output for identical input
+- ChatAssistant renders bubbles, thinking state, trade badges and unwraps stringified JSON (finally/frontend/components/ChatAssistant.test.tsx, Level unit)
 Assertions:
 - parsed reply is non-empty and contains no leading brace
+- chat bubble text equals the unwrapped reply with no braces visible
+- loading text "Copilot is thinking" is present while pending; badge text matches "Trade Fill: SIDE QTY TICKER"
 - trade with insufficient cash is reported in the chat response
 - prompt string contains each watchlist ticker with its live price
-
-### ai-trading-assistant
-Requirement: ChatAssistant renders user and assistant bubbles, thinking state, trade badges, and unwraps stringified JSON replies.
-Level: unit
-Test file: finally/frontend/components/ChatAssistant.test.tsx
-Bead ID: te-uav
-Phase: ai-trading-assistant
-Scenarios:
-- stringified JSON reply renders as plain text
-- thinking indicator shows while request is pending
-- trade fill badge renders for executed trade
-Assertions:
-- bubble text equals unwrapped reply, no braces visible
-- loading text "Copilot is thinking" is present while pending
-- badge text matches "Trade Fill: SIDE QTY TICKER"
-
-### testing-release
-Requirement: Full API contract across routes, GET root path real dashboard content, and no placeholder page.
-Level: integration
-Test file: finally/backend/tests/test_api.py
-Bead ID: pending
-Phase: testing-release
-Scenarios:
-- every SPEC Section 8 route responds with the specified shape
-- GET root path returns FinAlly heading, ten tickers and $10,000
-Assertions:
-- response bodies carry the documented keys and types
-- dashboard HTML contains the real content strings, not placeholder text
 
 ### testing-release
 Requirement: Playwright E2E covers dashboard, trading, chat and SSE with real browser interactions and DOM state-change assertions.
@@ -179,7 +127,9 @@ Scenarios:
 - Buy 5 AAPL reduces cash and adds a position row
 - Send chat message shows an assistant reply
 - Add and remove watchlist ticker updates the DOM
+- full API contract: every SPEC Section 8 route responds with the specified shape, and GET root path shows the FinAlly heading, ten tickers and $10,000 (finally/backend/tests/test_api.py, Level integration)
 Assertions:
+- response bodies carry the documented keys and types; dashboard HTML contains real content strings, not placeholder text
 - cash text decreases after Buy
 - ticker text appears or disappears in the watchlist
 - assistant bubble has non-empty text and no raw JSON
