@@ -128,7 +128,7 @@ Assertions:
 Requirement: Chat responses never expose raw JSON; the parser accepts reply, response, message, content, action, error and suggestion keys; trades from chat auto-execute with validation; LLM_MOCK=true is deterministic; prompts embed live prices such as AAPL ($190.50).
 Level: unit
 Test file: finally/backend/tests/test_llm.py
-Bead ID: pending
+Bead ID: te-la7
 Phase: ai-trading-assistant
 Scenarios:
 - each reply key variant parses to conversational text
@@ -145,7 +145,7 @@ Assertions:
 Requirement: ChatAssistant renders user and assistant bubbles, thinking state, trade badges, and unwraps stringified JSON replies.
 Level: unit
 Test file: finally/frontend/components/ChatAssistant.test.tsx
-Bead ID: pending
+Bead ID: te-uav
 Phase: ai-trading-assistant
 Scenarios:
 - stringified JSON reply renders as plain text
