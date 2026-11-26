@@ -290,18 +290,7 @@
       }
     ],
     "explicit_delivery_contract": true,
-    "active_phase_id": "testing-release",
-    "completed_phase_ids": [
-      "project-foundation",
-      "project-foundation-support",
-      "core-market-infrastructure",
-      "database-portfolio-engine",
-      "watchlist-market-ui",
-      "portfolio-visualisation-trading",
-      "ai-trading-assistant",
-      "application-polish",
-      "testing-release"
-    ],
+    "active_phase_id": "project-foundation",
     "spec_summary": "",
     "min_architecture_bytes": 3200,
     "min_plan_bytes": 800,
