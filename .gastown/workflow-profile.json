@@ -276,7 +276,7 @@
       }
     ],
     "explicit_delivery_contract": true,
-    "active_phase_id": "project-foundation-support",
+    "active_phase_id": "core-market-infrastructure",
     "spec_summary": "",
     "min_architecture_bytes": 3200,
     "min_plan_bytes": 800,
