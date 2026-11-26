@@ -4,16 +4,18 @@ Active phase: testing-release (Testing & Release). Scope is limited to the six
 paths in this phase's required_files. Other phases' files are deferred and get
 their own beads when those phases become active.
 
-Phase verification (qa_verify_command):
+Phase verification (qa_verify_command, run once after all six beads are closed):
 `(cd finally/backend && uv run pytest tests/test_api.py -q) && (cd finally/test && npm install --ignore-scripts && npx playwright test --list)`
 
-## Revision note (QA rework)
+Per-bead verify commands check only the bead's own artifact. The phase gate is
+not part of any individual bead's verify.
 
-te-eku failed its auto-verify because `npx playwright test --list` reports
-"No tests found" until finally/test/e2e.spec.ts (te-7by) exists. The list gate
-is therefore owned by te-7by, not te-eku. te-eku verifies only its own artifact
-(config present, non-empty, loadable as TypeScript). te-7by runs the full phase
-gate after it lands. Queue order is unchanged: te-rak, te-eku, te-7by, te-9o3.
+## Revision note (gate policy)
+
+te-7by was rejected because its verify included `tests/test_api.py`, which
+belongs to te-2iz. Each bead now verifies only its own file. The Playwright
+list check for te-7by runs inside finally/test and does not touch the backend.
+The full phase gate runs after te-2iz, te-9o3 and te-5n9 are closed.
 
 ## Bead map
 
@@ -36,7 +38,7 @@ gate after it lands. Queue order is unchanged: te-rak, te-eku, te-7by, te-9o3.
 - Consumed by: te-9o3 (compose passes --config=test/playwright.config.ts), te-7by
 - Acceptance:
   - File exists and is non-empty.
-  - baseURL honours BASE_URL with default http://localhost:8010.
+  - baseURL honours BASE_URL with default http://127.0.0.1:8010.
   - Does not require e2e.spec.ts to exist; test discovery is verified by te-7by.
 - Verify: `test -s finally/test/playwright.config.ts`
 
@@ -50,7 +52,7 @@ gate after it lands. Queue order is unchanged: te-rak, te-eku, te-7by, te-9o3.
   - Asserts GET / shows the FinAlly heading, ten default tickers, and $10,000 cash.
   - Covers a market buy and sell round trip and watchlist add/remove, per SPEC.
   - Lists cleanly with `npx playwright test --list` (this makes the phase list gate pass).
-- Verify: `(cd finally/test && npm install --ignore-scripts && npx playwright test --list)`
+- Verify: `test -s finally/test/e2e.spec.ts && (cd finally/test && npm install --ignore-scripts && npx playwright test --list)`
 
 ### te-9o3: finally/test/docker-compose.test.yml
 - Scope: compose harness that builds the app image and runs Playwright against it on the internal network.
