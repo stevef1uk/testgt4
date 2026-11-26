@@ -1,7 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
-  testDir: './e2e',
+  testDir: './test',
+  testMatch: 'e2e.spec.ts',
   timeout: 10000,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
@@ -9,21 +10,13 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: [['html', { open: 'never' }], ['list']],
   use: {
-    baseURL: process.env.BASE_URL || 'http://app:8010',
+    baseURL: process.env.BASE_URL || 'http://host.docker.internal:8010',
     trace: 'on-first-retry',
   },
   projects: [
     {
       name: 'chromium',
-      use: {
-        ...devices['Desktop Chrome'],
-        launchOptions: {
-          args: [
-            '--disable-features=HttpsUpgrades,HttpsFirstModeV2,AutomaticHttpsDefault,AutomaticHttpsDefaultEnabled,HttpsOnlyMode',
-            '--ignore-certificate-errors',
-          ],
-        },
-      },
+      use: { ...devices['Desktop Chrome'] },
     },
   ],
 });
