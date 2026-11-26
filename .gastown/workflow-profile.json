@@ -276,9 +276,10 @@
       }
     ],
     "explicit_delivery_contract": true,
-    "active_phase_id": "watchlist-market-ui",
+    "active_phase_id": "portfolio-visualisation-trading",
     "completed_phase_ids": [
-      "database-portfolio-engine"
+      "database-portfolio-engine",
+      "watchlist-market-ui"
     ],
     "spec_summary": "",
     "min_architecture_bytes": 3200,
