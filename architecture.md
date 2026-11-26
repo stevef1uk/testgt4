@@ -19,13 +19,13 @@ The layout root is `finally`. Every path carries the `finally/` prefix.
 
 Root and deployment: `finally/Dockerfile`, `finally/docker-compose.yml`, `finally/.env`, `finally/.gitignore`, `finally/db/.gitkeep`, `finally/scripts/start_mac.sh`, `finally/scripts/stop_mac.sh`, `finally/scripts/start_windows.ps1`, `finally/scripts/stop_windows.ps1`, `finally/planning/PLAN.md`.
 
-Backend (uv project): `finally/backend/pyproject.toml`, `finally/backend/app/main.py`, `finally/backend/app/api/__init__.py`, `finally/backend/app/api/schemas.py`, `finally/backend/app/api/routes_portfolio.py`, `finally/backend/app/api/routes_watchlist.py`, `finally/backend/app/api/routes_chat.py`, `finally/backend/app/db/__init__.py`, `finally/backend/app/db/schema.sql`, `finally/backend/app/db/seed.py`, `finally/backend/app/db/connection.py`, `finally/backend/app/market/__init__.py`, `finally/backend/app/market/base.py`, `finally/backend/app/market/simulator.py`, `finally/backend/app/market/massive_client.py`, `finally/backend/app/market/cache.py`, `finally/backend/app/market/stream.py`, `finally/backend/app/market/poller.py`, `finally/backend/app/portfolio/__init__.py`, `finally/backend/app/portfolio/repository.py`, `finally/backend/app/portfolio/engine.py`, `finally/backend/app/portfolio/snapshots.py`, `finally/backend/app/llm/__init__.py`, `finally/backend/app/llm/client.py`, `finally/backend/app/llm/prompts.py`, `finally/backend/app/llm/parser.py`, `finally/backend/app/llm/chat_service.py`, `finally/backend/tests/test_market.py`, `finally/backend/tests/test_portfolio.py`, `finally/backend/tests/test_portfolio_api.py`, `finally/backend/tests/test_watchlist_api.py`, `finally/backend/tests/test_llm.py`, `finally/backend/tests/test_api.py`.
+Backend (uv project): `finally/backend/pyproject.toml`, `finally/backend/app/main.py`, `finally/backend/app/api/__init__.py`, `finally/backend/app/api/schemas.py`, `finally/backend/app/api/routes_portfolio.py`, `finally/backend/app/api/routes_watchlist.py`, `finally/backend/app/api/routes_chat.py`, `finally/backend/app/db/__init__.py`, `finally/backend/app/db/schema.sql`, `finally/backend/app/db/seed.py`, `finally/backend/app/db/connection.py`, `finally/backend/app/market/__init__.py`, `finally/backend/app/market/base.py`, `finally/backend/app/market/simulator.py`, `finally/backend/app/market/massive_client.py`, `finally/backend/app/market/cache.py`, `finally/backend/app/market/stream.py`, `finally/backend/app/market/poller.py`, `finally/backend/app/portfolio/__init__.py`, `finally/backend/app/portfolio/repository.py`, `finally/backend/app/portfolio/engine.py`, `finally/backend/app/portfolio/snapshots.py`, `finally/backend/app/llm/__init__.py`, `finally/backend/app/llm/client.py`, `finally/backend/app/llm/prompts.py`, `finally/backend/app/llm/parser.py`, `finally/backend/app/llm/chat_service.py`, `finally/backend/tests/test_market.py`, `finally/backend/tests/test_portfolio.py`, `finally/backend/tests/test_portfolio_api.py`, `finally/backend/tests/test_watchlist_api.py`, `finally/backend/tests/test_llm.py`, `finally/backend/tests/test_api.py`, `finally/backend/tests/test_health.py`, `finally/backend/tests/test_schema.py`, `finally/backend/tests/test_trading_flow.py`.
 
 Frontend (Next.js static export to `finally/frontend/out/`): `finally/frontend/package.json`, `finally/frontend/tsconfig.json`, `finally/frontend/next.config.js`, `finally/frontend/next-env.d.ts`, `finally/frontend/app/layout.tsx`, `finally/frontend/app/page.tsx`, `finally/frontend/app/globals.css`, `finally/frontend/app/polish.css`, `finally/frontend/components/Header.tsx`, `finally/frontend/components/Sidebar.tsx`, `finally/frontend/components/MarketOverview.tsx`, `finally/frontend/components/Watchlist.tsx`, `finally/frontend/components/PriceChart.tsx`, `finally/frontend/components/PortfolioSummary.tsx`, `finally/frontend/components/TradingPanel.tsx`, `finally/frontend/components/PositionsTable.tsx`, `finally/frontend/components/PnlChart.tsx`, `finally/frontend/components/PortfolioHeatmap.tsx`, `finally/frontend/components/ChatAssistant.tsx`, `finally/frontend/components/ChatAssistant.test.tsx`.
 
 E2E harness: `finally/test/package.json`, `finally/test/playwright.config.ts`, `finally/test/docker-compose.test.yml`, `finally/test/e2e.spec.ts`.
 
-Generated, not hand-written: `finally/backend/uv.lock`, `finally/frontend/package-lock.json`, `finally/frontend/next-env.d.ts`, `finally/frontend/out/`.
+Generated tool outputs, not hand-written (`finally/backend/uv.lock` is written by `uv sync` and is owned by core-market-infrastructure per the delivery contract; `finally/frontend/package-lock.json` is written by `npm install --ignore-scripts`): `finally/backend/uv.lock`, `finally/frontend/package-lock.json`, `finally/frontend/next-env.d.ts`, `finally/frontend/out/`.
 
 ## Module / bead ownership
 
@@ -53,6 +53,8 @@ Routes match SPEC Section 8 verbatim:
 - GET /api/health
 
 Entrypoint order in `finally/backend/app/main.py`: read environment (existing shell variables are never overwritten by `.env`); open `finally/db/finally.db`; run lazy schema creation and seeding; create the repository and price cache; start the market background task; register routers and the SSE route; mount static serving of `finally/frontend/out/`; serve on port 8010 with `uvicorn app.main:app --host 0.0.0.0 --port 8010`.
+Runtime launch command (SPEC Section 11, verbatim):
+`uvicorn app.main:app --host 0.0.0.0 --port 8010`
 
 ## Delivery phases
 
@@ -257,6 +259,9 @@ Full-suite gate: the backend suite, then the frontend build, then the Playwright
 Stage 1 uses `node:20-slim`. It copies `finally/frontend/`, runs `npm install --ignore-scripts && npm run build`, and produces the static export at `finally/frontend/out/`.
 
 Stage 2 uses `python:3.12-slim`. It installs uv, copies `finally/backend/`, runs `uv sync` from the lockfile, and copies the Stage 1 export with `COPY --from=frontend /frontend/out /app/frontend/out`. This `finally/frontend/out/` handoff is the only link between the stages. It exposes port 8010 with `EXPOSE 8010` and starts with `CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8010"]`.
+
+Container launch command (SPEC Section 11, verbatim):
+`uvicorn app.main:app --host 0.0.0.0 --port 8010`
 
 The named volume is `finally-data:/app/db`, mapped to the project `db/` directory.
 
