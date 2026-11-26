@@ -157,6 +157,8 @@ LLM_MOCK=false
 - If `MASSIVE_API_KEY` is set and non-empty → backend uses Massive REST API for market data
 - If `MASSIVE_API_KEY` is absent or empty → backend uses the built-in market simulator
 - If `LLM_MOCK=true` → backend returns deterministic mock LLM responses (for E2E tests)
+- If a valid `OPENROUTER_API_KEY` is provided and `LLM_MOCK` is not explicitly set to true, live LLM mode is enabled (`LLM_MOCK=false`).
+- **Environment Precedence Rule**: Startup scripts (`start_mac.sh`) and processes MUST preserve any existing environment variables exported in the caller's shell (e.g. `export OPENROUTER_API_KEY=...`). Sourcing `.env` MUST NOT overwrite non-empty environment variables with placeholder defaults.
 - The backend reads `.env` from the project root (mounted into the container or read via docker `--env-file`)
 
 ---
@@ -193,10 +195,13 @@ Both the simulator and the Massive client implement the same abstract interface.
 
 ### SSE Streaming
 
-- Endpoint: `GET /api/stream/prices`
+- Endpoint: `GET /api/stream/prices` (with alias `/api/stream`)
 - Long-lived SSE connection; client uses native `EventSource` API
-- Server pushes price updates for all tickers known to the system at a regular cadence (~500ms) — in the single-user model this is equivalent to the user's watchlist
-- Each SSE event contains ticker, price, previous price, timestamp, and change direction
+- Server pushes price updates for all tickers known to the system at a regular cadence (~500ms-1s) — in the single-user model this is equivalent to the user's watchlist
+- Each SSE event contains ticker, price, previous price, change, change percent, timestamp, and change direction (`up`, `down`, `flat`)
+- **Event Dispatch Compatibility Rule**: W3C `EventSource` specifies that named events (`event: price\ndata: ...`) only trigger listeners attached via `addEventListener("price", handler)`. Standard `source.onmessage` handlers only fire for unnamed messages or `event: message`. To prevent silent event loss in browser clients:
+  - The server SSE stream should yield both named events (`event: price`) and standard data lines (`data: {...}`).
+  - The frontend client MUST register listeners for both `addEventListener("price")` and `onmessage` so price ticks update smoothly and trigger visual price flash animations without latency.
 - Client handles reconnection automatically (EventSource has built-in retry)
 
 ---
@@ -309,34 +314,42 @@ There is an OPENROUTER_API_KEY in the .env file in the project root.
 
 When the user sends a chat message, the backend:
 
-1. Loads the user's current portfolio context (cash, positions with P&L, watchlist with live prices, total portfolio value)
-2. Loads recent conversation history from the `chat_messages` table
-3. Constructs a prompt with a system message, portfolio context, conversation history, and the user's new message
-4. Calls the LLM via LiteLLM → OpenRouter, requesting structured output, using the cerebras-inference skill
-5. Parses the complete structured JSON response
-6. Auto-executes any trades or watchlist changes specified in the response
-7. Stores the message and executed actions in `chat_messages`
-8. Returns the complete JSON response to the frontend (no token-by-token streaming — Cerebras inference is fast enough that a loading indicator is sufficient)
+1. Loads the user's current portfolio context: cash balance, current positions (with quantity, avg cost, current price, and unrealized P&L), and watchlist tickers paired with their **real-time live prices** (e.g. `AAPL ($190.50)`), plus total portfolio value.
+2. Loads recent conversation history from the `chat_messages` table.
+3. Constructs a prompt with a system message, portfolio context, conversation history, and the user's new message.
+4. Calls the LLM via LiteLLM → OpenRouter, requesting structured output, using the cerebras-inference skill.
+5. Parses the complete structured JSON response cleanly via a resilient multi-key parser.
+6. Auto-executes any trades or watchlist changes specified in the response, updating portfolio balances immediately.
+7. Stores the message and executed actions in `chat_messages`.
+8. Returns the complete JSON response to the frontend (no token-by-token streaming — Cerebras/OpenRouter inference is fast enough that a loading indicator is sufficient).
+
+### Live Price Context Requirement
+
+The market context passed to the LLM MUST contain real-time ticker prices for all watchlist symbols (e.g. `AAPL ($190.50)`). Without current market prices explicitly embedded in the context, the LLM will lack asset valuation data, causing trade validation failures, hallucinated figures, or "price unavailable" error replies.
 
 ### Structured Output Schema
 
-The LLM is instructed to respond with JSON matching this schema:
+The LLM is instructed to respond with valid JSON matching this schema:
 
 ```json
 {
-  "message": "Your conversational response to the user",
-  "trades": [
-    {"ticker": "AAPL", "side": "buy", "quantity": 10}
-  ],
-  "watchlist_changes": [
-    {"ticker": "PYPL", "action": "add"}
-  ]
+  "reply": "Your conversational response to the user",
+  "trade": {
+    "ticker": "AAPL",
+    "side": "buy",
+    "quantity": 10
+  }
 }
 ```
 
-- `message` (required): The conversational text shown to the user
-- `trades` (optional): Array of trades to auto-execute. Each trade goes through the same validation as manual trades (sufficient cash for buys, sufficient shares for sells)
-- `watchlist_changes` (optional): Array of watchlist modifications
+- `reply` (or `message`): The conversational text shown to the user.
+- `trade` (optional / null): An object specifying a trade to auto-execute (`ticker`, `side`, `quantity`). Each trade goes through standard validation (sufficient cash for buys, sufficient shares for sells).
+
+### Resilient Parser & Sanitization Rule
+
+To guarantee that chat interactions are robust across varying model outputs:
+- **Backend Parser**: The backend parser MUST inspect multiple response keys (`reply`, `response`, `message`, `content`, `action`, `error`, `suggestion`). If an action JSON is returned (e.g. `{"action": "buy", "ticker": "AAPL", "quantity": 2}`), the backend must extract the trade, execute it, and format a human-readable confirmation string (e.g., `Order BUY 2 AAPL: executed.`) instead of returning raw JSON.
+- **Frontend Sanitization**: The frontend `ChatAssistant` MUST sanitize and unwrap any stringified JSON payloads before rendering. Raw JSON blocks (`{...}`) MUST NOT be presented to the user in chat bubbles.
 
 ### Auto-Execution
 
@@ -351,11 +364,11 @@ If a trade fails validation (e.g., insufficient cash), the error is included in 
 
 The LLM should be prompted as "FinAlly, an AI trading assistant" with instructions to:
 - Analyze portfolio composition, risk concentration, and P&L
-- Suggest trades with reasoning
+- Suggest trades with reasoning based on the live prices provided in the context
 - Execute trades when the user asks or agrees
 - Manage the watchlist proactively
 - Be concise and data-driven in responses
-- Always respond with valid structured JSON
+- Always respond with a valid structured JSON object matching the required schema
 
 ### LLM Mock Mode
 
@@ -388,7 +401,7 @@ The frontend is a single-page application with a dense, terminal-inspired layout
 3. **Interactive Price Chart** (`PriceChart.tsx`): Displays price trends for the selected ticker (`aria-label` matching price chart).
 4. **Portfolio Visualizations** (`PortfolioSummary.tsx`, `PositionsTable.tsx`, and `PortfolioHeatmap.tsx` / `PnlChart.tsx`): Shows current portfolio equity, cash, unrealized P&L (`data-testid="portfolio-summary"`), open positions table (`data-testid="positions-table"`), and heatmap/P&L chart.
 5. **Trading Panel** (`TradingPanel.tsx`): Order execution panel with ticker input, quantity input, Buy and Sell buttons, and status messages (`data-testid="trading-panel"`).
-6. **AI Chat Assistant** (`ChatAssistant.tsx`): Docked chat sidebar with `aria-label="Chat assistant"`, message history, input (`aria-label="Chat message"`), and Send button.
+6. **AI Chat Assistant** (`ChatAssistant.tsx`): Docked chat sidebar with `aria-label="Chat assistant"`, real-time message history, user and assistant message bubbles, thinking/loading state indicator, input (`aria-label="Chat message"`), Send button, trade execution badges (`✓ Trade Fill: SIDE QTY TICKER`), and automatic callbacks to refresh the portfolio upon trade execution.
 
 **Strict Anti-Stubbing Rule**: The main page MUST NOT be an isolated mock, minimal text placeholder, or partial stub that renders only a subset of elements. Submitting a stripped-down `page.tsx` or omitting any of the core components is strictly prohibited and constitutes an immediate QA failure.
 
@@ -399,6 +412,7 @@ The frontend is a single-page application with a dense, terminal-inspired layout
 - Price flash effect: on receiving a new price, briefly apply a CSS class with background color transition, then remove it
 - All API calls go to the same origin (`/api/*`) — no CORS configuration needed
 - Tailwind CSS for styling with a custom dark theme
+- Chat Assistant: supports both enter-key and button submission, auto-scrolls to the newest message, handles pending thinking states, and unescapes/unpacks any stringified JSON replies into formatted conversational text.
 
 ---
 
@@ -439,10 +453,10 @@ The `db/` directory in the project root maps to `/app/db` in the container. The 
 ### Start/Stop Scripts
 
 **`scripts/start_mac.sh`** (macOS/Linux):
-- Builds the Docker image if not already built (or if `--build` flag passed)
-- Runs the container with the volume mount, port mapping, and `.env` file
-- Prints the URL to access the app
-- Optionally opens the browser
+- Preserves any pre-existing environment variables exported in the caller's shell (including `OPENROUTER_API_KEY`, `LLM_MOCK`, `MASSIVE_API_KEY`) so that `.env` never overrides real API keys with placeholder defaults.
+- Ensures the frontend static export `frontend/out/index.html` is built automatically via `(cd frontend && npm run build)` if missing before launching uvicorn.
+- Runs uvicorn on port 8010 using the backend virtual environment or system Python.
+- Prints the URL to access the app and optionally opens the browser.
 
 **`scripts/stop_mac.sh`** (macOS/Linux):
 - Stops and removes the running container
@@ -598,12 +612,13 @@ Every scenario must use `page.getByRole()`, `page.getByText()`, or `page.getByTe
 
 | Test | Assertions |
 |------|-----------|
-| Send message | Type "What's my portfolio value?", click send. User message appears in history. |
-| Receive response | After loading, assistant message appears with text content (not empty). |
-| AI executes trade via chat | Type "Buy 5 AAPL", response confirms trade. Portfolio shows new position. |
+| Send message | Type "What's my portfolio value?", click send. User message appears in history, input field clears. |
+| Receive response | After loading, assistant message appears with non-empty text content (never empty, never raw JSON brackets `{...}`). |
+| AI executes trade via chat | Type "Buy 5 AAPL", response confirms trade. Portfolio shows new position and trade fill badge (`✓ Trade Fill: BUY 5 AAPL`) appears in chat. |
 | AI manages watchlist via chat | Type "Add TSLA to watchlist", response confirms. TSLA appears in watchlist. |
 | Mock mode deterministic | With `LLM_MOCK=true`, same input produces same output structure. |
-| Loading spinner visible | While waiting for LLM response, spinner/loading indicator shown. |
+| Loading spinner visible | While waiting for LLM response, spinner/thinking indicator is shown (`Copilot is thinking...`). |
+| Full chat interactivity | Chat form accepts input, Send button or Enter key submits, and conversation thread scrolls to latest message. |
 
 #### SSE Streaming (`sse.spec.ts`)
 
@@ -873,26 +888,26 @@ Complete the manual trading workstation experience.
 
 ### Goal
 
-Integrate an AI assistant capable of analysing and managing the portfolio.
+Integrate an AI assistant capable of analysing and managing the portfolio with real-time pricing and auto-execution.
 
 ### Deliverables
 
-- LiteLLM integration
-- OpenRouter client
-- Structured output parsing
-- Prompt construction
+- LiteLLM integration and direct HTTP fallback to OpenRouter
+- Market context construction with live ticker pricing
+- System prompt with explicit structured JSON response contract
+- Resilient structured output parser handling multiple schema variants
 - Conversation persistence
-- AI trade execution
-- AI watchlist management
+- AI trade auto-execution with inline trade fill badges
+- Docked ChatAssistant UI with auto-scroll, message bubbles, and thinking indicator
 - Mock LLM mode
 - Error handling and recovery
 
 ### Exit Criteria
 
-- AI responds to user requests
-- AI executes trades successfully
-- AI manages the watchlist
-- Chat history persists
+- AI responds to user requests with clean natural language text (never empty, never raw JSON brackets)
+- AI accurately references real-time market prices provided in prompt context
+- AI executes trades successfully and updates portfolio in real time
+- Chat UI renders user and assistant bubbles with trade confirmation badges
 - Mock mode produces deterministic responses
 
 ---
@@ -921,6 +936,7 @@ Refine the application into a production-quality trading workstation.
 - No significant UX gaps
 - Stable under continuous live streaming
 - Full UI Component Composition: `frontend/app/page.tsx` MUST compose and render all core components (`Header`, `Watchlist`, `MarketOverview`, `PriceChart`, `PortfolioSummary`, `PositionsTable`, `TradingPanel`, `ChatAssistant`). Stubbing, mock-only JSX, or omitting any of these components in `page.tsx` is strictly forbidden and constitutes a QA failure.
+- Both manual order execution panel and AI chat assistant are simultaneously mounted, interactive, and functional.
 
 ---
 
@@ -966,7 +982,8 @@ Validate the complete application and prepare it for release.
 ### Exit Criteria
 
 - All Playwright E2E tests pass (see Section 13 for mandatory coverage)
-- Complete UI visibility verified: all components (`Header`, `Watchlist`, `MarketOverview`, `PriceChart`, `PortfolioSummary`, `PositionsTable`, `TradingPanel`, `ChatAssistant`) verified mounted and visible on the page before workflow completion is granted
+- Complete UI visibility verified: all components (`Header`, `Watchlist`, `MarketOverview`, `PriceChart`, `PortfolioSummary`, `PositionsTable`, `TradingPanel`, `ChatAssistant`) verified mounted and visible simultaneously on the page before workflow completion is granted
+- Full chat assistant functionality verified: typing a prompt and sending produces a non-empty conversational response without raw JSON, and trade requests execute and reflect in portfolio
 - All unit tests pass (backend pytest + frontend component tests)
 - All automated tests **assert real content** (not just status codes / visibility)
 - Every UI feature in Sections 2 and 10 has a corresponding Playwright test
