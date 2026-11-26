@@ -27,13 +27,6 @@
     },
     {
       "stack": "python",
-      "rule": "QA lesson: Root cause: three active-phase (application-polish) implementation artifacts contradict SPEC.md Section 11 and the cached poli...",
-      "source": "qa_rework",
-      "hits": 1,
-      "updated_at": "2026-11-26T08:12:23Z"
-    },
-    {
-      "stack": "python",
       "rule": "QA lesson: {\"summary\":\"Stage 1: application-polish.spec.ts asserts dashboard content that does not exist in the rendered page",
       "source": "qa_rework",
       "hits": 1,
@@ -59,6 +52,13 @@
       "source": "qa_rework",
       "hits": 1,
       "updated_at": "2026-11-26T10:04:37Z"
+    },
+    {
+      "stack": "python",
+      "rule": "QA lesson: {\"summary\":\"Stage 2 (code quality/security) requires add allow-secret markers to start_mac.sh lines 21 and 24",
+      "source": "qa_rework",
+      "hits": 1,
+      "updated_at": "2026-11-26T17:58:23Z"
     }
   ]
 }
