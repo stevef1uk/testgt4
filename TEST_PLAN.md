@@ -34,7 +34,7 @@ Assertions:
 Requirement: SQLite schema is created lazily on first start; seed provides ten default tickers and $10,000 cash for user "default"; Next.js export builds to frontend/out.
 Level: unit
 Test file: finally/backend/tests/test_schema.py
-Bead ID: te-44z
+Bead ID: pending
 Phase: project-foundation-support
 Scenarios:
 - empty database file triggers table creation and seeding
@@ -64,13 +64,11 @@ Assertions:
 - both implementations are subclasses of PriceSource and implement its abstract methods
 - SSE frame starts with "event: " and carries a "data: " line with JSON
 
-
-
 ### database-portfolio-engine
 Requirement: Buys and sells update cash and positions; selling more than owned and buying with insufficient cash are rejected; snapshots are recorded after trades.
 Level: unit
 Test file: finally/backend/tests/test_portfolio.py
-Bead ID: pending
+Bead ID: te-olr
 Phase: database-portfolio-engine
 Scenarios:
 - buy reduces cash and creates position with average cost
@@ -85,7 +83,7 @@ Assertions:
 Requirement: Portfolio API routes match SPEC Section 8 for GET api/portfolio, POST api/portfolio/trade, and GET api/portfolio/history.
 Level: integration
 Test file: finally/backend/tests/test_portfolio_api.py
-Bead ID: pending
+Bead ID: te-0uz
 Phase: database-portfolio-engine
 Scenarios:
 - POST trade with valid body returns the executed trade
@@ -97,15 +95,16 @@ Assertions:
 - invalid side or quantity returns 4xx
 
 ### watchlist-market-ui
-Requirement: Watchlist CRUD routes add, reject duplicates, and remove tickers.
+Requirement: Watchlist CRUD routes add, reject duplicates, and remove tickers; GET lists the ten seeded tickers with shape asserted.
 Level: integration
 Test file: finally/backend/tests/test_watchlist_api.py
-Bead ID: pending
+Bead ID: te-8sc
 Phase: watchlist-market-ui
 Scenarios:
-- POST api/watchlist adds a ticker and GET lists it
-- duplicate ticker POST is rejected
-- DELETE api/watchlist/{ticker} removes the ticker
+- GET api/watchlist returns the ten seeded tickers with their documented shape
+- POST api/watchlist adds a ticker and a subsequent GET includes it
+- duplicate ticker POST is rejected and the list is unchanged
+- DELETE api/watchlist/{ticker} removes the ticker and a subsequent GET no longer includes it
 Assertions:
 - GET watchlist contains the added ticker after POST
 - duplicate returns an error and list length is unchanged
