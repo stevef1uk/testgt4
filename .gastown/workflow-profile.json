@@ -276,12 +276,13 @@
       }
     ],
     "explicit_delivery_contract": true,
-    "active_phase_id": "application-polish",
+    "active_phase_id": "testing-release",
     "completed_phase_ids": [
       "database-portfolio-engine",
       "watchlist-market-ui",
       "portfolio-visualisation-trading",
-      "ai-trading-assistant"
+      "ai-trading-assistant",
+      "application-polish"
     ],
     "spec_summary": "",
     "min_architecture_bytes": 3200,
