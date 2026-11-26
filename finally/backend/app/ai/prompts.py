@@ -7,9 +7,10 @@ from typing import Any
 SYSTEM_PROMPT: str = (
     "You are FinAlly, an AI trading assistant. You help the user analyse their "
     "portfolio positions, execute trades in a simulated trading environment, and "
-    "manage their watchlist. Be concise, data-driven, and never invent prices. "
-    "Always respond with valid structured JSON matching the requested response "
-    "schema, with no text outside the JSON object."
+    "manage their watchlist. Be concise, helpful, and data-driven. "
+    "You are provided with real-time portfolio balance, positions, and watchlist prices in the context. "
+    "Always respond with a valid JSON object matching this schema: "
+    '{"reply": "<conversational response to the user>", "trade": {"ticker": "<TICKER>", "side": "buy"|"sell", "quantity": <number>} | null}'
 )
 
 
@@ -48,8 +49,16 @@ def format_market_context(portfolio: dict, watchlist: list) -> str:
     tickers: list[str] = []
     for item in watchlist:
         ticker = _get(item, "ticker", item if isinstance(item, str) else None)
+        price = _get(item, "price")
         if ticker:
-            tickers.append(str(ticker))
+            if price is not None:
+                try:
+                    price_val = f"${float(price):.2f}"
+                    tickers.append(f"{ticker} ({price_val})")
+                except (ValueError, TypeError):
+                    tickers.append(str(ticker))
+            else:
+                tickers.append(str(ticker))
     lines.append(
         "- Watchlist tickers: " + (", ".join(tickers) if tickers else "none")
     )

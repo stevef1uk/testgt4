@@ -98,4 +98,47 @@ def generate_chat_response(messages: list, mock: bool) -> dict[str, Any]:
     if not isinstance(content, str) or not content.strip():
         return {"reply": "The assistant returned an empty response.", "trade": trade}
 
-    return {"reply": content.strip(), "trade": trade}
+    cleaned = content.strip()
+    if cleaned.startswith("```json") and cleaned.endswith("```"):
+        cleaned = cleaned[7:-3].strip()
+    elif cleaned.startswith("```") and cleaned.endswith("```"):
+        cleaned = cleaned[3:-3].strip()
+
+    reply_text = cleaned
+    try:
+        parsed = json.loads(cleaned)
+        if isinstance(parsed, dict):
+            if "reply" in parsed and isinstance(parsed["reply"], str):
+                reply_text = parsed["reply"]
+            elif "response" in parsed and isinstance(parsed["response"], str):
+                reply_text = parsed["response"]
+            elif "message" in parsed and isinstance(parsed["message"], str):
+                reply_text = parsed["message"]
+            elif "content" in parsed and isinstance(parsed["content"], str):
+                reply_text = parsed["content"]
+            elif "error" in parsed and isinstance(parsed["error"], str):
+                reply_text = parsed["error"]
+            elif "action" in parsed:
+                action = str(parsed.get("action", "")).upper()
+                qty = parsed.get("quantity", "")
+                sym = parsed.get("ticker", "")
+                status = parsed.get("transaction_status", "executed")
+                reply_text = f"Order {action} {qty} {sym}: {status}."
+            elif "suggestion" in parsed and isinstance(parsed["suggestion"], dict):
+                s = parsed["suggestion"]
+                act = s.get("action", "").upper()
+                sym = s.get("ticker", "")
+                reason = s.get("reason", "")
+                reply_text = f"Recommendation: {act} {sym}. Reason: {reason}"
+            if "trade" in parsed and isinstance(parsed["trade"], dict) and not trade:
+                trade = parsed["trade"]
+            elif not trade and "action" in parsed and "ticker" in parsed:
+                trade = {
+                    "ticker": str(parsed["ticker"]).upper(),
+                    "side": str(parsed["action"]).lower(),
+                    "quantity": float(parsed.get("quantity", 1)),
+                }
+    except Exception:
+        pass
+
+    return {"reply": reply_text, "trade": trade}

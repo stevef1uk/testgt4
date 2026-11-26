@@ -55,3 +55,7 @@ build/
 **/.turbo/
 *.pack
 **/*.pack
+finally/.env
+playwright-report/
+test-results/
+finally/test/playwright-report/

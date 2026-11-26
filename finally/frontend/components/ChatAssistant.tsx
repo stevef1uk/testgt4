@@ -51,10 +51,36 @@ export default function ChatAssistant({
       });
       const data = (await res.json()) as {
         reply?: string;
+        response?: string;
+        message?: string;
         error?: string;
+        detail?: string;
         trade?: { side: string; ticker: string; quantity: number };
       };
-      const reply = data.reply ?? data.error ?? "No response received";
+      let reply =
+        data.reply ??
+        data.response ??
+        data.message ??
+        data.error ??
+        data.detail ??
+        (res.ok ? "No response received" : `Error (${res.status})`);
+
+      if (
+        typeof reply === "string" &&
+        reply.trim().startsWith("{") &&
+        reply.trim().endsWith("}")
+      ) {
+        try {
+          const parsed = JSON.parse(reply.trim());
+          if (parsed.reply) reply = parsed.reply;
+          else if (parsed.response) reply = parsed.response;
+          else if (parsed.message) reply = parsed.message;
+          else if (parsed.error) reply = parsed.error;
+        } catch {
+          // Keep raw reply if parsing fails
+        }
+      }
+
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: reply, trade: data.trade },
@@ -62,10 +88,11 @@ export default function ChatAssistant({
       if (data.trade) {
         onTrade?.();
       }
-    } catch {
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : "Request failed";
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "Request failed. Please try again." },
+        { role: "assistant", content: `Error: ${errMsg}. Please try again.` },
       ]);
     } finally {
       setPending(false);

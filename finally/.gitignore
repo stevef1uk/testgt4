@@ -9,3 +9,6 @@ dist/
 .env.local
 .DS_Store
 out/
+.env
+playwright-report/
+test-results/
