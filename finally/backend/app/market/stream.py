@@ -15,18 +15,28 @@ HEARTBEAT_EVERY = 15  # emit a comment frame every N intervals to keep proxies o
 
 
 def tick_to_dict(tick: PriceTick) -> dict[str, Any]:
-    """Serialise a PriceTick into a JSON-safe dict."""
+    """Serialise a PriceTick into a JSON-safe dict matching SPEC Section 6."""
     return {
         "ticker": tick.ticker,
         "price": tick.price,
+        "previous_price": tick.previous_price,
+        "change": tick.change,
+        "change_percent": tick.change_percent,
+        "change_direction": tick.change_direction,
         "timestamp": tick.timestamp.isoformat(),
     }
 
 
-def format_sse(event: str, data: Any) -> str:
-    """Encode one SSE frame. `data` is JSON-encoded onto a single data line."""
+def format_sse(event: str | None, data: Any) -> str:
+    """Encode one SSE frame.
+
+    If `event` is non-empty, emits `event: <event>\\ndata: <json>\\n\\n`.
+    If `event` is None or empty, emits standard unnamed `data: <json>\\n\\n`.
+    """
     payload = json.dumps(data, separators=(",", ":"))
-    return f"event: {event}\ndata: {payload}\n\n"
+    if event:
+        return f"event: {event}\ndata: {payload}\n\n"
+    return f"data: {payload}\n\n"
 
 
 def format_comment(text: str = "keep-alive") -> str:
@@ -39,16 +49,22 @@ async def price_events(
     interval: float = DEFAULT_INTERVAL,
     max_events: int | None = None,
 ) -> AsyncIterator[str]:
-    """Yield SSE frames containing the full latest-price snapshot every `interval` seconds.
+    """Yield SSE frames containing live price updates per SPEC Section 6.
 
-    `max_events` bounds the generator (used by tests); None streams indefinitely.
+    SPEC requirements:
+    - Each SSE event contains ticker, price, previous price, change, change percent, timestamp, change_direction.
+    - Yields both named events (`event: price`) and standard data lines (`data: {...}`).
     """
     sent = 0
     idle = 0
     while max_events is None or sent < max_events:
         ticks = await cache.get_all()
         if ticks:
-            yield format_sse("prices", [tick_to_dict(t) for t in ticks])
+            # Yield named events for addEventListener("price")
+            for t in ticks:
+                yield format_sse("price", tick_to_dict(t))
+            # Also yield unnamed data line with array of ticks for onmessage handlers
+            yield format_sse(None, [tick_to_dict(t) for t in ticks])
             idle = 0
         else:
             idle += 1

@@ -44,6 +44,13 @@ class SimulatedPriceSource(PriceSource):
         async with self._lock:
             self._prices.clear()
 
+    async def get_price(self, ticker: str) -> float | None:
+        async with self._lock:
+            return self._prices.get(ticker)
+
+    async def subscribe(self, ticker: str) -> None:
+        await self.add_ticker(ticker)
+
     async def add_ticker(self, ticker: str) -> None:
         async with self._lock:
             if ticker not in self._prices:

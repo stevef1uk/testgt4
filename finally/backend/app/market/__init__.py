@@ -17,6 +17,7 @@ import importlib
 from typing import Any
 
 __all__ = [
+    "MarketDataSource",
     "PriceSource",
     "PriceTick",
     "SimulatedPriceSource",
@@ -26,6 +27,7 @@ __all__ = [
 ]
 
 _EXPORTS: dict[str, str] = {
+    "MarketDataSource": "app.market.base",
     "PriceSource": "app.market.base",
     "PriceTick": "app.market.base",
     "SimulatedPriceSource": "app.market.simulator",

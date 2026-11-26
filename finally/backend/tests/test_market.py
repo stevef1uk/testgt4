@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from app.market.base import PriceTick
+from app.market.base import MarketDataSource, PriceSource, PriceTick
 from app.market.cache import PriceCache
 from app.market.massive_client import MassiveClient, _parse_snapshot
 from app.market.poller import PricePoller
@@ -21,6 +21,12 @@ def run(coro):
 
 
 # --- base -----------------------------------------------------------------
+
+def test_market_data_source_is_base_class():
+    assert issubclass(PriceSource, MarketDataSource)
+    assert issubclass(SimulatedPriceSource, MarketDataSource)
+    assert issubclass(MassiveClient, MarketDataSource)
+
 
 def test_price_tick_rejects_empty_ticker():
     with pytest.raises(ValueError):
@@ -55,6 +61,10 @@ def test_cache_update_and_get_returns_latest_tick():
         tick = await cache.get("AAPL")
         assert tick is not None
         assert tick.price == 191.5
+        assert tick.previous_price == 190.0
+        assert tick.change == 1.5
+        assert tick.change_percent == pytest.approx(0.7895, rel=1e-3)
+        assert tick.change_direction == "up"
         assert len(cache) == 1
 
     run(scenario())
@@ -195,18 +205,38 @@ def test_poller_start_and_stop_manage_running_state():
 # --- stream ---------------------------------------------------------------
 
 def test_format_sse_emits_event_and_single_data_line():
-    frame = format_sse("prices", [{"ticker": "AAPL", "price": 1.0}])
-    assert frame.startswith("event: prices\ndata: ")
+    frame = format_sse("price", {"ticker": "AAPL", "price": 1.0})
+    assert frame.startswith("event: price\ndata: ")
     assert frame.endswith("\n\n")
     data_line = frame.split("\n")[1]
-    assert json.loads(data_line[len("data: "):]) == [{"ticker": "AAPL", "price": 1.0}]
+    assert json.loads(data_line[len("data: "):]) == {"ticker": "AAPL", "price": 1.0}
+
+
+def test_format_sse_emits_unnamed_data_line_when_event_is_none():
+    frame = format_sse(None, [{"ticker": "AAPL", "price": 1.0}])
+    assert frame.startswith("data: ")
+    assert not frame.startswith("event:")
+    assert frame.endswith("\n\n")
 
 
 def test_tick_to_dict_serialises_fields():
     ts = datetime(2025, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
-    assert tick_to_dict(PriceTick(ticker="AAPL", price=12.5, timestamp=ts)) == {
+    tick = PriceTick(
+        ticker="AAPL",
+        price=12.5,
+        previous_price=10.0,
+        change=2.5,
+        change_percent=25.0,
+        change_direction="up",
+        timestamp=ts,
+    )
+    assert tick_to_dict(tick) == {
         "ticker": "AAPL",
         "price": 12.5,
+        "previous_price": 10.0,
+        "change": 2.5,
+        "change_percent": 25.0,
+        "change_direction": "up",
         "timestamp": ts.isoformat(),
     }
 
@@ -216,10 +246,14 @@ def test_price_events_yields_snapshot_frame_with_real_prices():
         cache = PriceCache()
         await cache.update(PriceTick(ticker="AAPL", price=190.0))
         frames = [f async for f in price_events(cache, interval=0, max_events=1)]
-        assert len(frames) == 1
-        assert frames[0].startswith("event: prices\n")
-        payload = json.loads(frames[0].split("\n")[1][len("data: "):])
-        assert payload[0]["ticker"] == "AAPL"
-        assert payload[0]["price"] == 190.0
+        # Yields named event for AAPL, and unnamed array data line
+        assert len(frames) == 2
+        assert frames[0].startswith("event: price\n")
+        assert frames[1].startswith("data: ")
+        named_payload = json.loads(frames[0].split("\n")[1][len("data: "):])
+        assert named_payload["ticker"] == "AAPL"
+        assert named_payload["price"] == 190.0
+        assert "change" in named_payload
+        assert "change_direction" in named_payload
 
     run(scenario())

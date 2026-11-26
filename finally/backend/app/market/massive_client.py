@@ -41,6 +41,14 @@ class MassiveClient(PriceSource):
             self._tickers = []
             self._latest.clear()
 
+    async def get_price(self, ticker: str) -> float | None:
+        async with self._lock:
+            tick = self._latest.get(ticker)
+            return tick.price if tick else None
+
+    async def subscribe(self, ticker: str) -> None:
+        await self.add_ticker(ticker)
+
     async def add_ticker(self, ticker: str) -> None:
         async with self._lock:
             if ticker not in self._tickers:
