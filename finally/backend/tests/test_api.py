@@ -23,6 +23,23 @@ if str(BACKEND_DIR) not in sys.path:
 import app.db.connection as connection_module  # noqa: E402
 import app.main as main_module  # noqa: E402
 from app.db.seed import initialize_database  # noqa: E402
+from app.portfolio import engine as portfolio_engine  # noqa: E402
+
+API_TEST_PRICES = {
+    "AAPL": 150.0,
+    "NVDA": 120.0,
+    "MSFT": 300.0,
+    "GOOGL": 140.0,
+    "AMZN": 180.0,
+    "TSLA": 200.0,
+}
+
+
+@pytest.fixture(autouse=True)
+def price_source_fixture() -> Iterator[None]:
+    portfolio_engine.set_price_source(lambda ticker: API_TEST_PRICES.get(ticker))
+    yield
+    portfolio_engine.set_price_source(lambda ticker: None)
 
 DEFAULT_TICKERS = [
     "AAPL",
