@@ -24,6 +24,8 @@ import app.db.connection as connection_module  # noqa: E402
 import app.main as main_module  # noqa: E402
 from app.db.seed import initialize_database  # noqa: E402
 from app.portfolio import engine as portfolio_engine  # noqa: E402
+from app.portfolio import repository as portfolio_repo  # noqa: E402
+from app.portfolio import repository as repository_module  # noqa: E402
 
 API_TEST_PRICES = {
     "AAPL": 150.0,
@@ -62,12 +64,20 @@ DASHBOARD_HTML = (
 
 
 @pytest.fixture
-def db_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    """Point the app at a fresh, seeded SQLite file for this test only."""
+def db_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Path]:
+    """Point the app at a fresh, seeded SQLite file for this test only.
+
+    The portfolio repository caches a module-level connection, so it must be
+    replaced explicitly; patching DEFAULT_DB_PATH alone does not reach it.
+    """
     path = tmp_path / "finally.db"
     monkeypatch.setattr(connection_module, "DEFAULT_DB_PATH", path)
     initialize_database(str(path))
-    return path
+    conn = connection_module.connect(path)
+    repository_module.set_connection(conn)
+    yield path
+    repository_module.set_connection(connection_module.connect(":memory:"))
+    conn.close()
 
 
 @pytest.fixture
