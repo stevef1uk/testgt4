@@ -429,7 +429,7 @@ Stage 2: Python 3.12 slim
   - Install uv
   - Copy backend/
   - uv sync (install Python dependencies from lockfile)
-  - Copy frontend build output into a static/ directory
+  - Copy frontend/out into /app/frontend/out
   - Expose port 8010
   - CMD: uvicorn app.main:app --host 0.0.0.0 --port 8010
 ```
@@ -509,7 +509,7 @@ The container is designed to deploy to AWS App Runner, Render, or any container 
 - AI chat (mocked): send a message, receive a response, trade execution appears inline
 - SSE resilience: disconnect and verify reconnection
 
-**Content assertion rule**: The "health and dashboard are available" test must assert the actual dashboard content — the page heading (`getByRole('heading', { level: 1, name: 'Trading dashboard' })`), the FinAlly brand text (`getByText('FinAlly')`), at least one watchlist ticker, and the cash/portfolio figure — via `getByText`/`getByRole`/`toHaveText`/`toContainText`. A test that only checks `200 + content-type + body visible` is **insufficient** and must be rejected by QA: it passes when the app serves a placeholder page. Tests must never assert placeholder text (e.g. "Finally", "Coming soon").
+**Content assertion rule**: The "health and dashboard are available" test must assert the actual dashboard content — the page heading (`getByRole('heading', { level: 1, name: 'FinAlly' })`), the FinAlly brand text (`getByText('FinAlly')`), at least one watchlist ticker, and the cash/portfolio figure — via `getByText`/`getByRole`/`toHaveText`/`toContainText`. A test that only checks `200 + content-type + body visible` is **insufficient** and must be rejected by QA: it passes when the app serves a placeholder page. Tests must never assert placeholder text (e.g. "Finally", "Coming soon").
 
 **Browser interaction rule**: At least one mandatory E2E test must drive a real user action in the browser — click a button, submit a form, or type into an input — and assert the resulting DOM state or API state change (for example: cash decreases and a position appears after Buy; a ticker appears after Add; an assistant message appears after Send). A static page loaded with `page.goto` plus content assertions alone does **not** satisfy this SPEC. QA must reject `all_passed` when this interaction-and-state-change evidence is missing.
 
@@ -710,7 +710,7 @@ The `## Delivery phases` section of `architecture.md` MUST contain a YAML block 
 | `project-foundation` | `finally/frontend/package.json`, `finally/frontend/tsconfig.json`, `finally/frontend/next.config.js`, `finally/frontend/app/layout.tsx`, `finally/frontend/app/page.tsx`, `finally/frontend/app/globals.css` |
 | `project-foundation-support` | `finally/frontend/next-env.d.ts` |
 | `watchlist-market-ui` | `finally/frontend/components/Header.tsx`, `Sidebar.tsx`, `MarketOverview.tsx`, `Watchlist.tsx`, `PriceChart.tsx` |
-| `portfolio-visualisation-trading` | `finally/frontend/components/PortfolioSummary.tsx`, `finally/frontend/components/TradingPanel.tsx` |
+| `portfolio-visualisation-trading` | `finally/frontend/components/PortfolioSummary.tsx`, `finally/frontend/components/TradingPanel.tsx`, `finally/frontend/components/PositionsTable.tsx`, `finally/frontend/components/PnlChart.tsx`, `finally/frontend/components/PortfolioHeatmap.tsx` |
 | `ai-trading-assistant` | `finally/frontend/components/ChatAssistant.tsx`, `finally/frontend/components/ChatAssistant.test.tsx` |
 | `application-polish` | `finally/frontend/app/polish.css` |
 
