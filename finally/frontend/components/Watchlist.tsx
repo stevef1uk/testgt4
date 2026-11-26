@@ -7,6 +7,7 @@ import {
   removeWatchlistTicker,
   type WatchlistItem,
 } from "../lib/api";
+import { openPriceStream } from "../lib/sse";
 
 export interface WatchlistProps {
   selectedTicker?: string;
@@ -17,6 +18,7 @@ export default function Watchlist({ selectedTicker, onSelect }: WatchlistProps) 
   const [items, setItems] = useState<WatchlistItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [flashTickers, setFlashTickers] = useState<Record<string, "up" | "down">>({});
 
   const load = useCallback(async () => {
     try {
@@ -31,6 +33,43 @@ export default function Watchlist({ selectedTicker, onSelect }: WatchlistProps) 
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Subscribe to live SSE price stream
+  useEffect(() => {
+    const handle = openPriceStream({
+      onPrice: (event) => {
+        setItems((prev) =>
+          prev.map((item) =>
+            item.ticker === event.ticker
+              ? {
+                  ...item,
+                  price: event.price,
+                  previous_price: event.previous_price,
+                  change: event.change,
+                  change_percent: event.change_percent,
+                  direction: event.direction,
+                }
+              : item
+          )
+        );
+
+        setFlashTickers((prev) => ({
+          ...prev,
+          [event.ticker]: event.direction === "up" ? "up" : "down",
+        }));
+
+        setTimeout(() => {
+          setFlashTickers((prev) => {
+            const next = { ...prev };
+            delete next[event.ticker];
+            return next;
+          });
+        }, 1200);
+      },
+    });
+
+    return () => handle.close();
+  }, []);
 
   const handleAdd = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -71,7 +110,7 @@ export default function Watchlist({ selectedTicker, onSelect }: WatchlistProps) 
     <section aria-label="Watchlist" className="p-4 space-y-3">
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold text-white">Watchlist</h2>
-        <span className="text-xs text-gray-400">{items.length} symbols</span>
+        <span className="text-xs text-gray-400 font-mono">{items.length} symbols</span>
       </div>
 
       <form onSubmit={handleAdd} className="flex gap-2">
@@ -111,12 +150,19 @@ export default function Watchlist({ selectedTicker, onSelect }: WatchlistProps) 
         <tbody>
           {items.map((item) => {
             const isSelected = selectedTicker === item.ticker;
+            const flash = flashTickers[item.ticker];
             return (
               <tr
                 key={item.ticker}
                 data-testid={`watchlist-row-${item.ticker}`}
                 className={`border-b border-gray-800/50 hover:bg-gray-800/40 transition-colors ${
                   isSelected ? "bg-gray-800/70" : ""
+                } ${
+                  flash === "up"
+                    ? "bg-green-950/40"
+                    : flash === "down"
+                    ? "bg-red-950/40"
+                    : ""
                 }`}
               >
                 <td className="py-2">
@@ -124,14 +170,24 @@ export default function Watchlist({ selectedTicker, onSelect }: WatchlistProps) 
                     type="button"
                     aria-pressed={isSelected}
                     onClick={() => onSelect?.(item.ticker)}
-                    className={`font-semibold hover:text-blue-400 text-left ${
+                    className={`font-semibold hover:text-blue-400 text-left transition-colors ${
                       isSelected ? "text-blue-400" : "text-gray-200"
                     }`}
                   >
                     {item.ticker}
                   </button>
                 </td>
-                <td className="py-2 text-gray-300 font-mono">${item.price.toFixed(2)}</td>
+                <td
+                  className={`py-2 font-mono transition-colors ${
+                    flash === "up"
+                      ? "text-green-300 font-bold"
+                      : flash === "down"
+                      ? "text-red-300 font-bold"
+                      : "text-gray-300"
+                  }`}
+                >
+                  ${item.price.toFixed(2)}
+                </td>
                 <td
                   className={`py-2 font-mono text-xs ${
                     item.change >= 0 ? "text-green-400" : "text-red-400"

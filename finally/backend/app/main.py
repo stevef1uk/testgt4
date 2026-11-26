@@ -294,7 +294,8 @@ def create_app() -> FastAPI:
                         "updated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                     }
                     yield format_sse_event("price", tick_data)
-                await asyncio.sleep(2.0)
+                    yield f"data: {json.dumps(tick_data)}\n\n"
+                await asyncio.sleep(1.0)
 
         return StreamingResponse(
             event_generator(),

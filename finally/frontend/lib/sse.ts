@@ -23,7 +23,7 @@ export interface PriceStreamHandle {
 export function openPriceStream(options: PriceStreamOptions): PriceStreamHandle {
   const source = new EventSource(options.url ?? PRICE_STREAM_URL);
 
-  source.onmessage = (msg: MessageEvent<string>) => {
+  const handler = (msg: MessageEvent<string>) => {
     try {
       const parsed = JSON.parse(msg.data) as PriceEvent;
       options.onPrice(parsed);
@@ -31,6 +31,9 @@ export function openPriceStream(options: PriceStreamOptions): PriceStreamHandle 
       // Ignore malformed frames; the next event will carry fresh data.
     }
   };
+
+  source.onmessage = handler;
+  source.addEventListener("price", handler as EventListener);
 
   source.onerror = (ev: Event) => {
     options.onError?.(ev);
