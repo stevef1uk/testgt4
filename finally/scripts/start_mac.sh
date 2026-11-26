@@ -18,10 +18,10 @@ fi
 
 # Restore user's exported variables if set
 if [[ -n "$USER_OPENROUTER_KEY" ]]; then
-  export OPENROUTER_API_KEY="$USER_OPENROUTER_KEY" # allow-secret: environment variable pass-through, no literal secret value
+  export OPENROUTER_API_KEY="$USER_OPENROUTER_KEY" allow-secret: env var pass-through, no literal secret value
 fi
 if [[ -n "$USER_MASSIVE_KEY" ]]; then
-  export MASSIVE_API_KEY="$USER_MASSIVE_KEY" # allow-secret: environment variable pass-through, no literal secret value
+  export MASSIVE_API_KEY="$USER_MASSIVE_KEY" allow-secret: env var pass-through, no literal secret value
 fi
 
 # If a real OPENROUTER_API_KEY is present and user didn't explicitly force mock mode, default to live LLM
