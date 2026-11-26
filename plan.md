@@ -1,8 +1,15 @@
 # Implementation plan — portfolio-visualisation-trading
 
-Active phase covers exactly six implement paths. Later phases get their own beads and are out of scope here.
+Plan ID: portfolio-visualisation-trading
+Active phase: portfolio-visualisation-trading (Portfolio Visualisation & Trading)
+Completed phases (out of scope): database-portfolio-engine, watchlist-market-ui
 
-Canonical phase verification (run from test4/mayor/rig):
+This plan covers exactly six implement paths for the active phase. Later phases get their own beads. Completed-phase files are not reopened here.
+
+## Canonical phase verification
+
+Run from test4/mayor/rig:
+
 `test -f finally/frontend/components/PortfolioSummary.tsx && test -f finally/frontend/components/TradingPanel.tsx && test -f finally/frontend/components/PositionsTable.tsx && test -f finally/frontend/components/PnlChart.tsx && test -f finally/frontend/components/PortfolioHeatmap.tsx && test -f finally/backend/tests/test_trading_flow.py && (cd finally/backend && uv run pytest tests/test_portfolio_api.py tests/test_trading_flow.py -q) && (cd finally/frontend && npm run build)`
 
 ## Portfolio HTTP contract (SPEC Section 8, exact)
@@ -17,9 +24,9 @@ No aliases or extra routes. Frontend and tests must use these paths verbatim.
 
 ## Bead status at planning time
 
-- te-733 (finally/backend/tests/test_trading_flow.py) is already closed per `bd list --limit=0 `. Planning does not reopen it. QA re-verifies it with the canonical command.
-- te-3sl (PnlChart.tsx) is in_progress. The file exists on disk and must be closed through implementation.
-- te-2gr, te-350, te-y8k, te-yiq are open.
+- te-3sl (finally/frontend/components/PnlChart.tsx) is in_progress. It is active completion work and must be closed through implementation.
+- te-2gr, te-350, te-y8k, te-yiq are open and are active implementation work.
+- te-733 (finally/backend/tests/test_trading_flow.py) is closed. It is coverage-only in this plan: not active implementation work, not reopened. QA re-verifies it with the canonical command.
 
 ## Bead map
 
@@ -81,6 +88,7 @@ No aliases or extra routes. Frontend and tests must use these paths verbatim.
 - Verify: cd finally/frontend && npm run build
 
 ### te-733: finally/backend/tests/test_trading_flow.py
+- Status: closed. Coverage-only for this phase. Do not reopen; QA re-verifies it through the canonical command.
 - Scope: End-to-end backend test of buy then sell through POST /api/portfolio/trade, checking cash and positions via GET /api/portfolio.
 - Architecture: architecture.md, testing section for trading flow.
 - Interfaces: test module only; exercises the three routes in the contract table above.
