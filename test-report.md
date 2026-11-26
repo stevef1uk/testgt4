@@ -1,25 +1,26 @@
-# Test Review — project-foundation-support
+# Test Review — watchlist-market-ui (with database-portfolio-engine)
 
 ## Summary
-Phase verify FAILED (exit 1). The verify ran as `docker build -f Dockerfile` from the rig root, and pytest targeted `finally/tests/test_schema.py`. Both paths are wrong for this layout. The configured command uses `(cd finally && docker build ...)` and `(cd finally/backend && uv run pytest tests/test_schema.py -q)`. No green run of the configured command has been observed.
+All in-scope tests present; phase verify passed (exit 0): pytest tests/test_watchlist_api.py 7 passed; npm run build succeeded.
 
 ## Per-requirement results
-### te-44z (project-foundation-support: schema and seed) — FAIL (verify not green)
-- Test file: finally/backend/tests/test_schema.py
-- Verify result: exit 1, `failed to read dockerfile: open Dockerfile: no such file or directory`
-- Notes: The test file has real assertions. Coverage for the finding:
-  - Schema file present and creates tables: lines 42, 47
-  - UNIQUE (user_id, ticker) on watchlist: lines 73-76
-  - UNIQUE on positions: lines 86-90
-  - Seed cash of 10000.0 and exact ten tickers: lines 101, 109
-  - Idempotent seed count: line 118
-  Coverage is adequate in the test file. The phase verify has not passed, so the requirement is not satisfied.
+### watchlist-market-ui: watchlist CRUD routes — PASS
+- Test file: finally/backend/tests/test_watchlist_api.py (4096 bytes)
+- Verify result: 7 passed
+- Notes: Bead te-8sc. Covers GET seeded tickers, POST add, duplicate rejection, DELETE removal.
 
-## Evidence
-- Evidence: {"file":"finally/backend/tests/test_schema.py","line":42,"excerpt":"    assert SCHEMA_PATH.is_file()"}
-- Evidence: {"file":"finally/backend/tests/test_schema.py","line":101,"excerpt":"    assert profile[\"cash_balance\"] == pytest.approx(10000.0)"}
-- Evidence: {"file":"finally/backend/tests/test_schema.py","line":109,"excerpt":"    assert tickers == set(seed.DEFAULT_WATCHLIST)"}
-- Evidence: {"file":"finally/backend/tests/test_schema.py","line":118,"excerpt":"    assert count == len(seed.DEFAULT_WATCHLIST)"}
+### database-portfolio-engine: portfolio engine — PASS (completed phase, existence/content check only)
+- Test file: finally/backend/tests/test_portfolio.py (8406 bytes)
+- Verify result: file present with content
+- Notes: Bead te-olr.
+
+### database-portfolio-engine: portfolio API routes — PASS (completed phase, existence/content check only)
+- Test file: finally/backend/tests/test_portfolio_api.py (6470 bytes)
+- Verify result: file present with content
+- Notes: Bead te-0uz.
+
+### Deferred (future phases)
+- project-foundation, project-foundation-support, core-market-infrastructure, portfolio-visualisation-trading, ai-trading-assistant, application-polish, testing-release: deferred; not evaluated in this review.
 
 ## Overall assessment
-FAIL. The phase verify did not exit green. The stale command still runs from the rig root. Polecat must confirm the verify runs from the correct directories. Owning bead to reopen: te-44z. Future-phase rows are deferred.
+Active phase watchlist-market-ui passes its verify and test coverage matches TEST_PLAN.md. Completed database-portfolio-engine test files are present. Recommend success.
