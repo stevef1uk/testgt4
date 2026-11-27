@@ -282,7 +282,8 @@
       "watchlist-market-ui",
       "portfolio-visualisation-trading",
       "ai-trading-assistant",
-      "application-polish"
+      "application-polish",
+      "testing-release"
     ],
     "spec_summary": "",
     "min_architecture_bytes": 3200,
