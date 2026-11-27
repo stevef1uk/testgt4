@@ -1,1 +1,0 @@
-"""Database package: SQLite connection helpers, schema, and seed data."""
