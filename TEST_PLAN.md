@@ -3,14 +3,14 @@
 ## Requirements → tests
 
 ### project-foundation
-Requirement: GET api/health returns success; GET the root path returns the real dashboard (FinAlly heading, ten default tickers, $10,000 cash) and a 503 diagnostic when the export is missing; no placeholder page.
+Requirement: GET api/health returns success; the root path returns the real dashboard (FinAlly heading, ten default tickers, $10,000 cash) and a 503 diagnostic when the export is missing; no placeholder page.
 Level: integration
 Test file: finally/backend/tests/test_health.py
 Bead ID: te-sj3
 Phase: project-foundation
 Scenarios:
 - GET api/health returns 200 with a healthy status body
-- GET root path with export absent returns 503 with a diagnostic body, not a placeholder
+- root path with export absent returns 503 with a diagnostic body, not a placeholder
 - create_app wires the health route and static fallback
 Assertions:
 - health JSON status field equals the healthy value
@@ -118,16 +118,17 @@ Assertions:
 - prompt string contains each watchlist ticker with its live price
 
 ### testing-release
-Requirement: Playwright E2E covers dashboard, trading, chat and SSE with real browser interactions and DOM state-change assertions.
+Requirement: Playwright E2E covers dashboard, trading, chat and SSE with real browser interactions and DOM state-change assertions; the backend API contract test covers every SPEC Section 8 route.
 Level: ui
 Test file: finally/test/e2e.spec.ts
-Bead ID: pending
+Bead ID: te-7by, te-2iz
 Phase: testing-release
 Scenarios:
-- Buy 5 AAPL reduces cash and adds a position row
-- Send chat message shows an assistant reply
-- Add and remove watchlist ticker updates the DOM
-- full API contract: every SPEC Section 8 route responds with the specified shape, and GET root path shows the FinAlly heading, ten tickers and $10,000 (finally/backend/tests/test_api.py, Level integration)
+- root path shows the FinAlly heading, the ten default tickers and the $10,000 cash balance (e2e.spec.ts)
+- Buy 5 AAPL reduces cash and adds a position row (e2e.spec.ts, real click plus DOM state change)
+- Add and remove watchlist ticker updates the DOM (e2e.spec.ts)
+- Send chat message shows an assistant reply (e2e.spec.ts)
+- full API contract: every SPEC Section 8 route responds with the specified shape, and the root path shows the FinAlly heading, ten tickers and $10,000 (finally/backend/tests/test_api.py, Level integration, bead te-2iz)
 Assertions:
 - response bodies carry the documented keys and types; dashboard HTML contains real content strings, not placeholder text
 - cash text decreases after Buy
