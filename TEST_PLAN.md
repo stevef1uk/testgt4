@@ -55,13 +55,13 @@ Assertions:
 Requirement: Buys and sells update cash and positions; selling more than owned and buying with insufficient cash are rejected; snapshots are recorded after trades.
 Level: unit
 Test file: finally/backend/tests/test_portfolio.py
-Bead ID: te-olr
+Bead ID: closed
 Phase: database-portfolio-engine
 Scenarios:
 - buy reduces cash and creates position with average cost
 - sell reduces quantity and realises P&L against average cost
 - oversell and insufficient cash raise validation errors
-- portfolio routes match SPEC Section 8 (GET api/portfolio, POST api/portfolio/trade, GET api/portfolio/history); route-level checks live in finally/backend/tests/test_portfolio_api.py
+- snapshot recorded after an accepted trade
 Assertions:
 - cash_balance after buy equals prior cash minus quantity times price
 - average cost recalculated correctly after second buy
