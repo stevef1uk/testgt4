@@ -13,4 +13,4 @@ RUN python3 -m pip install --no-cache-dir fastapi==0.115.0 uvicorn==0.30.6
 COPY backend/ ./backend/
 COPY --from=frontend-builder /app/frontend/out ./frontend/out
 EXPOSE 8010
-CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8010"]
+CMD ["uvicorn", "app.main:app", "--app-dir", "backend", "--host", "0.0.0.0", "--port", "8010"]

@@ -34,13 +34,6 @@
     },
     {
       "stack": "python",
-      "rule": "QA lesson: {\"summary\":\"Stage 1 (Spec compliance) fails: page.tsx (bead te-5b4) lacks inline interactive controls and client-side behavior...",
-      "source": "qa_rework",
-      "hits": 1,
-      "updated_at": "2026-11-26T21:33:45Z"
-    },
-    {
-      "stack": "python",
       "rule": "QA lesson: ...(truncated)",
       "source": "qa_rework",
       "hits": 6,
@@ -59,6 +52,13 @@
       "source": "qa_rework",
       "hits": 1,
       "updated_at": "2026-11-27T05:26:53Z"
+    },
+    {
+      "stack": "python",
+      "rule": "QA lesson: {\"summary\":\"Stage 1: E2E gate cannot pass — app container fails to start and SSE route is missing",
+      "source": "qa_rework",
+      "hits": 1,
+      "updated_at": "2026-11-27T05:32:26Z"
     }
   ]
 }
