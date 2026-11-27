@@ -41,13 +41,6 @@
     },
     {
       "stack": "python",
-      "rule": "QA lesson: {\"summary\":\"Stage 1 failed: The validator gate rejected finally/frontend/app/page.tsx as 'static' — it contains no directly-...",
-      "source": "qa_rework",
-      "hits": 1,
-      "updated_at": "2026-11-26T21:42:55Z"
-    },
-    {
-      "stack": "python",
       "rule": "Test review lesson: Root cause: e2e.spec.ts (bead te-7by, testing-release phase) is missing the chat test and SSE behaviour test required...",
       "source": "qa_rework",
       "hits": 1,
@@ -59,6 +52,13 @@
       "source": "qa_rework",
       "hits": 1,
       "updated_at": "2026-11-27T05:32:26Z"
+    },
+    {
+      "stack": "python",
+      "rule": "QA lesson: Root cause: Playwright runner (v1.62.1) errors on top‑level test.describe in finally/test/e2e.spec.ts, and the project's pac...",
+      "source": "qa_rework",
+      "hits": 1,
+      "updated_at": "2026-11-27T05:36:52Z"
     }
   ]
 }
