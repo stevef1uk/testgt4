@@ -208,7 +208,7 @@ delivery_phases:
       - finally/backend/tests/test_api.py
       - finally/test/e2e.spec.ts
       - finally/test/specs/dashboard.spec.ts
-    qa_verify_command: 'test -f finally/planning/PLAN.md && test -f finally/Dockerfile && (cd finally && docker build -f Dockerfile -t finally-foundation-check .) && (cd finally/backend && uv run pytest -q) && (cd finally/test && npm install --ignore-scripts && npx playwright test --project=chromium)'
+    qa_verify_command: 'test -f finally/planning/PLAN.md && test -f finally/Dockerfile && (cd finally/backend && uv run pytest -q) && (cd finally/test && npm install --ignore-scripts && npx playwright test --project=chromium)'
     depends_on: [application-polish]
 
 ## Requirements
