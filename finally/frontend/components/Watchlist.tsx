@@ -8,10 +8,11 @@ export interface WatchlistItem {
 
 export interface WatchlistProps {
   apiBase?: string;
+  prices?: Record<string, { price: number; change_percent?: number }>;
   onSelect?: (ticker: string) => void;
 }
 
-export default function Watchlist({ apiBase = "", onSelect }: WatchlistProps) {
+export default function Watchlist({ apiBase = "", prices = {}, onSelect }: WatchlistProps) {
   const [items, setItems] = useState<WatchlistItem[]>([]);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -84,25 +85,35 @@ export default function Watchlist({ apiBase = "", onSelect }: WatchlistProps) {
         </p>
       )}
       <ul className="flex flex-col">
-        {items.map((item) => (
-          <li key={item.ticker} className="flex items-center justify-between py-1">
-            <button
-              type="button"
-              onClick={() => onSelect?.(item.ticker)}
-              className="font-mono text-sm hover:underline"
-            >
-              {item.ticker}
-            </button>
-            <button
-              type="button"
-              aria-label={`Remove ${item.ticker}`}
-              onClick={() => void handleRemove(item.ticker)}
-              className="text-xs text-gray-400 hover:text-red-400"
-            >
-              Remove
-            </button>
-          </li>
-        ))}
+        {items.map((item) => {
+          const priceInfo = prices[item.ticker];
+          return (
+            <li key={item.ticker} className="flex items-center justify-between py-1">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onSelect?.(item.ticker)}
+                  className="font-mono text-sm hover:underline"
+                >
+                  {item.ticker}
+                </button>
+                {priceInfo && (
+                  <span className="font-mono text-xs text-slate-300">
+                    ${priceInfo.price.toFixed(2)}
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                aria-label={`Remove ${item.ticker}`}
+                onClick={() => void handleRemove(item.ticker)}
+                className="text-xs text-gray-400 hover:text-red-400"
+              >
+                Remove
+              </button>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

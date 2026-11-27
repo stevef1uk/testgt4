@@ -552,7 +552,15 @@ test/
 - `retries`: 1 (CI flake tolerance)
 - `projects`: `[{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }]`
 - `reporter`: `[['html', { open: 'never' }], ['list']]`
-- `webServer`: disabled (Docker Compose manages the app)
+- `webServer`: configured to start the backend automatically when running locally or in CI if not already running:
+  ```ts
+  webServer: {
+    command: 'cd ../backend && uv run uvicorn app.main:app --port 8010',
+    url: 'http://127.0.0.1:8010/api/health',
+    reuseExistingServer: !process.env.CI,
+    timeout: 30_000,
+  }
+  ```
 
 **Page Objects** — every test uses Page Objects, never raw selectors:
 - `DashboardPage`: header elements (total value, cash, connection status), main chart area
@@ -650,12 +658,12 @@ Every scenario must use `page.getByRole()`, `page.getByText()`, or `page.getByTe
 - No test depends on state from a previous test (tests are isolated)
 - Seed data is consistent: 10 default tickers, $10,000 cash
 
-### CI Integration
+### CI & Test Execution
 
-- Playwright tests run in Docker via `docker-compose.test.yml`
-- `npx playwright test --project=chromium` — single browser for speed
+- Playwright tests run natively via `npx playwright test --project=chromium` (using `webServer` for host runs) or in Docker via `docker-compose.test.yml`.
+- **Mandatory execution**: Running `npx playwright test --list` or any enumeration-only command does NOT satisfy test execution gates. The test runner must execute every test in the browser to completion (exit code 0).
 - HTML report generated but not opened in CI
-- Test failure blocks merge
+- Any test failure or console error blocks merge
 
 ### Content Assertion Rule (repeated for emphasis)
 
@@ -979,13 +987,22 @@ Validate the complete application and prepare it for release.
 - README
 - Environment examples
 
+### Mandatory Verification Command
+
+The phase verification command for `testing-release` MUST execute real browser tests:
+`(cd finally/backend && uv run pytest -q) && (cd finally/test && npm install --ignore-scripts && npx playwright test --project=chromium)`
+
+- **Prohibition on `--list`**: Using `npx playwright test --list` or any enumeration-only command is strictly forbidden and constitutes an automatic QA rejection.
+- Every browser scenario in Section 13 must execute against a running server and exit with status code 0.
+
 ### Exit Criteria
 
-- All Playwright E2E tests pass (see Section 13 for mandatory coverage)
+- `npx playwright test --project=chromium` executes and reports 100% passed (zero failed, zero skipped).
 - Complete UI visibility verified: all components (`Header`, `Watchlist`, `MarketOverview`, `PriceChart`, `PortfolioSummary`, `PositionsTable`, `TradingPanel`, `ChatAssistant`) verified mounted and visible simultaneously on the page before workflow completion is granted
 - Full chat assistant functionality verified: typing a prompt and sending produces a non-empty conversational response without raw JSON, and trade requests execute and reflect in portfolio
 - All unit tests pass (backend pytest + frontend component tests)
 - All automated tests **assert real content** (not just status codes / visibility)
+- No uncaught 404 errors for `/_next/static/*` assets or script runtime errors in the browser console during test runs
 - Every UI feature in Sections 2 and 10 has a corresponding Playwright test
 - Fresh clone runs successfully
 - One-command startup works

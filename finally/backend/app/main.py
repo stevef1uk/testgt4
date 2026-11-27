@@ -5,16 +5,29 @@ Later phases register the portfolio, watchlist, and chat routers here.
 
 from pathlib import Path
 
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Response
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api import create_app as build_api_app
 
 FRONTEND_INDEX = Path(__file__).resolve().parents[2] / "frontend" / "out" / "index.html"
+FRONTEND_OUT = FRONTEND_INDEX.parent
 
 
 def create_app(title: str = "StockPilot", version: str = "0.1.0") -> FastAPI:
     app = build_api_app(title=title, version=version)
+
+    next_static_dir = FRONTEND_OUT / "_next"
+    if next_static_dir.is_dir():
+        app.mount("/_next", StaticFiles(directory=str(next_static_dir)), name="next-static")
+
+    @app.get("/favicon.ico", include_in_schema=False)
+    def favicon() -> Response:
+        fav = FRONTEND_OUT / "favicon.ico"
+        if fav.is_file():
+            return FileResponse(fav)
+        return Response(status_code=204)
 
     @app.get("/", response_class=HTMLResponse)
     def index() -> HTMLResponse:
