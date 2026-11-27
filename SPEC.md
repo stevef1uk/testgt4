@@ -32,7 +32,7 @@ delivery_phases:
       - finally/frontend/next-env.d.ts
       - finally/Dockerfile
       - finally/docker-compose.yml
-      - finally/.env
+      - finally/.env.example
       - finally/scripts/start_mac.sh
       - finally/scripts/stop_mac.sh
       - finally/db/.gitkeep
@@ -740,7 +740,7 @@ Every scenario must use `page.getByRole()`, `page.getByText()`, or `page.getByTe
 | Connection status indicator present | `getByTestId('connection-status')` visible (green dot = connected) |
 | Cash balance updates after trade | After buy: cash value decreases; after sell: cash value increases |
 | Layout is dark-themed | `page.locator('body')` has CSS background color close to `#0d1117` or `#1a1a2e` |
-| Complete component composition | All core components must be mounted and visible simultaneously: `getByRole('heading', { name: 'FinAlly' })`, `getByTestId('connection-status')`, `getByTestId('cash-balance')`, `getByRole('heading', { name: 'Watchlist' })`, `getByLabel('Market overview')`, `getByLabel(/price chart/i)`, `getByTestId('portfolio-summary')`, `getByTestId('positions-table')`, `getByTestId('trading-panel')`, and `getByLabel('Chat assistant')` |
+| Complete component composition | All core components must be mounted and visible simultaneously: `getByRole('heading', { name: 'FinAlly' })`, `getByTestId('connection-status')`, `getByTestId('cash-balance')`, `getByLabel('Watchlist')`, `getByLabel('Market overview')`, `getByLabel(/price chart/i)`, `getByTestId('portfolio-summary')`, `getByTestId('positions-table')`, `getByTestId('trading-panel')`, and `getByLabel('Chat assistant')` |
 
 #### Watchlist (`watchlist.spec.ts`)
 

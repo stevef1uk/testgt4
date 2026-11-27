@@ -17,7 +17,7 @@ Constraints from SPEC:
 
 The layout root is `finally`. Every path carries the `finally/` prefix.
 
-Root and deployment: `finally/Dockerfile`, `finally/docker-compose.yml`, `finally/.env`, `finally/.gitignore`, `finally/db/.gitkeep`, `finally/scripts/start_mac.sh`, `finally/scripts/stop_mac.sh`, `finally/scripts/start_windows.ps1`, `finally/scripts/stop_windows.ps1`, `finally/planning/PLAN.md`.
+Root and deployment: `finally/Dockerfile`, `finally/docker-compose.yml`, `finally/.env.example`, `finally/.gitignore`, `finally/db/.gitkeep`, `finally/scripts/start_mac.sh`, `finally/scripts/stop_mac.sh`, `finally/scripts/start_windows.ps1`, `finally/scripts/stop_windows.ps1`, `finally/planning/PLAN.md`.
 
 Backend (uv project): `finally/backend/pyproject.toml`, `finally/backend/app/main.py`, `finally/backend/app/api/__init__.py`, `finally/backend/app/api/schemas.py`, `finally/backend/app/api/routes_portfolio.py`, `finally/backend/app/api/routes_watchlist.py`, `finally/backend/app/api/routes_chat.py`, `finally/backend/app/db/__init__.py`, `finally/backend/app/db/schema.sql`, `finally/backend/app/db/seed.py`, `finally/backend/app/db/connection.py`, `finally/backend/app/market/__init__.py`, `finally/backend/app/market/base.py`, `finally/backend/app/market/simulator.py`, `finally/backend/app/market/massive_client.py`, `finally/backend/app/market/cache.py`, `finally/backend/app/market/stream.py`, `finally/backend/app/market/poller.py`, `finally/backend/app/portfolio/__init__.py`, `finally/backend/app/portfolio/repository.py`, `finally/backend/app/portfolio/engine.py`, `finally/backend/app/portfolio/snapshots.py`, `finally/backend/app/llm/__init__.py`, `finally/backend/app/llm/client.py`, `finally/backend/app/llm/prompts.py`, `finally/backend/app/llm/parser.py`, `finally/backend/app/llm/chat_service.py`, `finally/backend/tests/test_market.py`, `finally/backend/tests/test_portfolio.py`, `finally/backend/tests/test_portfolio_api.py`, `finally/backend/tests/test_watchlist_api.py`, `finally/backend/tests/test_llm.py`, `finally/backend/tests/test_api.py`, `finally/backend/tests/test_health.py`, `finally/backend/tests/test_schema.py`, `finally/backend/tests/test_trading_flow.py`.
 
@@ -88,7 +88,7 @@ delivery_phases:
       - finally/frontend/next-env.d.ts
       - finally/Dockerfile
       - finally/docker-compose.yml
-      - finally/.env
+      - finally/.env.example
       - finally/scripts/start_mac.sh
       - finally/scripts/stop_mac.sh
       - finally/db/.gitkeep
