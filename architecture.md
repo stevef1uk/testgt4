@@ -23,9 +23,9 @@ Backend (uv project): `finally/backend/pyproject.toml`, `finally/backend/app/mai
 
 Frontend (Next.js static export to `finally/frontend/out/`): `finally/frontend/package.json`, `finally/frontend/tsconfig.json`, `finally/frontend/next.config.js`, `finally/frontend/next-env.d.ts`, `finally/frontend/app/layout.tsx`, `finally/frontend/app/page.tsx`, `finally/frontend/app/globals.css`, `finally/frontend/app/polish.css`, `finally/frontend/components/Header.tsx`, `finally/frontend/components/Sidebar.tsx`, `finally/frontend/components/MarketOverview.tsx`, `finally/frontend/components/Watchlist.tsx`, `finally/frontend/components/PriceChart.tsx`, `finally/frontend/components/PortfolioSummary.tsx`, `finally/frontend/components/TradingPanel.tsx`, `finally/frontend/components/PositionsTable.tsx`, `finally/frontend/components/PnlChart.tsx`, `finally/frontend/components/PortfolioHeatmap.tsx`, `finally/frontend/components/ChatAssistant.tsx`, `finally/frontend/components/ChatAssistant.test.tsx`.
 
-E2E harness: `finally/test/package.json`, `finally/test/playwright.config.ts`, `finally/test/docker-compose.test.yml`, `finally/test/e2e.spec.ts`.
+E2E harness: `finally/test/package.json`, `finally/test/playwright.config.ts`, `finally/test/docker-compose.test.yml`, `finally/test/e2e.spec.ts`, plus the SPEC Section 13 harness files: `finally/test/specs/dashboard.spec.ts`, `finally/test/specs/watchlist.spec.ts`, `finally/test/specs/trading.spec.ts`, `finally/test/specs/portfolio.spec.ts`, `finally/test/specs/chat.spec.ts`, `finally/test/specs/sse.spec.ts`, `finally/test/specs/navigation.spec.ts`, `finally/test/specs/mvp.spec.ts`, `finally/test/pages/dashboard.page.ts`, `finally/test/pages/watchlist.page.ts`, `finally/test/pages/trade.page.ts`, `finally/test/pages/portfolio.page.ts`, `finally/test/pages/chat.page.ts`, `finally/test/fixtures/base.ts`, `finally/test/api/helpers.ts`.
 
-Generated tool outputs, not hand-written (`finally/backend/uv.lock` is written by `uv sync` and is owned by core-market-infrastructure per the delivery contract; the npm lockfile is an install side effect of the `npm install --ignore-scripts` step in project-foundation-support's gate; it is verified there, is not a declared deliverable, and has no separate phase owner): `finally/backend/uv.lock`, `finally/frontend/next-env.d.ts`, `finally/frontend/out/`.
+Generated tool outputs, not hand-written (`finally/backend/uv.lock` is written by `uv sync` and is owned by core-market-infrastructure per the delivery contract; the npm lockfile is an install side effect of the `npm install --ignore-scripts` step in project-foundation-support's gate; it is verified there, is not a declared deliverable, and has no separate phase owner): `finally/backend/uv.lock`, `finally/frontend/out/`. `finally/frontend/next-env.d.ts` is also written by the Next.js build and is a declared required deliverable owned solely by project-foundation-support.
 
 ## Module / bead ownership
 
@@ -90,9 +90,16 @@ delivery_phases:
       - finally/frontend/app/layout.tsx
       - finally/frontend/app/page.tsx
       - finally/frontend/app/globals.css
-      - finally/Dockerfile
-    qa_verify_command: 'test -f finally/backend/app/db/schema.sql && test -f finally/Dockerfile && (cd finally && docker build -f Dockerfile -t finally-foundation-check .) && test -f finally/backend/app/db/seed.py && (cd finally/frontend && npm install --ignore-scripts) && test -f finally/frontend/package-lock.json && (cd finally/frontend && npm run build) && test -f finally/frontend/out/index.html && (cd finally/backend && uv run pytest tests/test_schema.py -q)'
+      - finally/frontend/next-env.d.ts
+    qa_verify_command: 'test -f finally/backend/app/db/schema.sql && test -f finally/backend/app/db/seed.py && (cd finally/frontend && npm install --ignore-scripts) && test -f finally/frontend/package-lock.json && (cd finally/frontend && npm run build) && test -f finally/frontend/out/index.html && test -f finally/frontend/next-env.d.ts && (cd finally/backend && uv run pytest tests/test_schema.py -q)'
     depends_on: [project-foundation]
+  - id: project-foundation-docker
+    title: Project Foundation Docker
+    spec_focus: Project Foundation
+    required_files:
+      - finally/Dockerfile
+    qa_verify_command: 'test -f finally/Dockerfile && (cd finally && docker build -f Dockerfile -t finally-foundation-check .)'
+    depends_on: [project-foundation-support]
     file_dependencies:
       finally/Dockerfile: [finally/frontend/package.json, finally/frontend/tsconfig.json, finally/frontend/next.config.js, finally/frontend/app/layout.tsx, finally/frontend/app/page.tsx, finally/frontend/app/globals.css]
   - id: core-market-infrastructure
@@ -171,38 +178,67 @@ delivery_phases:
     spec_focus: Application Polish
     required_files:
       - finally/frontend/app/polish.css
-      - finally/frontend/next-env.d.ts
       - finally/.gitignore
       - finally/frontend/app/page.tsx
       - finally/scripts/start_windows.ps1
       - finally/scripts/stop_windows.ps1
-    qa_verify_command: 'test -f finally/scripts/start_windows.ps1 && test -f finally/scripts/stop_windows.ps1 && test -f finally/.gitignore && test -f finally/frontend/next-env.d.ts && (cd finally/frontend && npm run build)'
+    qa_verify_command: 'test -f finally/scripts/start_windows.ps1 && test -f finally/scripts/stop_windows.ps1 && test -f finally/.gitignore && test -f finally/frontend/app/polish.css && (for c in Header Watchlist MarketOverview PriceChart PortfolioSummary PositionsTable TradingPanel ChatAssistant; do grep -q "<$c" finally/frontend/app/page.tsx || exit 1; done) && (cd finally/frontend && npm run build)'
     depends_on: [ai-trading-assistant]
     file_dependencies:
       finally/frontend/app/page.tsx: [finally/frontend/components/Header.tsx, finally/frontend/components/Watchlist.tsx, finally/frontend/components/MarketOverview.tsx, finally/frontend/components/PriceChart.tsx, finally/frontend/components/PortfolioSummary.tsx, finally/frontend/components/PositionsTable.tsx, finally/frontend/components/TradingPanel.tsx, finally/frontend/components/ChatAssistant.tsx]
+  - id: testing-release-harness
+    title: Testing & Release (E2E harness)
+    spec_focus: Testing & Release
+    required_files:
+      - finally/test/package.json
+      - finally/test/playwright.config.ts
+      - finally/test/docker-compose.test.yml
+      - finally/test/pages/dashboard.page.ts
+      - finally/test/pages/watchlist.page.ts
+      - finally/test/pages/trade.page.ts
+      - finally/test/pages/portfolio.page.ts
+      - finally/test/pages/chat.page.ts
+      - finally/test/fixtures/base.ts
+      - finally/test/api/helpers.ts
+    qa_verify_command: 'test -f finally/test/package.json && test -f finally/test/playwright.config.ts && test -f finally/test/docker-compose.test.yml && test -f finally/test/pages/dashboard.page.ts && test -f finally/test/pages/watchlist.page.ts && test -f finally/test/pages/trade.page.ts && test -f finally/test/pages/portfolio.page.ts && test -f finally/test/pages/chat.page.ts && test -f finally/test/fixtures/base.ts && test -f finally/test/api/helpers.ts'
+    depends_on: [application-polish]
+  - id: testing-release-specs
+    title: Testing & Release (E2E specs and API tests)
+    spec_focus: Testing & Release
+    required_files:
+      - finally/backend/tests/test_api.py
+      - finally/test/e2e.spec.ts
+      - finally/test/specs/dashboard.spec.ts
+      - finally/test/specs/watchlist.spec.ts
+      - finally/test/specs/trading.spec.ts
+      - finally/test/specs/portfolio.spec.ts
+      - finally/test/specs/chat.spec.ts
+      - finally/test/specs/sse.spec.ts
+      - finally/test/specs/navigation.spec.ts
+      - finally/test/specs/mvp.spec.ts
+    qa_verify_command: 'test -f finally/backend/tests/test_api.py && test -f finally/test/e2e.spec.ts && test -f finally/test/specs/dashboard.spec.ts && test -f finally/test/specs/watchlist.spec.ts && test -f finally/test/specs/trading.spec.ts && test -f finally/test/specs/portfolio.spec.ts && test -f finally/test/specs/chat.spec.ts && test -f finally/test/specs/sse.spec.ts && test -f finally/test/specs/navigation.spec.ts && test -f finally/test/specs/mvp.spec.ts && (cd finally/backend && uv run pytest tests/test_api.py -q)'
+    depends_on: [testing-release-harness]
   - id: testing-release
     title: Testing & Release
     spec_focus: Testing & Release
     required_files:
-      - finally/backend/tests/test_api.py
-      - finally/test/package.json
-      - finally/test/playwright.config.ts
-      - finally/test/docker-compose.test.yml
-      - finally/test/e2e.spec.ts
       - finally/planning/PLAN.md
-    qa_verify_command: '(cd finally/backend && uv run pytest -q) && (cd finally/test && npm install --ignore-scripts && npx playwright test --project=chromium)'
-    depends_on: [application-polish]
+    qa_verify_command: 'test -f finally/planning/PLAN.md && (cd finally/backend && uv run pytest -q) && (cd finally/test && npm install --ignore-scripts && npx playwright test --project=chromium)'
+    depends_on: [testing-release-specs]
 ```
 
 ## Requirements
 
 ### project-foundation
 Test ownership: `finally/backend/tests/test_health.py` covers the health endpoint and the 503 diagnostic when the export is absent. Real dashboard content is asserted in `finally/backend/tests/test_api.py`.
-Runnable skeleton: uv project, SQLite data directory marker `finally/db/.gitkeep`, `create_app`, static serving of the Next.js export, GET /api/health, compose file, start/stop scripts, `.env` loading. The Dockerfile is owned by project-foundation-support, after the frontend skeleton it copies exists. GET / returns real dashboard HTML once the export exists.
+Runnable skeleton: uv project, SQLite data directory marker `finally/db/.gitkeep`, `create_app`, static serving of the Next.js export, GET /api/health, compose file, start/stop scripts, `.env` loading. The Dockerfile is owned by project-foundation-docker, which runs after the frontend skeleton it copies exists. GET / returns real dashboard HTML once the export exists.
 
 ### project-foundation-support
 Test ownership: `finally/backend/tests/test_schema.py` covers schema creation, lazy initialisation, and the ten seeded tickers with $10,000 cash for user "default".
-SQLite schema, lazy initialization on first start, seed of ten default tickers and $10,000 cash for user "default". Next.js project setup (package.json, tsconfig, next config, layout, page, globals.css) and frontend skeleton builds to `finally/frontend/out/`. Also owns `finally/Dockerfile`, which must come after the frontend files it COPYs (the package manifest and the npm lockfile produced by install); verified by `docker build -f Dockerfile .` run from `finally/`.
+SQLite schema, lazy initialization on first start, seed of ten default tickers and $10,000 cash for user "default". Next.js project setup (package.json, tsconfig, next config, layout, page, globals.css) and frontend skeleton builds to `finally/frontend/out/`. Also owns `finally/frontend/next-env.d.ts` (written by the Next.js build and verified in its gate). The Dockerfile moves to project-foundation-docker, which depends on this phase and runs `docker build -f Dockerfile .` from `finally/`.
+
+### project-foundation-docker
+Dockerfile (`finally/Dockerfile`), delivered after the frontend skeleton from project-foundation-support exists. Its gate runs `docker build -f Dockerfile .` from `finally/`.
 
 ### core-market-infrastructure
 Generated uv lockfile `finally/backend/uv.lock`. Market interface, GBM simulator, Massive client, provider selection, shared price cache, background task, and GET /api/stream/prices emitting named `price` events and unnamed data lines.
@@ -221,10 +257,16 @@ Trade bar, positions table, heatmap, P&L chart, portfolio summary, all driven by
 LiteLLM to OpenRouter with mock mode, live-price context, resilient parser, auto-execution with `✓ Trade Fill` badges, docked ChatAssistant.
 
 ### application-polish
-Owns `finally/.gitignore` and the Next.js generated `finally/frontend/next-env.d.ts`. Dark terminal styling, animations, loading and empty states, accessibility, and full composition of Header, Watchlist, MarketOverview, PriceChart, PortfolioSummary, PositionsTable, TradingPanel, and ChatAssistant on page.tsx. `finally/frontend/app/page.tsx` is a skeleton from project-foundation-support; this phase amends it to mount Header, Watchlist, MarketOverview, PriceChart, PortfolioSummary, PositionsTable, TradingPanel and ChatAssistant together.
+Owns `finally/.gitignore`. Dark terminal styling, animations, loading and empty states, accessibility, and full composition of Header, Watchlist, MarketOverview, PriceChart, PortfolioSummary, PositionsTable, TradingPanel, and ChatAssistant on page.tsx. `finally/frontend/app/page.tsx` is a skeleton from project-foundation-support; this phase amends it to mount Header, Watchlist, MarketOverview, PriceChart, PortfolioSummary, PositionsTable, TradingPanel and ChatAssistant together.
+
+### testing-release-harness
+Playwright harness: `finally/test/package.json`, `finally/test/playwright.config.ts`, `finally/test/docker-compose.test.yml`, page objects under `finally/test/pages/`, and fixtures and API helpers under `finally/test/fixtures/` and `finally/test/api/`.
+
+### testing-release-specs
+SPEC Section 13 scenarios: the eight specs under `finally/test/specs/`, `finally/test/e2e.spec.ts`, and backend API tests in `finally/backend/tests/test_api.py`.
 
 ### testing-release
-Planning documentation at `finally/planning/PLAN.md`. Backend pytest suites, Playwright E2E per SPEC Section 13, and the docker compose test harness.
+Planning documentation at `finally/planning/PLAN.md` and the full-suite gate: backend pytest, then Playwright in `finally/test`.
 
 ## Unit tests
 
@@ -257,7 +299,7 @@ Full-suite gate: the backend suite, then the frontend build, then the Playwright
 
 ## Docker & Deployment
 
-The Dockerfile is delivered by project-foundation-support, so every path it COPYs exists by that phase. Stage 1 uses `node:20-slim`. It copies `finally/frontend/`, runs `npm install --ignore-scripts && npm run build`, and produces the static export at `finally/frontend/out/`.
+The Dockerfile is delivered by project-foundation-docker, which depends on project-foundation-support, so every path it COPYs exists by that phase. Stage 1 uses `node:20-slim`. It copies `finally/frontend/`, runs `npm install --ignore-scripts && npm run build`, and produces the static export at `finally/frontend/out/`.
 
 Stage 2 uses `python:3.12-slim`. It installs uv, copies `finally/backend/`, runs `uv sync` from the lockfile, and copies the Stage 1 export with `COPY --from=frontend /frontend/out /app/frontend/out`. This `finally/frontend/out/` handoff is the only link between the stages. It exposes port 8010 with `EXPOSE 8010` and starts with `CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8010"]`.
 
@@ -267,6 +309,9 @@ Container launch command (SPEC Section 11, verbatim):
 The named volume is finally-data:/app/db, mapped to the project `db/` directory.
 
 ## E2E / integration testing
+
+The Section 13 harness (specs, page objects, fixtures, API helpers) is owned by testing-release and listed in its `required_files`; each file is verified by its `qa_verify_command`.
+
 
 Playwright runs in `finally/test/` against `BASE_URL=http://app:8010` under `finally/test/docker-compose.test.yml`, with `LLM_MOCK=true`. Tests assert real content (ticker names, `$10,000`, chat text) and include at least one real interaction with a state-change assertion (Buy reduces cash and adds a position; Send shows an assistant reply).
 
