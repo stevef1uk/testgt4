@@ -236,7 +236,7 @@ The user runs a single Docker command (or a provided start script). A browser op
 finally/
 ├── frontend/                 # Next.js TypeScript project (static export)
 ├── backend/                  # FastAPI uv project (Python)
-│   └── db/                   # Schema definitions, seed data, migration logic
+│   └── app/db/               # Schema definitions, seed data, migration logic
 ├── planning/                 # Project-wide documentation for agents
 │   ├── PLAN.md               # This document
 │   └── ...                   # Additional agent reference docs
@@ -246,6 +246,7 @@ finally/
 │   ├── start_windows.ps1     # Launch Docker container (Windows PowerShell)
 │   └── stop_windows.ps1      # Stop Docker container (Windows PowerShell)
 ├── test/                     # Playwright E2E tests + docker-compose.test.yml
+│   ├── e2e.spec.ts           # Root smoke & end-to-end user journeys
 │   ├── specs/                # Test scenarios (*.spec.ts)
 │   ├── pages/                # Page Objects (dashboard, watchlist, trade, portfolio, chat)
 │   ├── fixtures/             # Shared Playwright fixtures
@@ -256,7 +257,8 @@ finally/
 │   └── .gitkeep              # Directory exists in repo; finally.db is gitignored
 ├── Dockerfile                # Multi-stage build (Node → Python)
 ├── docker-compose.yml        # Optional convenience wrapper
-├── .env                      # Environment variables (gitignored, .env.example committed)
+├── .env                      # Environment variables (created from .env.example)
+├── .env.example              # Committed template for environment variables
 └── .gitignore
 ```
 
@@ -266,7 +268,8 @@ finally/
 - **`backend/`** is a self-contained uv project with its own `pyproject.toml`. It owns all server logic including database initialization, schema, seed data, API routes, SSE streaming, market data, and LLM integration. Internal structure is up to the Backend/Market Data agents.
 - **`backend/app/main.py`** is the application entry point and **must define `def create_app(...) -> FastAPI`** wiring all canonical routes from [Section 8](#8-api-endpoints), SSE, and the static fallback. `backend/app/api/__init__.py` **must exist** and provide the FastAPI factory (this file is a required deliverable, not an implementation detail).
 - **`backend/app/api/schemas.py`** defines the Pydantic request/response contracts for the routes in [Section 8](#8-api-endpoints). The contracts in `backend/tests/*` and `test/e2e.spec.ts` must match this section exactly (single source of truth).
-- **`backend/db/`** contains schema SQL definitions and seed logic. The backend lazily initializes the database on first request — creating tables and seeding default data if the SQLite file doesn't exist or is empty. Seed data must include the ten default tickers (`AAPL, GOOGL, MSFT, AMZN, TSLA, NVDA, META, JPM, V, NFLX`) and a `$10,000` cash balance.
+- **`backend/app/db/`** contains schema SQL definitions and seed logic. The backend lazily initializes the database on first request — creating tables and seeding default data if the SQLite file doesn't exist or is empty. Seed data must include the ten default tickers (`AAPL, GOOGL, MSFT, AMZN, TSLA, NVDA, META, JPM, V, NFLX`) and a `$10,000` cash balance.
+- **`.env`** contains configuration variables, seeded from `.env.example` during setup.
 - **`db/`** at the top level is the runtime volume mount point. The SQLite file (`db/finally.db`) is created here by the backend and persists across container restarts via Docker volume.
 - **`planning/`** contains project-wide documentation, including this plan. All agents reference files here as the shared contract.
 - **`test/`** contains Playwright E2E tests and supporting infrastructure (e.g., `docker-compose.test.yml`). Unit tests live within `frontend/` and `backend/` respectively, following each framework's conventions.
@@ -343,7 +346,7 @@ Both the simulator and the Massive client implement the same abstract interface.
 
 ### SSE Streaming
 
-- Endpoint: `GET /api/stream/prices` (with alias `/api/stream`)
+- Endpoint: `GET /api/stream/prices`
 - Long-lived SSE connection; client uses native `EventSource` API
 - Server pushes price updates for all tickers known to the system at a regular cadence (~500ms-1s) — in the single-user model this is equivalent to the user's watchlist
 - Each SSE event contains ticker, price, previous price, change, change percent, timestamp, and change direction (`up`, `down`, `flat`)
@@ -525,6 +528,10 @@ When `LLM_MOCK=true`, the backend returns deterministic mock responses instead o
 - Development without an API key
 - CI/CD pipelines
 
+### Fallback Mechanism
+
+If a LiteLLM call fails or times out, the backend automatically falls back to a direct HTTP POST to OpenRouter using the configured API key.
+
 ---
 
 ## 10. Frontend Design
@@ -545,7 +552,7 @@ The frontend is a single-page application with a dense, terminal-inspired layout
 ### Mandatory UI Component Composition Rule (Hard Requirement)
 `frontend/app/page.tsx` must be a fully integrated single-page application that mounts and renders all functional components simultaneously in a cohesive, polished dark-themed dashboard:
 1. **Header** (`Header.tsx`): App title "FinAlly", connection status indicator (`data-testid="connection-status"`), and live cash balance (`data-testid="cash-balance"`).
-2. **Watchlist & Market Overview** (`Watchlist.tsx` / `MarketOverview.tsx`): Real ticker rows with live prices, percentage changes, sparkline indicator, and add/remove ticker controls (`aria-label="Watchlist"`). Clicking any ticker in the watchlist or market overview automatically selects it for charting and populates the Trading Panel input.
+2. **Watchlist & Market Overview** (`Watchlist.tsx` / `MarketOverview.tsx`): Real ticker rows with live prices, percentage changes, sparkline indicator, and add/remove ticker controls (`aria-label="Watchlist"` on the watchlist container and `aria-label="Market overview"` on the market overview container). Clicking any ticker in the watchlist or market overview automatically selects it for charting and populates the Trading Panel input.
 3. **Interactive Price Chart** (`PriceChart.tsx`): Displays price trends for the selected ticker (`aria-label` matching price chart).
 4. **Portfolio Visualizations** (`PortfolioSummary.tsx`, `PositionsTable.tsx`, and `PortfolioHeatmap.tsx` / `PnlChart.tsx`): Shows current portfolio equity, cash, unrealized P&L (`data-testid="portfolio-summary"`), open positions table (`data-testid="positions-table"`), and heatmap/P&L chart.
 5. **Trading Panel** (`TradingPanel.tsx`): Polished order execution card (`data-testid="trading-panel"`) with ticker input, quantity input, quick-select quantity buttons (e.g. 1, 5, 10, 50), Buy and Sell buttons, and live confirmation/error messages. Automatically updates its ticker input when a user clicks a ticker in the watchlist or chart.
@@ -705,7 +712,7 @@ test/
 - `webServer`: configured to start the backend automatically when running locally or in CI if not already running:
   ```ts
   webServer: {
-    command: 'cd ../backend && uv run uvicorn app.main:app --port 8010',
+    command: 'cd ../backend && uv run uvicorn app.main:app --host 0.0.0.0 --port 8010',
     url: 'http://127.0.0.1:8010/api/health',
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,
