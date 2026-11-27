@@ -2,6 +2,154 @@
 
 ## Project Specification
 
+## Workflow & Delivery Contract
+
+```yaml
+delivery_phases:
+  - id: project-foundation
+    title: Project Foundation
+    spec_focus: Project Foundation
+    required_files:
+      - finally/backend/pyproject.toml
+      - finally/backend/app/main.py
+      - finally/backend/app/api/__init__.py
+      - finally/backend/tests/test_health.py
+      - finally/frontend/package.json
+      - finally/frontend/tsconfig.json
+      - finally/frontend/next.config.js
+      - finally/frontend/app/layout.tsx
+      - finally/frontend/app/page.tsx
+      - finally/frontend/app/globals.css
+    qa_verify_command: 'test -f finally/backend/app/main.py && test -f finally/backend/app/api/__init__.py && test -f finally/backend/tests/test_health.py && (cd finally/backend && uv sync && uv run python -c "import app.main") && (cd finally/backend && uv run pytest tests/test_health.py -q) && (cd finally/frontend && npm install --ignore-scripts) && (cd finally/frontend && npm run build) && test -f finally/frontend/out/index.html'
+    depends_on: []
+  - id: project-foundation-support
+    title: Project Foundation Support
+    spec_focus: Project Foundation
+    required_files:
+      - finally/backend/app/db/schema.sql
+      - finally/backend/app/db/seed.py
+      - finally/backend/tests/test_schema.py
+      - finally/frontend/next-env.d.ts
+      - finally/Dockerfile
+      - finally/docker-compose.yml
+      - finally/.env
+      - finally/scripts/start_mac.sh
+      - finally/scripts/stop_mac.sh
+      - finally/db/.gitkeep
+    qa_verify_command: 'test -f finally/backend/app/db/schema.sql && test -f finally/backend/app/db/seed.py && (cd finally/frontend && npm install --ignore-scripts) && test -f finally/frontend/package-lock.json && (cd finally/frontend && npm run build) && test -f finally/frontend/out/index.html && test -f finally/frontend/next-env.d.ts && (cd finally/backend && uv run pytest tests/test_schema.py -q) && test -f finally/Dockerfile'
+    depends_on: [project-foundation]
+  - id: core-market-infrastructure
+    title: Core Market Infrastructure
+    spec_focus: Core Market Infrastructure
+    required_files:
+      - finally/backend/app/market/__init__.py
+      - finally/backend/app/market/base.py
+      - finally/backend/app/market/simulator.py
+      - finally/backend/app/market/massive_client.py
+      - finally/backend/app/market/cache.py
+      - finally/backend/app/market/stream.py
+      - finally/backend/app/market/poller.py
+      - finally/backend/tests/test_market.py
+      - finally/backend/uv.lock
+    qa_verify_command: 'test -f finally/backend/app/market/base.py && test -f finally/backend/app/market/simulator.py && test -f finally/backend/app/market/massive_client.py && test -f finally/backend/app/market/cache.py && test -f finally/backend/app/market/stream.py && test -f finally/backend/app/market/poller.py && test -f finally/backend/uv.lock && (cd finally/backend && uv run pytest tests/test_market.py -q)'
+    depends_on: [project-foundation-support]
+  - id: database-portfolio-engine
+    title: Database & Portfolio Engine
+    spec_focus: Database & Portfolio Engine
+    required_files:
+      - finally/backend/app/db/__init__.py
+      - finally/backend/app/db/connection.py
+      - finally/backend/app/portfolio/__init__.py
+      - finally/backend/app/portfolio/repository.py
+      - finally/backend/app/portfolio/engine.py
+      - finally/backend/app/portfolio/snapshots.py
+      - finally/backend/app/api/schemas.py
+      - finally/backend/app/api/routes_portfolio.py
+      - finally/backend/tests/test_portfolio.py
+      - finally/backend/tests/test_portfolio_api.py
+    qa_verify_command: 'test -f finally/backend/app/db/connection.py && test -f finally/backend/app/portfolio/repository.py && test -f finally/backend/app/portfolio/engine.py && test -f finally/backend/app/portfolio/snapshots.py && test -f finally/backend/app/api/schemas.py && test -f finally/backend/app/api/routes_portfolio.py && (cd finally/backend && uv run pytest tests/test_portfolio.py tests/test_portfolio_api.py -q)'
+    depends_on: [core-market-infrastructure]
+  - id: watchlist-market-ui
+    title: Watchlist & Market UI
+    spec_focus: Watchlist & Market UI
+    required_files:
+      - finally/backend/app/api/routes_watchlist.py
+      - finally/backend/tests/test_watchlist_api.py
+      - finally/frontend/components/Header.tsx
+      - finally/frontend/components/Sidebar.tsx
+      - finally/frontend/components/MarketOverview.tsx
+      - finally/frontend/components/Watchlist.tsx
+      - finally/frontend/components/PriceChart.tsx
+      - finally/test/pages/watchlist.page.ts
+      - finally/test/specs/watchlist.spec.ts
+      - finally/test/package.json
+    qa_verify_command: 'test -f finally/backend/app/api/routes_watchlist.py && test -f finally/test/package.json && test -f finally/frontend/components/Header.tsx && test -f finally/frontend/components/Sidebar.tsx && test -f finally/frontend/components/MarketOverview.tsx && test -f finally/frontend/components/Watchlist.tsx && test -f finally/frontend/components/PriceChart.tsx && (cd finally/backend && uv run pytest tests/test_watchlist_api.py -q) && (cd finally/frontend && npm run build)'
+    depends_on: [database-portfolio-engine]
+  - id: portfolio-visualisation-trading
+    title: Portfolio Visualisation & Trading
+    spec_focus: Portfolio Visualisation & Trading
+    required_files:
+      - finally/frontend/components/PortfolioSummary.tsx
+      - finally/frontend/components/TradingPanel.tsx
+      - finally/frontend/components/PositionsTable.tsx
+      - finally/frontend/components/PnlChart.tsx
+      - finally/frontend/components/PortfolioHeatmap.tsx
+      - finally/backend/tests/test_trading_flow.py
+      - finally/test/pages/trade.page.ts
+      - finally/test/pages/portfolio.page.ts
+      - finally/test/specs/trading.spec.ts
+      - finally/test/specs/portfolio.spec.ts
+    qa_verify_command: 'test -f finally/frontend/components/PortfolioSummary.tsx && test -f finally/frontend/components/TradingPanel.tsx && test -f finally/frontend/components/PositionsTable.tsx && test -f finally/frontend/components/PnlChart.tsx && test -f finally/frontend/components/PortfolioHeatmap.tsx && test -f finally/backend/tests/test_trading_flow.py && (cd finally/backend && uv run pytest tests/test_portfolio_api.py tests/test_trading_flow.py -q) && (cd finally/frontend && npm run build)'
+    depends_on: [database-portfolio-engine, watchlist-market-ui]
+  - id: ai-trading-assistant
+    title: AI Trading Assistant
+    spec_focus: AI Trading Assistant
+    required_files:
+      - finally/backend/app/llm/__init__.py
+      - finally/backend/app/llm/client.py
+      - finally/backend/app/llm/prompts.py
+      - finally/backend/app/llm/parser.py
+      - finally/backend/app/llm/chat_service.py
+      - finally/backend/app/api/routes_chat.py
+      - finally/backend/tests/test_llm.py
+      - finally/frontend/components/ChatAssistant.tsx
+      - finally/frontend/components/ChatAssistant.test.tsx
+      - finally/test/pages/chat.page.ts
+    qa_verify_command: 'test -f finally/backend/app/llm/client.py && test -f finally/backend/app/llm/prompts.py && test -f finally/backend/app/llm/parser.py && test -f finally/backend/app/llm/chat_service.py && test -f finally/backend/app/api/routes_chat.py && test -f finally/frontend/components/ChatAssistant.tsx && test -f finally/frontend/components/ChatAssistant.test.tsx && (cd finally/backend && LLM_MOCK=true uv run pytest tests/test_llm.py -q) && (cd finally/frontend && npm run build)'
+    depends_on: [portfolio-visualisation-trading]
+  - id: application-polish
+    title: Application Polish
+    spec_focus: Application Polish
+    required_files:
+      - finally/frontend/app/polish.css
+      - finally/.gitignore
+      - finally/frontend/app/page.tsx
+      - finally/scripts/start_windows.ps1
+      - finally/scripts/stop_windows.ps1
+      - finally/test/specs/chat.spec.ts
+      - finally/test/specs/sse.spec.ts
+      - finally/test/specs/navigation.spec.ts
+      - finally/test/specs/mvp.spec.ts
+    qa_verify_command: 'test -f finally/scripts/start_windows.ps1 && test -f finally/scripts/stop_windows.ps1 && test -f finally/.gitignore && test -f finally/frontend/app/polish.css && (for c in Header Watchlist MarketOverview PriceChart PortfolioSummary PositionsTable TradingPanel ChatAssistant; do grep -q "<$c" finally/frontend/app/page.tsx || exit 1; done) && (cd finally/frontend && npm run build)'
+    depends_on: [ai-trading-assistant]
+  - id: testing-release
+    title: Testing & Release
+    spec_focus: Testing & Release
+    required_files:
+      - finally/planning/PLAN.md
+      - finally/test/playwright.config.ts
+      - finally/test/docker-compose.test.yml
+      - finally/test/pages/dashboard.page.ts
+      - finally/test/fixtures/base.ts
+      - finally/test/api/helpers.ts
+      - finally/backend/tests/test_api.py
+      - finally/test/e2e.spec.ts
+      - finally/test/specs/dashboard.spec.ts
+    qa_verify_command: 'test -f finally/planning/PLAN.md && test -f finally/Dockerfile && (cd finally/backend && uv run pytest -q) && (cd finally/test && npm install --ignore-scripts && npx playwright test --project=chromium)'
+    depends_on: [application-polish]
+```
+
+
 ## 1. Vision
 
 FinAlly (Finance Ally) is a visually stunning AI-powered trading workstation that streams live market data, lets users trade a simulated portfolio, and integrates an LLM chat assistant that can analyze positions and execute trades on the user's behalf. It looks and feels like a modern Bloomberg terminal with an AI copilot.
