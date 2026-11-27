@@ -208,7 +208,7 @@ delivery_phases:
       - finally/backend/tests/test_api.py
       - finally/test/e2e.spec.ts
       - finally/test/specs/dashboard.spec.ts
-    qa_verify_command: "test -f finally/planning/PLAN.md && test -f finally/Dockerfile && (cd finally && docker build -f Dockerfile -t finally-foundation-check .) && (cd finally/backend && uv run pytest -q) && (cd finally/test && npm install --ignore-scripts && npx playwright test --project=chromium)"
+    qa_verify_command: 'test -f finally/planning/PLAN.md && test -f finally/Dockerfile && (cd finally && docker build -f Dockerfile -t finally-foundation-check .) && (cd finally/backend && uv run pytest -q) && (cd finally/test && npm install --ignore-scripts && npx playwright test --project=chromium)'
     depends_on: [application-polish]
 
 ## Requirements
@@ -265,7 +265,7 @@ Backend integration runs through the FastAPI app created by `create_app` in `fin
 
 The Dockerfile at `finally/Dockerfile` is a two-stage build with an explicit handoff:
 
-- Stage 1 (Node build) uses the base image `node:20-slim`. It copies `finally/frontend`, installs dependencies declared in `finally/frontend/package.json`, and runs the production build with `output: "export"`. The static export is written to `finally/frontend/out/`.
+- Stage 1 (Node build, declared as `FROM node:20-slim AS frontend`) uses the base image `node:20-slim`. It copies `finally/frontend`, installs dependencies declared in `finally/frontend/package.json`, and runs the production build with `output: "export"`. The static export is written to `finally/frontend/out/`.
 - Stage 2 (Python runtime) uses the base image `python:3.12-slim`. It installs uv, copies `finally/backend`, runs `uv sync` against the lockfile, and copies the Stage 1 artifact `finally/frontend/out/` into `/app/frontend/out` with `COPY --from=frontend`. The stages are not independent builds: Stage 2 depends on the `finally/frontend/out/` artifact produced by Stage 1.
 - The container exposes port 8010 (`EXPOSE 8010`).
 - The runtime command is:
@@ -274,7 +274,7 @@ The Dockerfile at `finally/Dockerfile` is a two-stage build with an explicit han
 uvicorn app.main:app --host 0.0.0.0 --port 8010
 ```
 
-The SQLite file persists through the volume mount `-v finally-data:/app/db`, which maps to `finally/db/` on the host. `finally/docker-compose.yml` is an optional wrapper around the same image.
+The SQLite file persists through the volume mount `-v finally-data:/app/db`, which is the named-volume equivalent of the host directory `finally/db/`; inside the container the database file is `/app/db/finally.db`. `finally/docker-compose.yml` is an optional wrapper around the same image.
 
 ## E2E / integration testing
 
