@@ -190,7 +190,7 @@ delivery_phases:
       - finally/test/docker-compose.test.yml
       - finally/test/e2e.spec.ts
       - finally/planning/PLAN.md
-    qa_verify_command: '(cd finally/backend && uv run pytest tests/test_api.py -q) && (cd finally/test && npm install --ignore-scripts && npx playwright test --list)'
+    qa_verify_command: '(cd finally/backend && uv run pytest -q) && (cd finally/test && npm install --ignore-scripts && npx playwright test --project=chromium)'
     depends_on: [application-polish]
 ```
 
@@ -252,7 +252,7 @@ Layer three, runtime smoke test: after the build, the server is started from `fi
 
 Unit test structure: each backend module has a matching file in `finally/backend/tests/` (`test_market.py`, `test_portfolio.py`, `test_portfolio_api.py`, `test_watchlist_api.py`, `test_llm.py`, `test_api.py`). LLM tests run with `LLM_MOCK=true` so behaviour is deterministic. Tests assert returned values and state changes, not status codes alone.
 
-Full-suite gate: the backend suite, then the frontend build, then the Playwright list check in `finally/test`. Container E2E scenarios are described in the E2E section below.
+Full-suite gate: the backend suite, then the frontend build, then the Playwright browser run (`npx playwright test --project=chromium`) in `finally/test`. Container E2E scenarios are described in the E2E section below.
 
 
 ## Docker & Deployment
