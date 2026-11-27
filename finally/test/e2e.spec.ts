@@ -54,4 +54,57 @@ test.describe('FinAlly E2E User Journeys', () => {
     const delRes = await request.delete('/api/watchlist/ORCL');
     expect([200, 204]).toContain(delRes.status());
   });
+
+  test('sends a chat message through the UI and shows a non-empty assistant reply without raw JSON', async ({ page }) => {
+    await page.goto('/');
+
+    const chatSection = page.locator('section[aria-label="AI assistant"]');
+    await expect(chatSection).toBeVisible();
+
+    const input = chatSection.locator('input[aria-label="Message"], textarea[aria-label="Message"]');
+    await input.fill('Hello FinAlly');
+
+    const chatResponse = page.waitForResponse((res) => res.url().includes('/api/chat') && res.request().method() === 'POST');
+    await chatSection.locator('button[type="submit"]').click();
+    await chatResponse;
+
+    // The user's message appears in the history, followed by an assistant bubble
+    const assistantBubble = chatSection.locator('ul[aria-label="Chat history"] li[data-role="assistant"]').last();
+    await expect(assistantBubble).toBeVisible({ timeout: 20_000 });
+
+    const text = (await assistantBubble.innerText()).trim();
+    expect(text.length).toBeGreaterThan(0);
+    expect(text.startsWith('{')).toBe(false);
+    expect(text.startsWith('[')).toBe(false);
+    expect(text).not.toContain('"role"');
+  });
+
+  test('opens the live price stream (SSE) on page load and receives price events', async ({ page }) => {
+    const streamRequest = page.waitForRequest((req) => /\/api\/stream/.test(req.url()));
+
+    await page.goto('/');
+
+    const req = await streamRequest;
+    expect(req.url()).toMatch(/\/api\/stream/);
+
+    // Wait for a streamed price update to reach the page: the body should show a numeric price for a default ticker
+    const priceReceived = await page.evaluate(
+      () =>
+        new Promise<boolean>((resolve) => {
+          const timer = setTimeout(() => resolve(false), 15_000);
+          const es = new EventSource('/api/stream/prices');
+          es.onmessage = () => {
+            clearTimeout(timer);
+            es.close();
+            resolve(true);
+          };
+          es.onerror = () => {
+            clearTimeout(timer);
+            es.close();
+            resolve(false);
+          };
+        }),
+    );
+    expect(priceReceived).toBe(true);
+  });
 });

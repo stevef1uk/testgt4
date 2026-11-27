@@ -34,13 +34,6 @@
     },
     {
       "stack": "python",
-      "rule": "QA lesson: {\"summary\":\"Stage 1: application-polish phase required page.tsx to mount all 8 core components (Header, Watchlist, MarketOverv...",
-      "source": "qa_rework",
-      "hits": 1,
-      "updated_at": "2026-11-26T21:30:32Z"
-    },
-    {
-      "stack": "python",
       "rule": "QA lesson: {\"summary\":\"Stage 1 (Spec compliance) fails: page.tsx (bead te-5b4) lacks inline interactive controls and client-side behavior...",
       "source": "qa_rework",
       "hits": 1,
@@ -59,6 +52,13 @@
       "source": "qa_rework",
       "hits": 1,
       "updated_at": "2026-11-26T21:42:55Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Test review lesson: Root cause: e2e.spec.ts (bead te-7by, testing-release phase) is missing the chat test and SSE behaviour test required...",
+      "source": "qa_rework",
+      "hits": 1,
+      "updated_at": "2026-11-27T05:26:53Z"
     }
   ]
 }
