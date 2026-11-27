@@ -34,13 +34,6 @@
     },
     {
       "stack": "python",
-      "rule": "QA lesson: ...(truncated)",
-      "source": "qa_rework",
-      "hits": 6,
-      "updated_at": "2026-11-26T21:39:28Z"
-    },
-    {
-      "stack": "python",
       "rule": "Test review lesson: Root cause: e2e.spec.ts (bead te-7by, testing-release phase) is missing the chat test and SSE behaviour test required...",
       "source": "qa_rework",
       "hits": 1,
@@ -59,6 +52,13 @@
       "source": "qa_rework",
       "hits": 1,
       "updated_at": "2026-11-27T05:36:52Z"
+    },
+    {
+      "stack": "python",
+      "rule": "QA lesson: ...(truncated)",
+      "source": "qa_rework",
+      "hits": 7,
+      "updated_at": "2026-11-27T05:39:56Z"
     }
   ]
 }

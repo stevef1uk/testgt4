@@ -10,6 +10,7 @@ services:
       - "8010:8010"
     environment:
       - PORT=8010
+      - LLM_MOCK=true
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8010/api/health')"]
       interval: 5s

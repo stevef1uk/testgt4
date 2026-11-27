@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class TradeRequest(BaseModel):
-    """Payload for POST /api/portfolio/trades."""
+    """Payload for POST /api/portfolio/trade."""
 
     model_config = ConfigDict(extra="forbid")
 

@@ -161,7 +161,7 @@ def test_initial_portfolio_has_ten_thousand_cash(client: TestClient) -> None:
 
 def test_buy_market_order_fills_and_debits_cash(client: TestClient) -> None:
     resp = client.post(
-        "/api/portfolio/trades",
+        "/api/portfolio/trade",
         json={"ticker": "AAPL", "quantity": 2, "side": "buy"},
     )
     assert resp.status_code == 201
@@ -174,7 +174,7 @@ def test_buy_market_order_fills_and_debits_cash(client: TestClient) -> None:
 
 def test_sell_without_position_is_rejected(client: TestClient) -> None:
     resp = client.post(
-        "/api/portfolio/trades",
+        "/api/portfolio/trade",
         json={"ticker": "AAPL", "quantity": 1, "side": "sell"},
     )
     assert resp.status_code == 400
@@ -182,7 +182,7 @@ def test_sell_without_position_is_rejected(client: TestClient) -> None:
 
 def test_buy_exceeding_cash_is_rejected(client: TestClient) -> None:
     resp = client.post(
-        "/api/portfolio/trades",
+        "/api/portfolio/trade",
         json={"ticker": "NVDA", "quantity": 1_000_000, "side": "buy"},
     )
     assert resp.status_code == 400

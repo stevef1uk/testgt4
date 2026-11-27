@@ -35,7 +35,7 @@ def get_portfolio_history() -> Any:
     return _engine().get_portfolio_history()
 
 
-@router.post("/trades", status_code=status.HTTP_201_CREATED)
+@router.post("/trade", status_code=status.HTTP_201_CREATED)
 def post_trade(payload: dict[str, Any]) -> Any:
     """Execute a buy/sell trade against the simulated portfolio."""
     try:

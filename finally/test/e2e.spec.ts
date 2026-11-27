@@ -5,22 +5,22 @@ test.describe('FinAlly E2E User Journeys', () => {
     await page.goto('/');
 
     // Check heading
-    const heading = page.locator('header, h1, [aria-label="Header"]').filter({ hasText: 'FinAlly' });
+    const heading = page.getByText('FinAlly');
     await expect(heading.first()).toBeVisible();
 
     // Check starting cash balance of $10,000
-    await expect(page.locator('body')).toContainText('10,000');
+    await expect(page.getByText('10,000').first()).toBeVisible();
 
     // Check that default tickers appear
     const defaultTickers = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'NVDA', 'META', 'JPM', 'V', 'NFLX'];
     for (const ticker of defaultTickers) {
-      await expect(page.locator('body')).toContainText(ticker);
+      await expect(page.getByText(ticker).first()).toBeVisible();
     }
   });
 
   test('covers a market buy and sell round trip', async ({ page, request }) => {
     // Direct API verification of buy and sell flow
-    const buyRes = await request.post('/api/portfolio/trades', {
+    const buyRes = await request.post('/api/portfolio/trade', {
       data: { ticker: 'AAPL', quantity: 2, side: 'buy' },
     });
     expect([200, 201]).toContain(buyRes.status());
@@ -30,7 +30,7 @@ test.describe('FinAlly E2E User Journeys', () => {
     const portfolio = await portfolioRes.json();
     expect(portfolio.cash_balance ?? portfolio.cash).toBeLessThan(10000);
 
-    const sellRes = await request.post('/api/portfolio/trades', {
+    const sellRes = await request.post('/api/portfolio/trade', {
       data: { ticker: 'AAPL', quantity: 1, side: 'sell' },
     });
     expect([200, 201]).toContain(sellRes.status());
@@ -58,18 +58,18 @@ test.describe('FinAlly E2E User Journeys', () => {
   test('sends a chat message through the UI and shows a non-empty assistant reply without raw JSON', async ({ page }) => {
     await page.goto('/');
 
-    const chatSection = page.locator('section[aria-label="AI assistant"]');
+    const chatSection = page.getByRole('region', { name: 'AI assistant' });
     await expect(chatSection).toBeVisible();
 
-    const input = chatSection.locator('input[aria-label="Message"], textarea[aria-label="Message"]');
+    const input = chatSection.getByRole('textbox', { name: 'Message' });
     await input.fill('Hello FinAlly');
 
     const chatResponse = page.waitForResponse((res) => res.url().includes('/api/chat') && res.request().method() === 'POST');
-    await chatSection.locator('button[type="submit"]').click();
+    await chatSection.getByRole('button', { name: /send/i }).click();
     await chatResponse;
 
     // The user's message appears in the history, followed by an assistant bubble
-    const assistantBubble = chatSection.locator('ul[aria-label="Chat history"] li[data-role="assistant"]').last();
+    const assistantBubble = chatSection.getByRole('list', { name: 'Chat history' }).getByRole('listitem').last();
     await expect(assistantBubble).toBeVisible({ timeout: 20_000 });
 
     const text = (await assistantBubble.innerText()).trim();
