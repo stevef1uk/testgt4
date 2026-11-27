@@ -11,7 +11,7 @@ Constraints from SPEC:
 - Single user (user_id "default"); every table carries a user_id column.
 - GET / renders the real dashboard: FinAlly heading, ten default tickers with prices, $10,000 cash. No placeholder page. If the export is missing, GET / returns 503 with a diagnostic body.
 - LLM output passes a resilient multi-key parser; raw JSON never reaches a chat bubble.
-- Every LLM prompt embeds live prices, for example `AAPL ($190.50)`.
+- Every LLM prompt embeds live prices, for example AAPL ($190.50).
 
 ## Planned file layout
 
@@ -264,7 +264,7 @@ Stage 2 uses `python:3.12-slim`. It installs uv, copies `finally/backend/`, runs
 Container launch command (SPEC Section 11, verbatim):
 `uvicorn app.main:app --host 0.0.0.0 --port 8010`
 
-The named volume is `finally-data:/app/db`, mapped to the project `db/` directory.
+The named volume is finally-data:/app/db, mapped to the project `db/` directory.
 
 ## E2E / integration testing
 
