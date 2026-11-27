@@ -19,6 +19,12 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
+  webServer: {
+    command: 'cd ../backend && LLM_MOCK=true uv run uvicorn app.main:app --port 8010',
+    url: 'http://127.0.0.1:8010/api/health',
+    reuseExistingServer: true,
+    timeout: 30_000,
+  },
   projects: [
     {
       name: 'chromium',

@@ -58,11 +58,18 @@ function parseReply(raw: string): ParsedReply {
   return { text: raw, trades: [] };
 }
 
+const DEFAULT_GREETING: ChatMessage = {
+  role: "assistant",
+  content: "Hello! I am FinAlly, your AI trading copilot. Ask me about your portfolio, market trends, or to execute a trade.",
+};
+
 export default function ChatAssistant({
   initialMessages = [],
   onSend,
 }: ChatAssistantProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const [messages, setMessages] = useState<ChatMessage[]>(
+    initialMessages.length > 0 ? initialMessages : [DEFAULT_GREETING]
+  );
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
 
@@ -87,43 +94,71 @@ export default function ChatAssistant({
   }
 
   return (
-    <section aria-label="AI assistant" className="flex h-full flex-col">
-      <ul aria-label="Chat history" className="flex-1 space-y-2 overflow-y-auto p-2">
+    <section aria-label="AI assistant" className="panel p-4 flex flex-col h-[420px] text-sm">
+      <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+        <div className="flex items-center gap-2">
+          <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <h3 className="font-semibold text-slate-200">FinAlly Copilot</h3>
+        </div>
+        <span className="text-xs bg-slate-800 text-blue-400 border border-slate-700 px-2 py-0.5 rounded">
+          AI Assistant
+        </span>
+      </div>
+
+      <ul aria-label="Chat history" className="flex-1 space-y-3 overflow-y-auto pr-1">
         {messages.map((m, i) => (
-          <li key={i} data-role={m.role}>
-            <span className="font-semibold">
-              {m.role === "user" ? "You" : "FinAlly"}:
-            </span>{" "}
-            <span>{m.content}</span>
-            {m.trades?.map((t, j) => (
-              <span
-                key={j}
-                className="ml-2 rounded border px-1 text-xs font-semibold"
-              >
-                {`✓ Trade Fill: ${t.side.toUpperCase()} ${t.quantity} ${t.ticker.toUpperCase()}`}
-              </span>
-            ))}
+          <li
+            key={i}
+            data-role={m.role}
+            className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
+          >
+            <span className="text-[11px] text-slate-500 mb-0.5 px-1">
+              {m.role === "user" ? "You" : "FinAlly"}
+            </span>
+            <div
+              className={`rounded-lg px-3 py-2 max-w-[90%] text-sm leading-relaxed ${
+                m.role === "user"
+                  ? "bg-blue-600/30 border border-blue-500/50 text-blue-100"
+                  : "bg-slate-800/90 border border-slate-700/80 text-slate-200"
+              }`}
+            >
+              <p className="whitespace-pre-wrap">{m.content}</p>
+              {m.trades && m.trades.length > 0 && (
+                <div className="mt-2 space-y-1">
+                  {m.trades.map((t, j) => (
+                    <div
+                      key={j}
+                      className="inline-block rounded bg-emerald-950/80 border border-emerald-700 px-2 py-0.5 text-xs font-mono text-emerald-300"
+                    >
+                      {`✓ Trade Fill: ${t.side.toUpperCase()} ${t.quantity} ${t.ticker.toUpperCase()}`}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </li>
         ))}
         {pending && (
-          <li role="status" aria-live="polite" className="italic">
+          <li role="status" aria-live="polite" className="flex items-center gap-2 text-slate-400 text-xs italic p-1">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-400 animate-ping" />
             Copilot is thinking...
           </li>
         )}
       </ul>
-      <form onSubmit={handleSubmit} className="flex gap-2 p-2">
+
+      <form onSubmit={handleSubmit} className="flex gap-2 pt-3 border-t border-slate-800 mt-2">
         <input
           type="text"
           aria-label="Message"
           placeholder="Ask FinAlly..."
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          className="flex-1 rounded border px-2 py-1"
+          className="flex-1 rounded bg-slate-900 border border-slate-700 px-3 py-1.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500"
         />
         <button
           type="submit"
           disabled={pending}
-          className="rounded px-3 py-1"
+          className="rounded px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Send
         </button>

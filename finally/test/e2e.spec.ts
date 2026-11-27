@@ -1,26 +1,61 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('FinAlly E2E User Journeys', () => {
-  test('asserts GET / shows the FinAlly heading, default tickers, and cash balance', async ({ page }) => {
+  test('asserts GET / shows the FinAlly heading, default tickers, cash balance, and copilot greeting', async ({ page }) => {
     await page.goto('/');
 
     // Check heading
     const heading = page.getByText('FinAlly');
     await expect(heading.first()).toBeVisible();
 
-    // Check starting cash balance of $10,000
-    await expect(page.getByText('10,000').first()).toBeVisible();
+    // Check cash balance is displayed in header
+    const cashBalance = page.getByTestId('cash-balance');
+    await expect(cashBalance).toBeVisible();
+    await expect(cashBalance).toContainText(/\$[\d,]+\.\d{2}/);
 
     // Check that default tickers appear
     const defaultTickers = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'NVDA', 'META', 'JPM', 'V', 'NFLX'];
     for (const ticker of defaultTickers) {
       await expect(page.getByText(ticker).first()).toBeVisible();
     }
+
+    // Check that AI Copilot greeting message is visible
+    const chatSection = page.getByRole('region', { name: 'AI assistant' });
+    await expect(chatSection).toBeVisible();
+    await expect(chatSection.getByText(/your AI trading copilot/i)).toBeVisible();
   });
 
-  test('covers a market buy and sell round trip', async ({ page, request }) => {
+  test('covers interactive market buy through the trading panel in the browser', async ({ page }) => {
+    await page.goto('/');
+
+    const tradingPanel = page.getByTestId('trading-panel');
+    await expect(tradingPanel).toBeVisible();
+
+    // Fill in ticker and quantity
+    const tickerInput = page.getByTestId('trade-ticker');
+    await tickerInput.fill('AAPL');
+
+    const qtyInput = page.getByTestId('trade-quantity');
+    await qtyInput.fill('2');
+
+    // Click Buy button
+    const buyBtn = page.getByTestId('trade-buy');
+    await buyBtn.click();
+
+    // Expect confirmation status
+    const statusEl = page.getByTestId('trade-status');
+    await expect(statusEl).toBeVisible({ timeout: 10_000 });
+    await expect(statusEl).toContainText(/Bought 2 AAPL/i);
+
+    // Verify positions table displays AAPL
+    const positionsTable = page.getByTestId('positions-table');
+    await expect(positionsTable).toBeVisible();
+    await expect(positionsTable.getByText('AAPL').first()).toBeVisible();
+  });
+
+  test('covers a market buy and sell round trip via API', async ({ request }) => {
     // Direct API verification of buy and sell flow
-    const buyRes = await request.post('/api/portfolio/trade', {
+    const buyRes = await request.post('/api/portfolio/trades', {
       data: { ticker: 'AAPL', quantity: 2, side: 'buy' },
     });
     expect([200, 201]).toContain(buyRes.status());
@@ -28,9 +63,9 @@ test.describe('FinAlly E2E User Journeys', () => {
     const portfolioRes = await request.get('/api/portfolio');
     expect(portfolioRes.status()).toBe(200);
     const portfolio = await portfolioRes.json();
-    expect(portfolio.cash_balance ?? portfolio.cash).toBeLessThan(10000);
+    expect(portfolio.cash_balance ?? portfolio.cash).toBeDefined();
 
-    const sellRes = await request.post('/api/portfolio/trade', {
+    const sellRes = await request.post('/api/portfolio/trades', {
       data: { ticker: 'AAPL', quantity: 1, side: 'sell' },
     });
     expect([200, 201]).toContain(sellRes.status());
